@@ -1,8 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Redacao, Correcao, UsuarioSessao, RascunhoRedacao } from '@/types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jzsudeviiosbhgkeljaf.supabase.co';
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'sb_publishable_Id8BqloLwBkESdoO-C6ZNw_uhAunIoI';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
