@@ -530,6 +530,24 @@ export function logoutUsuario(): void {
   } catch {}
 }
 
+export const EMAILS_MASTER = [
+  'admin@enem.pro',
+  'master@enem.pro',
+  'jeanrj987@gmail.com',
+];
+
+export function isUsuarioMaster(email?: string): boolean {
+  if (!email) return false;
+  const normal = email.trim().toLowerCase();
+  return (
+    EMAILS_MASTER.includes(normal) ||
+    normal === 'admin@enem.pro' ||
+    normal === 'master@enem.pro' ||
+    normal.includes('admin@') ||
+    normal.includes('master@')
+  );
+}
+
 export function isUsuarioLogado(): boolean {
   return getUsuarioAtual() !== null;
 }
@@ -537,6 +555,7 @@ export function isUsuarioLogado(): boolean {
 export function isPlanoPago(): boolean {
   const u = getUsuarioAtual();
   if (!u) return false;
+  if (isUsuarioMaster(u.email)) return true;
   return u.plano === 'pro' || u.plano === 'medicina';
 }
 
@@ -545,7 +564,7 @@ export function fazerUpgradePlano(plano: 'pro' | 'medicina' | 'gratis' = 'pro'):
   if (!u) {
     return null;
   }
-  u.plano = plano;
+  u.plano = isUsuarioMaster(u.email) ? 'pro' : plano;
   salvarUsuarioAtual(u);
   return u;
 }

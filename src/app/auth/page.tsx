@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { salvarUsuarioAtual, UsuarioSessao } from '@/lib/storage';
+import { salvarUsuarioAtual, isUsuarioMaster, UsuarioSessao } from '@/lib/storage';
 import { loginComGoogleSupabase } from '@/lib/supabase';
 
 function AuthContent() {
@@ -55,11 +55,18 @@ function AuthContent() {
 
     setTimeout(() => {
       setLoading(false);
+      const userEmail = email.trim().toLowerCase();
+      const isMaster = isUsuarioMaster(userEmail);
+
       const novoUsuario: UsuarioSessao = {
-        id: 'usr_' + Date.now(),
-        nome: nome.trim() || (isLogin ? 'Estudante' : 'Novo Estudante'),
-        email: email.trim() || 'estudante@enem.pro',
-        plano: 'gratis', // Contas novas sempre começam no plano gratuito
+        id: isMaster
+          ? (userEmail.includes('admin') ? 'usr_admin_master' : 'usr_master_enem')
+          : 'usr_' + Date.now(),
+        nome: isMaster
+          ? (userEmail.includes('admin') ? 'Administrador Master' : 'Coordenação Master')
+          : (nome.trim() || (isLogin ? 'Estudante' : 'Novo Estudante')),
+        email: userEmail || 'estudante@enem.pro',
+        plano: isMaster ? 'pro' : 'gratis', // Master sempre tem plano PRO
         created_at: new Date().toISOString(),
       };
 
@@ -67,7 +74,9 @@ function AuthContent() {
 
       setMessage({
         type: 'success',
-        text: isLogin
+        text: isMaster
+          ? 'Login Master Autenticado (Acesso 100% Liberado)! Redirecionando...'
+          : isLogin
           ? 'Login efetuado com sucesso! Redirecionando...'
           : 'Conta criada com sucesso! Redirecionando...',
       });

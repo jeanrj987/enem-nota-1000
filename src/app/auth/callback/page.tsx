@@ -4,7 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase, obterUsuarioSupabase } from '@/lib/supabase';
-import { salvarUsuarioAtual, UsuarioSessao } from '@/lib/storage';
+import { salvarUsuarioAtual, isUsuarioMaster, UsuarioSessao } from '@/lib/storage';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -97,6 +97,7 @@ function AuthCallbackContent() {
     async function handleUserLogin(user: any) {
       try {
         const userDb = await obterUsuarioSupabase(user.id);
+        const isMaster = isUsuarioMaster(user.email);
 
         const usuarioSessao: UsuarioSessao = {
           id: user.id,
@@ -106,7 +107,7 @@ function AuthCallbackContent() {
             user.email?.split('@')[0] ||
             'Estudante Google',
           email: user.email || '',
-          plano: userDb?.plano || 'gratis',
+          plano: isMaster ? 'pro' : (userDb?.plano || 'gratis'),
           created_at: user.created_at || new Date().toISOString(),
         };
 
