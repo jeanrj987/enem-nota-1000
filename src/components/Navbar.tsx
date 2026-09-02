@@ -19,7 +19,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { BannerUrgencia } from '@/components/BannerUrgencia';
-import { getUsuarioAtual, calcularStreakEstudos, isPlanoPago, logoutUsuario, UsuarioSessao } from '@/lib/storage';
+import { getUsuarioAtual, isUsuarioMaster, calcularStreakEstudos, isPlanoPago, logoutUsuario, UsuarioSessao } from '@/lib/storage';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -34,12 +34,15 @@ export function Navbar() {
     setIsPro(isPlanoPago());
   }, [pathname]);
 
+  const isMaster = isUsuarioMaster(usuario?.email);
+
   const navLinks = [
     { href: '/', label: 'Início' },
     { href: '/#como-funciona', label: 'Como Funciona' },
     { href: '/nova-redacao', label: 'Estúdio' },
     { href: '/dashboard', label: 'Desempenho' },
     { href: '/#planos', label: 'Planos' },
+    ...(isMaster ? [{ href: '/admin/leads', label: '👑 Leads (X1)' }] : []),
   ];
 
   return (

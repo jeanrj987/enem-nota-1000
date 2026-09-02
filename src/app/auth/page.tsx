@@ -9,6 +9,9 @@ import {
   Mail,
   Lock,
   User,
+  Phone,
+  MapPin,
+  Calendar,
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
@@ -21,6 +24,26 @@ import { Footer } from '@/components/Footer';
 import { salvarUsuarioAtual, isUsuarioMaster, UsuarioSessao } from '@/lib/storage';
 import { loginComGoogleSupabase } from '@/lib/supabase';
 
+const ESTADOS_BRASIL = [
+  'SP', 'RJ', 'MG', 'BA', 'RS', 'PR', 'PE', 'CE', 'SC', 'GO',
+  'MA', 'PB', 'PA', 'ES', 'PI', 'RN', 'AL', 'MT', 'MS', 'DF',
+  'SE', 'RO', 'TO', 'AC', 'AP', 'RR', 'AM',
+];
+
+const CURSOS_SUGERIDOS = [
+  'Medicina',
+  'Direito',
+  'Engenharia',
+  'Ciência da Computação',
+  'Odontologia',
+  'Psicologia',
+  'Enfermagem',
+  'Administração',
+  'Arquitetura',
+  'Biomedicina',
+  'Outro Curso',
+];
+
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,9 +53,29 @@ function AuthContent() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [nome, setNome] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [estado, setEstado] = useState('SP');
+  const [dataNascimento, setDataNascimento] = useState('');
+  const [cursoSonho, setCursoSonho] = useState('Medicina');
+
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+
+    if (v.length > 6) {
+      v = `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+    } else if (v.length > 2) {
+      v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+    } else if (v.length > 0) {
+      v = `(${v}`;
+    }
+    setWhatsapp(v);
+  };
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -53,6 +96,13 @@ function AuthContent() {
     setLoading(true);
     setMessage(null);
 
+    const cleanZap = whatsapp.replace(/\D/g, '');
+    if (!isLogin && cleanZap.length < 10) {
+      setLoading(false);
+      setMessage({ type: 'error', text: 'Por favor, informe um WhatsApp válido com DDD.' });
+      return;
+    }
+
     setTimeout(() => {
       setLoading(false);
       const userEmail = email.trim().toLowerCase();
@@ -61,12 +111,17 @@ function AuthContent() {
       const novoUsuario: UsuarioSessao = {
         id: isMaster
           ? (userEmail.includes('admin') ? 'usr_admin_master' : 'usr_master_enem')
-          : 'usr_' + Date.now(),
+          : `usr_${Date.now()}`,
         nome: isMaster
           ? (userEmail.includes('admin') ? 'Administrador Master' : 'Coordenação Master')
           : (nome.trim() || (isLogin ? 'Estudante' : 'Novo Estudante')),
         email: userEmail || 'estudante@enem.pro',
-        plano: isMaster ? 'pro' : 'gratis', // Master sempre tem plano PRO
+        whatsapp: whatsapp.trim() || undefined,
+        cidade: cidade.trim() || undefined,
+        estado: estado || undefined,
+        data_nascimento: dataNascimento || undefined,
+        curso_sonho: cursoSonho || undefined,
+        plano: isMaster ? 'pro' : 'gratis',
         created_at: new Date().toISOString(),
       };
 
@@ -78,12 +133,12 @@ function AuthContent() {
           ? 'Login Master Autenticado (Acesso 100% Liberado)! Redirecionando...'
           : isLogin
           ? 'Login efetuado com sucesso! Redirecionando...'
-          : 'Conta criada com sucesso! Redirecionando...',
+          : 'Perfil cadastrado com sucesso! Liberando acesso gratuito...',
       });
 
       setTimeout(() => {
         router.push(redirectTarget);
-      }, 500);
+      }, 600);
     }, 400);
   };
 
@@ -91,7 +146,7 @@ function AuthContent() {
     <main className="flex-1 flex items-center justify-center px-4 py-12 relative z-10">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md relative space-y-6">
+      <div className="w-full max-w-lg relative space-y-6">
         
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-600 p-0.5 mx-auto shadow-lg shadow-cyan-500/20">
@@ -100,30 +155,30 @@ function AuthContent() {
             </div>
           </div>
 
-          <h1 className="font-heading text-2xl font-extrabold text-white">
+          <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-white">
             {isLogin ? 'Entrar na sua Conta' : 'Criar Conta de Estudante'}
           </h1>
-          <p className="text-xs text-slate-300 font-sans">
+          <p className="text-xs text-slate-300 font-sans max-w-sm mx-auto">
             {isLogin
               ? 'Acesse seu histórico de redações e suas métricas'
-              : 'Cadastre-se para liberar o estúdio oficial do ENEM'}
+              : 'Preencha seus dados para liberar o estúdio gratuito de redação do ENEM'}
           </p>
         </div>
 
-        <div className="tech-card p-6 sm:p-8 rounded-3xl border border-cyan-500/30 shadow-2xl space-y-5">
+        <div className="tech-card p-6 sm:p-8 rounded-3xl border border-cyan-500/30 space-y-5 shadow-2xl relative">
           
-          {/* Botão Oficial Google OAuth */}
+          {/* Botão Google 1-Clique */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={googleLoading || loading}
-            className="w-full py-3 px-4 rounded-2xl bg-white text-slate-900 font-heading font-extrabold text-xs sm:text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-xl hover:shadow-cyan-500/10 cursor-pointer disabled:opacity-50 border border-slate-200 group active:scale-[0.98]"
+            disabled={googleLoading}
+            className="w-full py-3 px-4 rounded-xl bg-white text-slate-900 font-heading font-extrabold text-xs sm:text-sm flex items-center justify-center gap-3 hover:bg-slate-100 transition-all shadow-md cursor-pointer border border-slate-200 active:scale-[0.98] disabled:opacity-50"
           >
             {googleLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
-                <span>Conectando ao Google...</span>
-              </>
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-800" />
+                <span>Conectando com o Google...</span>
+              </div>
             ) : (
               <>
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -153,7 +208,7 @@ function AuthContent() {
           <div className="relative flex items-center justify-center">
             <div className="border-t border-white/[0.08] w-full" />
             <span className="bg-[#030612] px-3 text-[10px] uppercase font-mono text-slate-400 shrink-0">
-              ou continue com e-mail
+              ou continue com questionário
             </span>
             <div className="border-t border-white/[0.08] w-full" />
           </div>
@@ -201,70 +256,170 @@ function AuthContent() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {!isLogin && (
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
-                  Nome Completo
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Ana Clara Medeiros"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-                  />
+              <>
+                {/* Nome Completo */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
+                    Nome Completo *
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Ana Clara Medeiros"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
                 </div>
-              </div>
+
+                {/* WhatsApp & Data de Nascimento */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-emerald-400 uppercase tracking-wide">
+                      WhatsApp com DDD *
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-emerald-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="(11) 98765-4321"
+                        value={whatsapp}
+                        onChange={handleWhatsappChange}
+                        className="w-full bg-[#030612] border border-emerald-500/30 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
+                      Data de Nascimento
+                    </label>
+                    <div className="relative">
+                      <Calendar className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="date"
+                        value={dataNascimento}
+                        onChange={(e) => setDataNascimento(e.target.value)}
+                        className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cidade & Estado */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1">
+                    <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
+                      Cidade *
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ex: Campinas"
+                        value={cidade}
+                        onChange={(e) => setCidade(e.target.value)}
+                        className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
+                      UF *
+                    </label>
+                    <select
+                      value={estado}
+                      onChange={(e) => setEstado(e.target.value)}
+                      className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-cyan-400 font-mono cursor-pointer"
+                    >
+                      {ESTADOS_BRASIL.map((uf) => (
+                        <option key={uf} value={uf} className="bg-[#030612] text-white">
+                          {uf}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Curso dos Sonhos */}
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wide">
+                    Qual curso você quer passar no ENEM?
+                  </label>
+                  <div className="relative">
+                    <GraduationCap className="w-4 h-4 text-indigo-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <select
+                      value={cursoSonho}
+                      onChange={(e) => setCursoSonho(e.target.value)}
+                      className="w-full bg-[#030612] border border-indigo-500/30 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-400 cursor-pointer"
+                    >
+                      {CURSOS_SUGERIDOS.map((c) => (
+                        <option key={c} value={c} className="bg-[#030612] text-white">
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
             )}
 
-            <div className="space-y-1.5">
+            {/* E-mail (Opcional no cadastro, obrigatório no login) */}
+            <div className="space-y-1">
               <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
-                E-mail
+                {isLogin ? 'E-mail *' : 'E-mail (Opcional)'}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
-                  required
-                  placeholder="estudante@email.com"
+                  required={isLogin}
+                  placeholder={isLogin ? 'estudante@email.com' : 'estudante@email.com (opcional)'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
-                Senha
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={senha}
-                  onChange={(e) => setSenha(e.target.value)}
-                  className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
-                />
+            {/* Senha (Apenas no login para contas existentes) */}
+            {isLogin && (
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold text-cyan-300 uppercase tracking-wide">
+                  Senha *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    className="w-full bg-[#030612] border border-cyan-500/25 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="btn-cyber-primary w-full py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer"
+              className="btn-cyber-primary w-full py-3.5 rounded-xl font-heading font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl disabled:opacity-50 cursor-pointer mt-2"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <span>{isLogin ? 'ENTRAR COM E-MAIL' : 'CRIAR CONTA COM E-MAIL'}</span>
+                  <span>{isLogin ? 'ENTRAR NA PLATAFORMA' : 'LIBERAR MEU ACESSO GRATUITO'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -279,10 +434,9 @@ function AuthContent() {
 
 export default function AuthPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#02040a] text-slate-100 font-sans selection:bg-cyan-400 selection:text-black relative">
-      <div className="fixed inset-0 tech-grid-bg opacity-30 pointer-events-none z-0" />
+    <div className="min-h-screen flex flex-col bg-[#02040a] text-slate-100 font-sans relative overflow-hidden">
       <Navbar />
-      <Suspense fallback={<div className="flex-1 flex items-center justify-center text-xs text-cyan-400">Carregando...</div>}>
+      <Suspense fallback={<div className="flex-1 flex items-center justify-center text-xs font-mono text-cyan-400">Carregando...</div>}>
         <AuthContent />
       </Suspense>
       <Footer />

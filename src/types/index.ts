@@ -120,6 +120,11 @@ export interface UsuarioSessao {
   id: string;
   nome: string;
   email: string;
+  whatsapp?: string;
+  cidade?: string;
+  estado?: string;
+  data_nascimento?: string;
+  curso_sonho?: string;
   plano: 'gratis' | 'pro' | 'medicina';
   created_at: string;
 }

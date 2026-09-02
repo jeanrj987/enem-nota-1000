@@ -502,7 +502,11 @@ export function getUsuarioAtual(): UsuarioSessao | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USUARIO);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const u: UsuarioSessao = JSON.parse(raw);
+    if (isUsuarioMaster(u.email)) {
+      u.plano = 'pro';
+    }
+    return u;
   } catch {
     return null;
   }
@@ -511,6 +515,9 @@ export function getUsuarioAtual(): UsuarioSessao | null {
 export function salvarUsuarioAtual(usuario: UsuarioSessao): void {
   if (typeof window === 'undefined') return;
   try {
+    if (isUsuarioMaster(usuario.email)) {
+      usuario.plano = 'pro';
+    }
     localStorage.setItem(STORAGE_KEY_USUARIO, JSON.stringify(usuario));
 
     if (isSupabaseConfigured) {
@@ -534,18 +541,13 @@ export const EMAILS_MASTER = [
   'admin@enem.pro',
   'master@enem.pro',
   'jeanrj987@gmail.com',
+  'jeanrj987@users.noreply.github.com',
 ];
 
 export function isUsuarioMaster(email?: string): boolean {
   if (!email) return false;
   const normal = email.trim().toLowerCase();
-  return (
-    EMAILS_MASTER.includes(normal) ||
-    normal === 'admin@enem.pro' ||
-    normal === 'master@enem.pro' ||
-    normal.includes('admin@') ||
-    normal.includes('master@')
-  );
+  return EMAILS_MASTER.includes(normal);
 }
 
 export function isUsuarioLogado(): boolean {

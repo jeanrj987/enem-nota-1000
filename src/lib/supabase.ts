@@ -291,6 +291,11 @@ export async function salvarUsuarioSupabase(usuario: UsuarioSessao): Promise<boo
       id: usuario.id,
       email: usuario.email,
       nome: usuario.nome,
+      whatsapp: usuario.whatsapp || null,
+      cidade: usuario.cidade || null,
+      estado: usuario.estado || null,
+      data_nascimento: usuario.data_nascimento || null,
+      curso_sonho: usuario.curso_sonho || null,
       plano: usuario.plano,
       updated_at: new Date().toISOString(),
     });
@@ -320,11 +325,47 @@ export async function obterUsuarioSupabase(id: string): Promise<UsuarioSessao | 
       id: data.id,
       email: data.email,
       nome: data.nome,
+      whatsapp: data.whatsapp || undefined,
+      cidade: data.cidade || undefined,
+      estado: data.estado || undefined,
+      data_nascimento: data.data_nascimento || undefined,
+      curso_sonho: data.curso_sonho || undefined,
       plano: data.plano,
       created_at: data.created_at,
     };
   } catch {
     return null;
+  }
+}
+
+/**
+ * Busca todos os leads capturados para o painel de vendas no X1.
+ */
+export async function obterTodosLeadsSupabase(): Promise<UsuarioSessao[]> {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) return [];
+
+    return data.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      nome: u.nome,
+      whatsapp: u.whatsapp || undefined,
+      cidade: u.cidade || undefined,
+      estado: u.estado || undefined,
+      data_nascimento: u.data_nascimento || undefined,
+      curso_sonho: u.curso_sonho || undefined,
+      plano: u.plano,
+      created_at: u.created_at,
+    }));
+  } catch {
+    return [];
   }
 }
 

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corrigirRedacaoComIA } from '@/lib/openai';
+import { isUsuarioMaster } from '@/lib/storage';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { texto, tema, titulo, historico_aluno, plano_usuario } = body;
+    const { texto, tema, titulo, historico_aluno, plano_usuario, email_usuario } = body;
 
     if (!texto || typeof texto !== 'string' || texto.trim().length < 20) {
       return NextResponse.json(
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isPlanoPago = plano_usuario === 'pro' || plano_usuario === 'medicina';
+    const isMaster = isUsuarioMaster(email_usuario) || isUsuarioMaster(body.email);
+    const isPlanoPago = plano_usuario === 'pro' || plano_usuario === 'medicina' || isMaster;
 
     const correcaoCompleta = await corrigirRedacaoComIA(
       texto,
