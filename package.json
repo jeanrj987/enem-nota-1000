@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "calibrar": "tsx scripts/calibrar.ts"
+    "calibrar": "tsx scripts/calibrar.ts",
+    "auditoria:vies": "tsx scripts/auditoria-vies.ts"
   },
   "dependencies": {
     "@google/genai": "^2.19.0",

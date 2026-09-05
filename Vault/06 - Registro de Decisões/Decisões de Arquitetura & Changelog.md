@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-05 (persistência real + rate limiting)
+updated: 2026-09-05 (auditoria de viés + testes + copy honesto)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -72,6 +72,11 @@ updated: 2026-09-05 (persistência real + rate limiting)
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v1.4.0] - 2026-09-05 (copy honesto + testes + auditoria de viés)
+- **Removido**: cronômetro falso (reiniciava sozinho ao chegar a zero) e "5 vagas restantes" fixo do `SalesStickyBar.tsx` — publicidade enganosa vedada pelo CDC. Componente estava presente no código mas não era renderizado em nenhuma página no momento da correção; corrigido preventivamente.
+- **Adicionado**: 25 novos testes automatizados (`tests/rate-limit.test.ts`, `tests/storage.test.ts` com Supabase mockado, `tests/upload-route.test.ts`, `tests/corrigir-route.test.ts`) — total sobe de 45 para 70, cobrindo agora rate limiting, storage.ts e validação das rotas de API, sem depender de chamadas reais a LLM.
+- **Adicionado**: metodologia e corpus da auditoria de viés (`src/lib/auditoria/casos.ts`, `scripts/auditoria-vies.ts`, `npm run auditoria:vies`) — ver [[02 - Metodologia ENEM/Auditoria de Viés]]. Execução pendente de cota de API (Gemini free tier esgotado, sem chave OpenAI).
 
 ### [v1.3.0] - 2026-09-05 (persistência + rate limiting)
 - **Adicionado**: OCR de PDF sem texto selecionável via visão do Gemini — ver atualização do ADR 007.

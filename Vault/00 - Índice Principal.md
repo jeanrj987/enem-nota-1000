@@ -6,7 +6,7 @@ tags:
   - arquitetura
   - enem
   - documentacao
-updated: 2026-09-05
+updated: 2026-09-05 (auditoria de viés + testes + copy honesto)
 ---
 
 # 📚 Índice Principal — Base de Conhecimento Obsidian (Nota 1000 AI)
@@ -30,6 +30,7 @@ updated: 2026-09-05
 ### ✍️ 02. Metodologia de Correção Oficial (INEP / ENEM)
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz Oficial do INEP — As 5 Competências & Faixas de Nota]]
 - [[02 - Metodologia ENEM/Competências Detalhadas C1 a C5|Detalhamento Profundo de C1, C2, C3, C4 e C5 (Intervenção)]]
+- [[02 - Metodologia ENEM/Auditoria de Viés|Auditoria de Viés do Corretor — Regionalismo & Repertório de Fachada]]
 
 ### 🤖 03. Engenharia de Prompt & Inteligência Artificial
 - [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|Arquitetura de IA, Prompts de Sistema, Modelos (Gemini / GPT-4o-mini) & JSON Estruturado]]
