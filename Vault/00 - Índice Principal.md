@@ -6,7 +6,7 @@ tags:
   - arquitetura
   - enem
   - documentacao
-updated: 2026-09-01
+updated: 2026-09-05
 ---
 
 # 📚 Índice Principal — Base de Conhecimento Obsidian (Nota 1000 AI)

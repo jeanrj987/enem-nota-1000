@@ -7,97 +7,84 @@ tags:
   - prompt-engineering
   - system-prompt
   - json-schema
-updated: 2026-09-01
+updated: 2026-09-05
 ---
 
 # 🤖 Arquitetura de IA & Engenharia de Prompts
 
-> [!tip] **Estratégia Híbrida de Alta Disponibilidade**
-> O motor de correção do **Nota 1000 AI** foi arquitetado com um sistema de **fallback em cascata** para garantir custo mínimo, velocidade abaixo de 10s e 100% de disponibilidade mesmo sob picos de demanda.
+> [!warning] **Sem fallback heurístico — nunca fabricar resultado**
+> O antigo "motor heurístico offline" foi removido. Se Gemini e OpenAI falham, `corrigirRedacaoComIA` lança erro explícito — o aluno vê uma falha honesta, nunca uma nota inventada. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 005]].
+
+> [!tip] **Dupla correção com reconciliação**
+> Réplica do protocolo oficial do ENEM (dois corretores + arbitro em caso de divergência). Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 006]].
 
 ---
 
-## 🔄 Fluxo de Processamento da Redação
+## 🔄 Fluxo de Processamento (`corrigirRedacaoComDuplaCorrecao`)
 
 ```mermaid
 graph TD
-    A[Usuário Envia Redação] --> B[Endpoint /api/corrigir]
-    B --> C{Chave GEMINI_API_KEY Configurada?}
-    C -- Sim --> D[Google Gemini 3.6 Flash / 2.0 Flash\nTemp: 0.1, Formato: JSON]
-    D -- Sucesso --> G[Retornar Objeto Correcao]
-    D -- Falha / Timeout / 503 --> E{Chave OPENAI_API_KEY Configurada?}
-    C -- Não --> E
-    E -- Sim --> F[OpenAI gpt-4o-mini\nTemp: 0.2, json_object]
-    F -- Sucesso --> G
-    F -- Falha --> H[Motor Heurístico Offline de Fallback]
-    E -- Não --> H
-    H --> G
+    A[Usuário Envia Redação] --> B[POST /api/corrigir]
+    B --> C[2x corrigirRedacaoComIA em paralelo]
+    C --> D1[Correção 1]
+    C --> D2[Correção 2]
+    D1 --> E{Ambas falharam?}
+    D2 --> E
+    E -- Sim --> F[Erro explícito ao aluno]
+    E -- Não, 1 falhou --> G[Usa a que teve sucesso]
+    E -- Não, ambas OK --> H{Divergência de nota_geral > 100?}
+    H -- Não --> I[Reconcilia por média]
+    H -- Sim --> J[3ª correção de arbitragem]
+    J --> K[Reconcilia par mais próximo]
 ```
+
+Cada `corrigirRedacaoComIA` individual: Gemini 3.6 Flash (3 retries, backoff exponencial, temp 0.1) → OpenAI gpt-4o-mini (2 retries, temp 0.2, `max_tokens: 6000`) → lança erro.
+
+- **Motivo da dupla correção**: variação real medida de até 120 pontos na mesma redação entre execuções (não-determinismo do LLM).
+- **Limiar de divergência**: 100 pontos (`LIMIAR_DIVERGENCIA` em `src/lib/reconciliacao.ts`).
+- Se a 3ª correção também falhar, reconcilia com o par divergente mesmo assim (nunca falha a correção inteira por causa da arbitragem).
 
 ---
 
-## 📜 O System Prompt Oficial (`src/lib/prompt-agente.ts`)
+## 🔒 Regras de Consistência (validador, não só o prompt)
 
-O prompt de sistema é injetado em toda chamada à API. Ele atua como um professor avaliador do INEP de nível sênior:
+O modelo pode se autocontradizer em texto livre — por isso `correcao-schema.ts` trava a resposta contra fatos estruturais, não apenas confia no prompt:
 
-```markdown
-Você é um corretor especialista em redações do ENEM, com anos de experiência avaliando textos dissertativo-argumentativos segundo a matriz oficial do INEP. Seu papel não é apenas dar uma nota — é atuar como um professor 100% dedicado a fazer esse aluno específico melhorar e alcançar a nota máxima possível. Você é minucioso, crítico e direto, mas nunca desrespeitoso: sua exigência vem do cuidado genuíno com a evolução do aluno.
+| Regra | Trava |
+| :--- | :--- |
+| Soma das competências | Deve bater exatamente com `nota_geral` |
+| Nível de cada competência | `nivel === nota / 40` |
+| Anulação total | Fuga de tema, tipo textual errado, texto <7 linhas, cópia de motivadores → `nota_geral = 0`, todas competências = 0 |
+| C2 monobloco | Parágrafos reais ≤1 → nota de C2 ≤80 (contagem real injetada no prompt, IA não pode inferir estrutura que não existe) |
+| C5 (`elementos_c5`) | Agente/Ação/Meio/Efeito/Detalhamento como booleanos — 4-5 presentes ⇒ nota ≥160; 0 presentes ⇒ nota = 0 |
+| C1/C3/C4 (`habilidades_c1/c3/c4`) | Idem: 4/4 habilidades ⇒ nota ≥160; 0/4 ⇒ nota ≤80 |
+| Grounding de `erros[]` | Todo `trecho` citado deve existir literalmente no texto do aluno — senão é descartado com aviso |
+| C1 cross-check | Nota 200 com ≥2 erros gramaticais citados (competência 1) é rejeitada |
 
-## REGRAS GERAIS DE AVALIAÇÃO:
-1. Avalie EXCLUSIVAMENTE o texto fornecido pelo aluno. Nunca invente trechos.
-2. Cite trechos EXATOS entre aspas ao apontar erros ou acertos.
-3. Para cada problema apontado, ofereça a correção/reescrita sugerida e explique a lógica gramatical ou de coesão.
-4. Seja explicativo: indique qual conectivo faltou, onde deveria entrar e por quê.
-5. Siga rigorosamente as 5 competências (0 a 200 pontos cada, intervalos de 40).
-6. Audite minuciosamente a Competência 5 verificando os 5 elementos (Agente, Ação, Modo/Meio, Efeito, Detalhamento).
-```
-
----
-
-## 📦 Estrutura de Retorno JSON Exigida
-
-```json
-{
-  "nota_geral": 920,
-  "competencias": [
-    {
-      "numero": 1,
-      "nome": "Norma Culta",
-      "descricao_curta": "Domínio da norma padrão escrita da língua portuguesa.",
-      "nota": 160,
-      "nivel": 4,
-      "comentario": "Excelente estrutura sintática com apenas 2 deslizes de regência.",
-      "pontos_fortes": ["Vocabulário formal e preciso"],
-      "pontos_melhoria": ["Revisar regência do verbo visar"]
-    }
-  ],
-  "erros": [
-    {
-      "id": "err_1",
-      "trecho": "visando a melhoria",
-      "tipo": "regencia",
-      "correcao": "visando à melhoria",
-      "explicacao": "O verbo visar no sentido de almejar exige preposição 'a', gerando crase antes de substantivo feminino determinado.",
-      "competencia_relacionada": 1
-    }
-  ],
-  "versao_reescrita": "Texto integral reescrito no padrão nota 1000...",
-  "feedback_pedagogico": "Seu texto apresenta excelente projeto de texto...",
-  "pontos_positivos": ["Tese bem articulada no D1", "Uso produtivo de Bauman"],
-  "proximos_passos": ["Adicionar detalhamento ao meio na C5", "Evitar repetição de 'ademais'"]
-}
-```
+Padrão usado: **autorrelato estruturado + trava do validador** — pedir campos booleanos discretos em vez de só prosa livre, e validar consistência numérica contra eles depois do parse.
 
 ---
 
-## ⚙️ Parâmetros Técnicos Recomendados
-- **Temperatura**: `0.1` a `0.2` (Prioriza consistência e fidelidade à matriz sobre aleatoriedade).
-- **Tempo Médio de Resposta**: $3.5\text{s}$ a $7.5\text{s}$ (Dependendo da extensão da redação).
-- **Custo por Correção**: ~$0.0005 USD (menos de R$ 0,003 por redação com `gpt-4o-mini` ou Gemini Flash).
+## 📜 System Prompt (`src/lib/prompt-agente.ts`)
+
+Seções principais:
+1. Regras gerais (nunca inventar trechos, citar exato, seguir faixas de 40 em 40).
+2. **Situações que anulam a redação inteira** (5 condições oficiais do INEP).
+3. Rubrica de cada competência + bloco **"Regra Rígida de Consistência"** logo após C1, C3, C4 e C5, amarrando os campos estruturados às faixas de nota.
+4. Fato estrutural injetado dinamicamente por redação: contagem real de parágrafos (`contarParagrafos`), com aviso explícito de monobloco quando ≤1.
+5. Exemplo de JSON de saída com todos os campos (incluindo `habilidades_c1/c3/c4`, `elementos_c5`, `anulada`, `motivo_anulacao`).
+
+---
+
+## ⚙️ Parâmetros Técnicos
+- **Temperatura**: Gemini `0.1`, OpenAI `0.2`.
+- **max_tokens (OpenAI)**: `6000` (elevado de 3000 — evitava truncar JSON completo + reescrita de 4 parágrafos).
+- **Custo/tempo por correção**: ~2x uma correção única (dupla correção paralela); ~3x em caso de divergência >100 pontos (arbitragem). Trade-off deliberado: consistência > custo/latência.
+- **Observabilidade**: `src/lib/observabilidade.ts` loga cada tentativa e o resultado final (nota, duração, divergência, reconciliação) como JSON de uma linha.
 
 ---
 
 ## 🔗 Links Relacionados
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Critérios de Pontuação do INEP]]
 - [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript em src/types/index.ts]]
-- [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|Configuração de Chaves de API no .env.local]]
+- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADRs 005, 006, 007]]

@@ -6,7 +6,7 @@ tags:
   - ui
   - tailwindcss
   - glassmorphism
-updated: 2026-09-01
+updated: 2026-09-05
 ---
 
 # 🎨 Design System & Componentes Reutilizáveis
@@ -43,16 +43,18 @@ updated: 2026-09-01
 ### 2. `Footer.tsx`
 - Rodapé institucional com colunas para Competências do ENEM, Recursos da Plataforma e links de acesso direto.
 
-### 3. `CorrecaoView.tsx`
-- Painel completo de exibição do resultado da correção:
-  - Seletor de abas: *1. Análise Geral & Erros*, *2. Versão Reescrita 1000*, *3. Plano de Ação Pedagógico*.
-  - Disparo de confete automático quando $\text{nota} \ge 900$.
-  - Exportação de relatório completo em formato PDF via `jspdf`.
-  - Cards detalhados de cada uma das 5 competências com barras de progresso proporcionais.
+### 3. `CorrecaoView.tsx` (235 linhas, era 567)
+- Orquestra abas e banner de nota/anulação/reconciliação; composto por `src/components/correcao/`:
+  - `AbaAnalise.tsx`, `AbaReescrita.tsx`, `AbaPlano.tsx` — as 3 abas (Análise & Erros / Reescrita 1000 / Plano Pedagógico).
+  - `CompetenciaCard.tsx`, `TextoDestacado.tsx` — cards de competência e marcação de erros no texto.
+- Exportação em PDF extraída para `src/lib/pdf-export.ts` (`exportarCorrecaoParaPDF`).
+- Disparo de confete automático quando nota ≥900.
 
-### 4. `Editor.tsx`
-- Editor de texto para redação com contadores dinâmicos de palavras, linhas e caracteres.
-- Validação mínima para garantir que o texto possui estrutura adequada antes do envio.
+### 4. `Editor.tsx` (239 linhas, era 468)
+- Orquestra estado e submissão; composto por `src/components/editor/`:
+  - `SeletorTema.tsx` — seleção de tema oficial/customizado + título.
+  - `AreaProducaoTextual.tsx` — upload, conectivos rápidos, textarea, contadores.
+  - `ModalCarregamento.tsx` — overlay de progresso durante a correção (dupla correção pode levar 20-50s).
 
 ### 5. `GraficoEvolucao.tsx`
 - Componente baseado em `Recharts`:

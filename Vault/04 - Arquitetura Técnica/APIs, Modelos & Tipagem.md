@@ -6,7 +6,7 @@ tags:
   - interfaces
   - backend
   - endpoints
-updated: 2026-09-01
+updated: 2026-09-05
 ---
 
 # 🔌 APIs, Modelos de Dados & Tipagem TypeScript
@@ -33,6 +33,34 @@ export type TipoErro =
   | 'proposta_intervencao'
   | 'outro';
 
+// Campos estruturados por competência — booleanos usados para travar
+// a nota contra autocontradição da IA (ver validarCorrecaoIA)
+export interface HabilidadesC1 {
+  ortografia_e_acentuacao: boolean;
+  concordancia_e_regencia: boolean;
+  pontuacao_adequada: boolean;
+  registro_formal_sem_oralidade: boolean;
+}
+export interface HabilidadesC3 {
+  tese_clara: boolean;
+  argumentos_bem_selecionados: boolean;
+  progressao_logica: boolean;
+  conclusao_articulada: boolean;
+}
+export interface HabilidadesC4 {
+  conectivos_interparagrafos: boolean;
+  conectivos_intraparagrafos_variados: boolean;
+  ausencia_repeticao_excessiva: boolean;
+  ausencia_marcadores_orais: boolean;
+}
+export interface ElementosC5 {
+  agente: boolean;
+  acao: boolean;
+  meio: boolean;
+  efeito: boolean;
+  detalhamento: boolean;
+}
+
 export interface Competencia {
   numero: CompetenciaNumero;
   nome: string;
@@ -42,6 +70,10 @@ export interface Competencia {
   comentario: string;
   pontos_fortes?: string[];
   pontos_melhoria?: string[];
+  habilidades_c1?: HabilidadesC1;
+  habilidades_c3?: HabilidadesC3;
+  habilidades_c4?: HabilidadesC4;
+  elementos_c5?: ElementosC5;
 }
 
 export interface ErroIdentificado {
@@ -53,9 +85,17 @@ export interface ErroIdentificado {
   competencia_relacionada: CompetenciaNumero;
 }
 
+// Presente só quando a correção final veio de reconciliação de 2-3 tentativas
+export interface ReconciliacaoInfo {
+  correcaoUnica: boolean;
+  divergenciaDeAnulacao?: boolean;
+}
+
 export interface Correcao {
   id: string;
   redacao_id: string;
+  anulada: boolean;
+  motivo_anulacao: string | null;
   nota_geral: number; // 0 a 1000
   competencias: Competencia[];
   erros: ErroIdentificado[];
@@ -65,6 +105,7 @@ export interface Correcao {
   proximos_passos: string[];
   tempo_analise_ms?: number;
   created_at: string;
+  reconciliacao?: ReconciliacaoInfo;
 }
 
 export interface Redacao {
@@ -86,7 +127,8 @@ export interface Redacao {
 ## 📡 Endpoints de API Serverless
 
 ### 1. `POST /api/corrigir`
-- **Função**: Recebe o texto e tema da redação e invoca o motor de IA (`corrigirRedacaoComIA` em `src/lib/openai.ts`).
+- **Função**: Recebe o texto e tema da redação e invoca `corrigirRedacaoComDuplaCorrecao` (`src/lib/openai.ts`) — ver [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|fluxo de dupla correção]].
+- **Sem chave configurada ou falha total dos provedores**: retorna erro explícito (nunca uma nota fabricada).
 - **Payload de Requisição**:
   ```json
   {
@@ -104,7 +146,8 @@ export interface Redacao {
   ```
 
 ### 2. `POST /api/upload`
-- **Função**: Processa uploads de arquivos multipart/form-data nos formatos `.txt`, `.docx` (via `mammoth`) e `.pdf` (via stream parsing).
+- **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`/pdfjs-dist).
+- **Sem OCR**: PDF sem texto selecionável (foto/scan manuscrito) retorna erro 422 pedindo para colar o texto manualmente.
 - **Resposta**:
   ```json
   {

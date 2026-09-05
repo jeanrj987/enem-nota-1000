@@ -6,8 +6,11 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-01
+updated: 2026-09-05
 ---
+
+> [!warning] **Requisito de runtime**
+> Node **≥20.16 ou ≥22.3** (exigência de `pdf-parse`/`pdfjs-dist`; abaixo disso falha com `process.getBuiltinModule is not a function`). Ver `.nvmrc` (fixado em `22.22.3`). `next.config.ts` declara `serverExternalPackages: ["pdf-parse"]` — necessário para o worker do pdfjs resolver fora do bundle do Turbopack.
 
 # 💻 Stack Tecnológica & Estrutura de Rotas
 
