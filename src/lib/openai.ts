@@ -5,6 +5,7 @@ import { SYSTEM_PROMPT_ENEM } from './prompt-agente';
 import { contarParagrafos, montarCorrecao, validarCorrecaoIA } from './correcao-schema';
 import { LIMIAR_DIVERGENCIA, reconciliarCorrecoes } from './reconciliacao';
 import { gerarId } from './ids';
+import { logCorrecao } from './observabilidade';
 
 export async function corrigirRedacaoComIA(
   texto: string,
@@ -35,8 +36,8 @@ ${texto}
     const maxRetries = 3;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const startTime = Date.now();
       try {
-        const startTime = Date.now();
         const response = await ai.models.generateContent({
           model: 'gemini-3.6-flash',
           contents: [
@@ -59,13 +60,16 @@ ${texto}
             if (validacao.avisos.length > 0) {
               console.warn('Avisos de validação (Gemini):', validacao.avisos);
             }
+            logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: true, duracao_ms: duration });
             return montarCorrecao(validacao.data, duration);
           }
 
           console.warn(`Tentativa ${attempt} no Gemini falhou validação: ${validacao.error}`);
+          logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: false, duracao_ms: duration, motivo_falha: `validacao: ${validacao.error}` });
         }
       } catch (geminiError: any) {
         console.warn(`Tentativa ${attempt} no Gemini falhou (${geminiError?.message?.slice(0, 80)}).`);
+        logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: geminiError?.message?.slice(0, 200) || 'erro desconhecido' });
       }
 
       if (attempt < maxRetries) {
@@ -80,8 +84,8 @@ ${texto}
     const maxRetries = 2;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const startTime = Date.now();
       try {
-        const startTime = Date.now();
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages: [
@@ -90,11 +94,18 @@ ${texto}
           ],
           response_format: { type: 'json_object' },
           temperature: 0.2,
-          max_tokens: 3000,
+          max_tokens: 6000,
         });
 
         const duration = Date.now() - startTime;
         const content = response.choices[0]?.message?.content;
+        const truncado = response.choices[0]?.finish_reason === 'length';
+
+        if (truncado) {
+          console.warn(
+            `Tentativa ${attempt} na OpenAI truncou a resposta por limite de tokens (max_tokens=6000).`
+          );
+        }
 
         if (content) {
           const raw = JSON.parse(content);
@@ -104,13 +115,16 @@ ${texto}
             if (validacao.avisos.length > 0) {
               console.warn('Avisos de validação (OpenAI):', validacao.avisos);
             }
+            logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: true, duracao_ms: duration });
             return montarCorrecao(validacao.data, duration);
           }
 
           console.warn(`Tentativa ${attempt} na OpenAI falhou validação: ${validacao.error}`);
+          logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: false, duracao_ms: duration, motivo_falha: truncado ? `resposta truncada; validacao: ${validacao.error}` : `validacao: ${validacao.error}` });
         }
       } catch (openaiError: any) {
         console.error(`Tentativa ${attempt} na OpenAI falhou:`, openaiError?.message || openaiError);
+        logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: openaiError?.message?.slice(0, 200) || 'erro desconhecido' });
       }
     }
   }
@@ -144,6 +158,7 @@ export async function corrigirRedacaoComDuplaCorrecao(
   tema: string = 'Tema Livre',
   titulo: string = 'Sem título'
 ): Promise<Correcao> {
+  const inicio = Date.now();
   const [resultado1, resultado2] = await Promise.allSettled([
     corrigirRedacaoComIA(texto, tema, titulo),
     corrigirRedacaoComIA(texto, tema, titulo),
@@ -154,27 +169,41 @@ export async function corrigirRedacaoComDuplaCorrecao(
 
   if (resultado1.status === 'rejected' && resultado2.status === 'rejected') {
     // Ambas falharam: propaga o erro da primeira, mantendo a mensagem honesta do R1.
+    logCorrecao({ evento: 'correcao_falhou', duracao_total_ms: Date.now() - inicio, motivo: resultado1.reason?.message?.slice(0, 200) || 'erro desconhecido' });
     throw resultado1.reason;
   }
 
-  if (sucesso1 && !sucesso2) return reconciliarCorrecoes([sucesso1]);
-  if (!sucesso1 && sucesso2) return reconciliarCorrecoes([sucesso2]);
+  const logFinal = (correcao: Correcao, correcoesUsadas: number, divergencia?: number) => {
+    logCorrecao({
+      evento: 'correcao_concluida',
+      nota_geral: correcao.nota_geral,
+      anulada: correcao.anulada,
+      duracao_total_ms: Date.now() - inicio,
+      correcoes_usadas: correcoesUsadas,
+      divergencia,
+      reconciliada: correcoesUsadas > 1,
+    });
+    return correcao;
+  };
+
+  if (sucesso1 && !sucesso2) return logFinal(reconciliarCorrecoes([sucesso1]), 1);
+  if (!sucesso1 && sucesso2) return logFinal(reconciliarCorrecoes([sucesso2]), 1);
 
   const [c1, c2] = [sucesso1!, sucesso2!];
   const divergencia = Math.abs(c1.nota_geral - c2.nota_geral);
 
   if (divergencia <= LIMIAR_DIVERGENCIA) {
-    return reconciliarCorrecoes([c1, c2]);
+    return logFinal(reconciliarCorrecoes([c1, c2]), 2, divergencia);
   }
 
   // Divergência alta: aciona uma terceira correção de arbitragem.
   try {
     const c3 = await corrigirRedacaoComIA(texto, tema, titulo);
-    return reconciliarCorrecoes([c1, c2, c3]);
+    return logFinal(reconciliarCorrecoes([c1, c2, c3]), 3, divergencia);
   } catch {
     // Terceira correção falhou (ex: cota esgotada) — reconcilia com as duas
     // que já temos, mesmo divergentes, em vez de falhar a correção inteira.
-    return reconciliarCorrecoes([c1, c2]);
+    return logFinal(reconciliarCorrecoes([c1, c2]), 2, divergencia);
   }
 }
 

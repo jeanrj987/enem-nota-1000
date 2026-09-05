@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
+import { PDFParse } from 'pdf-parse';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,44 +25,22 @@ export async function POST(req: NextRequest) {
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
     } else if (fileName.endsWith('.pdf')) {
+      const parser = new PDFParse({ data: buffer });
       try {
-        // Extração de texto de PDF compatível com Next.js Serverless
-        // Fallback e parsing de streams de texto de PDF
-        const rawString = buffer.toString('latin1');
-        const textStreams: string[] = [];
-        
-        // Regex para capturar blocos BT (Begin Text) ... ET (End Text) em PDFs
-        const streamRegex = /BT[\s\S]*?ET/g;
-        let match;
-        while ((match = streamRegex.exec(rawString)) !== null) {
-          const block = match[0];
-          // Capturar texto dentro de parênteses (ex: (Texto aqui) Tj)
-          const textMatches = block.match(/\((.*?)\)/g);
-          if (textMatches) {
-            const line = textMatches
-              .map((m) => m.slice(1, -1))
-              .join('')
-              .replace(/\\([()\\])/g, '$1');
-            if (line.trim()) {
-              textStreams.push(line);
-            }
-          }
-        }
+        const result = await parser.getText({ pageJoiner: '\n\n' });
+        extractedText = result.text;
+      } finally {
+        await parser.destroy();
+      }
 
-        if (textStreams.length > 0) {
-          extractedText = textStreams.join('\n');
-        } else {
-          // Fallback para caracteres textuais limpos do buffer
-          extractedText = buffer
-            .toString('utf-8')
-            .replace(/[^\x20-\x7E\n\r\táàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]/g, ' ')
-            .replace(/\s+/g, ' ');
-        }
-      } catch (pdfErr) {
-        console.error('Erro na extração de texto do PDF:', pdfErr);
-        extractedText = buffer
-          .toString('utf-8')
-          .replace(/[^\x20-\x7E\n\r\táàâãéèêíïóôõöúçñÁÀÂÃÉÈÍÏÓÔÕÖÚÇÑ]/g, ' ');
+      if (!extractedText.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              'Não encontramos texto selecionável neste PDF. Se a redação foi digitalizada como foto/scan (sem OCR), copie e cole o texto manualmente na área de produção textual.',
+          },
+          { status: 422 }
+        );
       }
     } else {
       return NextResponse.json(
