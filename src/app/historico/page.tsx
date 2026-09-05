@@ -28,10 +28,11 @@ export default function HistoricoPage() {
   const [filtroFaixa, setFiltroFaixa] = useState<'todas' | '900+' | '800+' | '<800'>('todas');
 
   useEffect(() => {
-    const list = getRedacoesSalvas();
-    setRedacoes(list);
-    setHistoricoGrafico(gerarHistoricoGraficos(list));
-    setEstatisticas(calcularEstatisticas(list));
+    getRedacoesSalvas().then((list) => {
+      setRedacoes(list);
+      setHistoricoGrafico(gerarHistoricoGraficos(list));
+      setEstatisticas(calcularEstatisticas(list));
+    });
   }, []);
 
   const redacoesFiltradas = redacoes.filter((red) => {

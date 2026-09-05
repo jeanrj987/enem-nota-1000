@@ -155,8 +155,8 @@ export function Editor({
         correcao: data.correcao,
       };
 
-      // Salvar no storage local para persistência imediata
-      salvarRedacao(novaRedacao);
+      // Salvar (Supabase quando configurado, com fallback/mirror em localStorage)
+      await salvarRedacao(novaRedacao);
 
       clearInterval(interval);
       router.push(`/correcao/${novaRedacao.id}`);

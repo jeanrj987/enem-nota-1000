@@ -6,56 +6,46 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-01
+updated: 2026-09-05
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
 
-> [!info] **Camada de Persistência & Configurações**
-> O sistema está preparado para operar em modo híbrido: persistência remota no **Supabase (PostgreSQL + RLS + Auth + Storage)** e persistência local no navegador via **LocalStorage** (`src/lib/storage.ts`) para operação offline/demo rápida.
+> [!tip] **Persistência real ativa (projeto `jzsudeviiosbhgkeljaf`)**
+> `src/lib/storage.ts` usa Supabase quando `isSupabaseConfigured` é verdadeiro, com fallback/mirror em LocalStorage se a chamada remota falhar ou não houver credenciais. Testado de ponta a ponta (insert/select/delete) em 2026-09-05.
+
+> [!warning] **Sem autenticação real — RLS permissiva por device_id**
+> Não existe `auth.users` em uso ainda (login continua simulado). A tabela usa um `device_id` anônimo gerado no navegador (`src/lib/device-id.ts`, `crypto.randomUUID()` em localStorage) só para organizar o histórico — **não é uma fronteira de segurança**. A policy de RLS libera tudo para o role `anon`. Migrar para policies por `auth.uid()` quando a autenticação real for implementada.
 
 ---
 
-## 🗃️ Schema de Tabelas no Supabase
+## 🗃️ Schema Real (`supabase/schema.sql`)
+
+Substituiu o schema anterior de 2 tabelas (`redacoes` + `correcoes` com FK) por uma única tabela com a correção embutida em JSONB — mais simples e reflete que `Correcao` já é sempre 1:1 com `Redacao` no código (`src/types/index.ts`).
 
 ```sql
--- Tabela de Usuários (Integrada ao Supabase Auth)
-CREATE TABLE public.users (
-  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
-  email TEXT NOT NULL,
-  nome TEXT,
-  plano TEXT DEFAULT 'gratuito',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table public.redacoes (
+  id text primary key, -- não é uuid! IDs do app são "red_<uuid>" (src/lib/ids.ts)
+  device_id text not null,
+  titulo text not null,
+  tema text not null,
+  texto text not null,
+  palavras_count integer not null default 0,
+  linhas_count integer not null default 0,
+  status text not null default 'pendente',
+  correcao jsonb,
+  created_at timestamptz not null default now()
 );
 
--- Tabela de Redações
-CREATE TABLE public.redacoes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-  titulo TEXT NOT NULL,
-  tema TEXT NOT NULL,
-  texto TEXT NOT NULL,
-  palavras_count INTEGER NOT NULL,
-  linhas_count INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pendente',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+create index redacoes_device_id_idx on public.redacoes (device_id, created_at desc);
 
--- Tabela de Correções
-CREATE TABLE public.correcoes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  redacao_id UUID REFERENCES public.redacoes(id) ON DELETE CASCADE,
-  nota_geral INTEGER NOT NULL,
-  competencias JSONB NOT NULL,
-  erros JSONB NOT NULL,
-  versao_reescrita TEXT NOT NULL,
-  feedback_pedagogico TEXT NOT NULL,
-  pontos_positivos JSONB,
-  proximos_passos JSONB,
-  tempo_analise_ms INTEGER,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+alter table public.redacoes enable row level security;
+
+create policy "anon pode tudo (sem auth real ainda)"
+  on public.redacoes for all to anon using (true) with check (true);
 ```
+
+> [!bug] **Armadilha real encontrada**: a primeira versão do schema usava `id uuid`. Os IDs gerados pelo app (`gerarId('red')` → `red_${crypto.randomUUID()}`) são strings prefixadas, não UUIDs puros — todo insert falhava com `invalid input syntax for type uuid`. Corrigido para `id text`.
 
 ---
 
@@ -63,20 +53,42 @@ CREATE TABLE public.correcoes (
 
 | Variável | Obrigatória? | Descrição |
 | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | Recomendada | Chave da API do Google Gemini (utiliza modelo `gemini-3.6-flash`). |
+| `GEMINI_API_KEY` | Recomendada | Chave da API do Google Gemini (`gemini-3.6-flash`), também usada no OCR de PDF sem texto selecionável. |
 | `OPENAI_API_KEY` | Opcional (Fallback) | Chave da OpenAI para o modelo `gpt-4o-mini`. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Opcional (Auth/Sync) | URL do projeto Supabase. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Opcional (Auth/Sync) | Chave anônima pública do Supabase. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Opcional (Backend) | Chave com privilégios de serviço para operações de administração. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Configurada | `https://jzsudeviiosbhgkeljaf.supabase.co` — pode ser derivada do claim `ref` do JWT da anon key. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Configurada | Chave anônima pública do Supabase. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Não usada ainda | Reservada para quando operações administrativas (bypass de RLS) forem necessárias. |
 
 ---
 
-## 💾 Camada LocalStorage (`src/lib/storage.ts`)
-Caso as credenciais do Supabase não estejam conectadas, a aplicação executa automaticamente via LocalStorage, salvando o histórico de redações, calculando médias gerais, evolução percentual e alimentando o painel do estudante e os gráficos de evolução sem travar a experiência do usuário.
+## 💾 Camada de Storage (`src/lib/storage.ts`)
+
+`getRedacoesSalvas`, `salvarRedacao` e `buscarRedacaoPorId` agora são `async`:
+1. Se Supabase configurado: lê/escreve na tabela `redacoes`, filtrando por `device_id` (não por usuário — ainda não existe usuário real).
+2. `salvarRedacao` sempre grava em LocalStorage também (cache/fallback imediato), e tenta Supabase sem bloquear nem falhar a operação principal se a escrita remota der erro.
+3. Sem credenciais Supabase ou com falha de rede: cai para LocalStorage puro (comportamento anterior).
+
+`calcularEstatisticas` e `gerarHistoricoGraficos` continuam síncronas — operam sobre o array já carregado, sem I/O.
+
+Chamadores (`Editor.tsx`, `dashboard/page.tsx`, `historico/page.tsx`, `correcao/[id]/page.tsx`) foram atualizados para `await`/`.then()` essas chamadas.
+
+---
+
+## 🚦 Rate Limiting & Teto de Tamanho (`src/lib/rate-limit.ts`)
+
+> [!warning] **Limitação conhecida**: contador em memória, por processo — não é compartilhado entre instâncias serverless frias. Suficiente para MVP/instância única; para limitar de forma consistente em produção com múltiplas instâncias, trocar por um store compartilhado (ex: Upstash Redis).
+
+| Rota | Limite | Janela | Teto de tamanho |
+| :--- | :--- | :--- | :--- |
+| `POST /api/corrigir` | 5 requisições/IP | 10 min | 8000 caracteres de texto |
+| `POST /api/upload` | 15 requisições/IP | 10 min | 10MB por arquivo |
+
+Ambas retornam `429` com header `Retry-After` quando o limite é excedido; `/api/corrigir` retorna `413` para texto acima do teto, `/api/upload` retorna `413` para arquivo acima do teto.
 
 ---
 
 ## 🔗 Links Relacionados
-- [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript e Schemas]]
+- [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript e Endpoints]]
 - [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|Uso das Chaves de IA no Backend]]
+- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 008, 009]]
 - [[00 - Índice Principal|Retornar ao Índice Principal]]

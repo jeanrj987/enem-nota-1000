@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-05
+updated: 2026-09-05 (persistência real + rate limiting)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -54,11 +54,30 @@ updated: 2026-09-05
 - **Status**: Aprovado e Implementado
 - **Contexto**: O parser regex caseiro (ADR 002) não lidava com PDFs de layout real, gerando texto corrompido.
 - **Decisão**: Adotado `pdf-parse` (embrulha `pdfjs-dist`), que exige Node ≥20.16/22.3 — o projeto rodava em Node 20.14.0. Runtime atualizado para Node 22.22.3 (`.nvmrc`) e `next.config.ts` recebeu `serverExternalPackages: ["pdf-parse"]` para o worker do pdfjs resolver fora do bundle do Turbopack.
-- **Fora de escopo**: OCR de redação manuscrita/fotografada (PDF sem texto selecionável) — retorna erro explícito em vez de tentar extrair.
+- **Atualização**: OCR de PDF sem texto selecionável (foto/scan) foi implementado em seguida via visão do Gemini (`extrairTextoViaOCR` em `src/app/api/upload/route.ts`) — deixou de ser "fora de escopo".
+
+### ADR 008: Persistência Real via Supabase com Identidade Anônima por Dispositivo
+- **Status**: Aprovado e Implementado (substitui parte do ADR 002 original do Vault 05)
+- **Contexto**: Todo o histórico de redações vivia só em LocalStorage — sem sincronização entre dispositivos e com risco de perda ao limpar o navegador. Autenticação real ainda não existe (login segue simulado).
+- **Decisão**: Ativado projeto Supabase real (`jzsudeviiosbhgkeljaf`). Uma única tabela `redacoes` (schema simplificado, correção embutida em JSONB) substitui o antigo par `redacoes`+`correcoes`. Sem `auth.users`, o histórico é agrupado por um `device_id` anônimo (`crypto.randomUUID()` em localStorage) — RLS habilitada mas permissiva para o role `anon`, já que `device_id` não é uma fronteira de segurança real. `src/lib/storage.ts` tornou-se assíncrono: tenta Supabase primeiro, sempre grava em LocalStorage como fallback/cache, nunca bloqueia nem falha a UI por causa de uma escrita remota que deu erro.
+- **Armadilha corrigida em produção**: a coluna `id` foi inicialmente criada como `uuid`, mas os IDs do app são strings prefixadas (`red_<uuid>`, via `src/lib/ids.ts`) — todo insert falhava com `invalid input syntax for type uuid`. Corrigido para `id text`.
+- **Impacto**: Histórico agora sobrevive à limpeza do navegador e sincroniza entre abas/sessões do mesmo device_id. Migração para segurança real por usuário fica pendente da implementação de autenticação (ver Crítico no checklist).
+
+### ADR 009: Rate Limiting em Memória + Teto de Tamanho de Texto/Arquivo
+- **Status**: Aprovado e Implementado
+- **Contexto**: `/api/corrigir` e `/api/upload` eram públicas, sem limite de uso nem teto de tamanho — cada correção dispara 2-3 chamadas de LLM (dupla correção) e cada upload de PDF sem texto pode disparar OCR via Gemini, ambos com custo real por chamada.
+- **Decisão**: `src/lib/rate-limit.ts` implementa um limitador em memória, por IP, janela fixa (sem dependência externa). `/api/corrigir`: 5 requisições/10min, texto máx. 8000 caracteres. `/api/upload`: 15 requisições/10min, arquivo máx. 10MB. Ambas retornam `429`/`413` com mensagem clara.
+- **Limitação conhecida**: o contador é por processo — não é compartilhado entre instâncias serverless frias (cada cold start zera a janela). Suficiente para MVP; produção com múltiplas instâncias concorrentes precisa de um store compartilhado (Upstash Redis é o candidato natural, já que evita adicionar infra própria).
 
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v1.3.0] - 2026-09-05 (persistência + rate limiting)
+- **Adicionado**: OCR de PDF sem texto selecionável via visão do Gemini — ver atualização do ADR 007.
+- **Adicionado**: Persistência real via Supabase com `device_id` anônimo — ver ADR 008. `src/lib/storage.ts` agora assíncrono.
+- **Adicionado**: Rate limiting + teto de tamanho em `/api/corrigir` e `/api/upload` — ver ADR 009.
+- **Removido**: Schema antigo de 2 tabelas (`redacoes`+`correcoes`) nunca usado em código, substituído por schema único com JSONB (`supabase/schema.sql`).
 
 ### [v1.2.0] - 2026-09-05
 - **Removido**: Fallback heurístico de produção — ver ADR 005.

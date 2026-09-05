@@ -1,4 +1,6 @@
 import { Redacao, Correcao, HistoricoItem, EstatisticasUsuario, TemaRedacao } from '@/types';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getDeviceId } from '@/lib/device-id';
 
 export const TEMAS_ENEM_SUGERIDOS: TemaRedacao[] = [
   {
@@ -153,7 +155,7 @@ Portanto, medidas urgentes são necessárias para mitigar esse panorama excluden
 
 const STORAGE_KEY_REDACOES = 'enem_ai_redacoes_v1';
 
-export function getRedacoesSalvas(): Redacao[] {
+function getRedacoesSalvasLocal(): Redacao[] {
   if (typeof window === 'undefined') return MOCK_REDACOES_INICIAIS;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_REDACOES);
@@ -167,10 +169,10 @@ export function getRedacoesSalvas(): Redacao[] {
   }
 }
 
-export function salvarRedacao(redacao: Redacao): void {
+function salvarRedacaoLocal(redacao: Redacao): void {
   if (typeof window === 'undefined') return;
   try {
-    const atuais = getRedacoesSalvas();
+    const atuais = getRedacoesSalvasLocal();
     const index = atuais.findIndex(r => r.id === redacao.id);
     let novas: Redacao[];
     if (index >= 0) {
@@ -185,8 +187,96 @@ export function salvarRedacao(redacao: Redacao): void {
   }
 }
 
-export function buscarRedacaoPorId(id: string): Redacao | undefined {
-  const redacoes = getRedacoesSalvas();
+interface RedacaoRow {
+  id: string;
+  titulo: string;
+  tema: string;
+  texto: string;
+  palavras_count: number;
+  linhas_count: number;
+  status: Redacao['status'];
+  correcao: Correcao | null;
+  created_at: string;
+}
+
+function linhaParaRedacao(row: RedacaoRow): Redacao {
+  return {
+    id: row.id,
+    titulo: row.titulo,
+    tema: row.tema,
+    texto: row.texto,
+    palavras_count: row.palavras_count,
+    linhas_count: row.linhas_count,
+    status: row.status,
+    created_at: row.created_at,
+    correcao: row.correcao ?? undefined,
+  };
+}
+
+/**
+ * Busca o histórico de redações. Usa Supabase (persistência real, entre
+ * dispositivos que compartilhem o mesmo device_id) quando configurado;
+ * cai para localStorage em caso de ausência de configuração ou falha de
+ * rede, para nunca travar a experiência do usuário.
+ */
+export async function getRedacoesSalvas(): Promise<Redacao[]> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('redacoes')
+      .select('*')
+      .eq('device_id', getDeviceId())
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return data.map(linhaParaRedacao);
+    }
+    console.error('Erro ao buscar redações no Supabase, usando localStorage:', error);
+  }
+
+  return getRedacoesSalvasLocal();
+}
+
+/**
+ * Salva/atualiza uma redação. Sempre grava em localStorage (cache/fallback
+ * imediato) e, se o Supabase estiver configurado, tenta persistir lá também
+ * — sem bloquear nem falhar a operação principal se a escrita remota falhar.
+ */
+export async function salvarRedacao(redacao: Redacao): Promise<void> {
+  salvarRedacaoLocal(redacao);
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase.from('redacoes').upsert({
+      id: redacao.id,
+      device_id: getDeviceId(),
+      titulo: redacao.titulo,
+      tema: redacao.tema,
+      texto: redacao.texto,
+      palavras_count: redacao.palavras_count,
+      linhas_count: redacao.linhas_count,
+      status: redacao.status,
+      correcao: redacao.correcao ?? null,
+      created_at: redacao.created_at,
+    });
+
+    if (error) {
+      console.error('Erro ao salvar redação no Supabase (mantida em localStorage):', error);
+    }
+  }
+}
+
+export async function buscarRedacaoPorId(id: string): Promise<Redacao | undefined> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('redacoes')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!error && data) return linhaParaRedacao(data);
+    if (error) console.error('Erro ao buscar redação no Supabase, tentando localStorage:', error);
+  }
+
+  const redacoes = getRedacoesSalvasLocal();
   return redacoes.find(r => r.id === id);
 }
 

@@ -25,11 +25,10 @@ export default function PaginaResultadoCorrecao() {
 
   useEffect(() => {
     if (id) {
-      const encontrada = buscarRedacaoPorId(id);
-      if (encontrada) {
-        setRedacao(encontrada);
-      }
-      setLoading(false);
+      buscarRedacaoPorId(id).then((encontrada) => {
+        if (encontrada) setRedacao(encontrada);
+        setLoading(false);
+      });
     }
   }, [id]);
 

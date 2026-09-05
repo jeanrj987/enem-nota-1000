@@ -6,7 +6,7 @@ tags:
   - interfaces
   - backend
   - endpoints
-updated: 2026-09-05
+updated: 2026-09-05 (rate limiting + persistência)
 ---
 
 # 🔌 APIs, Modelos de Dados & Tipagem TypeScript
@@ -129,6 +129,7 @@ export interface Redacao {
 ### 1. `POST /api/corrigir`
 - **Função**: Recebe o texto e tema da redação e invoca `corrigirRedacaoComDuplaCorrecao` (`src/lib/openai.ts`) — ver [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|fluxo de dupla correção]].
 - **Sem chave configurada ou falha total dos provedores**: retorna erro explícito (nunca uma nota fabricada).
+- **Limites** (`src/lib/rate-limit.ts`): 5 requisições/IP a cada 10min (`429`), texto máx. 8000 caracteres (`413`).
 - **Payload de Requisição**:
   ```json
   {
@@ -146,8 +147,8 @@ export interface Redacao {
   ```
 
 ### 2. `POST /api/upload`
-- **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`/pdfjs-dist).
-- **Sem OCR**: PDF sem texto selecionável (foto/scan manuscrito) retorna erro 422 pedindo para colar o texto manualmente.
+- **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`/pdfjs-dist, com OCR via Gemini quando não há texto selecionável).
+- **Limites**: 15 requisições/IP a cada 10min (`429`), arquivo máx. 10MB (`413`).
 - **Resposta**:
   ```json
   {

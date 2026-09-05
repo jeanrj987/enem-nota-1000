@@ -26,9 +26,10 @@ export default function DashboardPage() {
   const [estatisticas, setEstatisticas] = useState<EstatisticasUsuario | null>(null);
 
   useEffect(() => {
-    const list = getRedacoesSalvas();
-    setRedacoes(list);
-    setEstatisticas(calcularEstatisticas(list));
+    getRedacoesSalvas().then((list) => {
+      setRedacoes(list);
+      setEstatisticas(calcularEstatisticas(list));
+    });
   }, []);
 
   return (

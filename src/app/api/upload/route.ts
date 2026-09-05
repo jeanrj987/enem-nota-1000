@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import { GoogleGenAI } from '@google/genai';
+import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_PAGINAS_OCR = 5;
+const MAX_TAMANHO_ARQUIVO_BYTES = 10 * 1024 * 1024; // 10MB
+const LIMITE_UPLOADS = 15;
+const JANELA_UPLOADS_MS = 10 * 60 * 1000; // 10 minutos
 
 /**
  * OCR de último recurso para PDFs sem texto selecionável (foto/scan de
@@ -59,12 +63,33 @@ async function extrairTextoViaOCR(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = obterIpCliente(req);
+  const rate = checarRateLimit(`upload:${ip}`, LIMITE_UPLOADS, JANELA_UPLOADS_MS);
+
+  if (!rate.permitido) {
+    return NextResponse.json(
+      {
+        error: `Limite de envios de arquivo atingido. Tente novamente em ${Math.ceil(
+          (rate.resetEm - Date.now()) / 1000 / 60
+        )} minuto(s).`,
+      },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rate.resetEm - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
 
     if (!file) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });
+    }
+
+    if (file.size > MAX_TAMANHO_ARQUIVO_BYTES) {
+      return NextResponse.json(
+        { error: `Arquivo excede o limite de ${MAX_TAMANHO_ARQUIVO_BYTES / (1024 * 1024)}MB.` },
+        { status: 413 }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
