@@ -15,7 +15,7 @@ import {
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Editor } from '@/components/Editor';
-import { RequerAssinatura } from '@/components/RequerAssinatura';
+import { RequerLogin } from '@/components/RequerLogin';
 
 function NovaRedacaoContent() {
   const searchParams = useSearchParams();
@@ -34,6 +34,9 @@ function NovaRedacaoContent() {
         </h1>
         <p className="text-xs sm:text-sm text-slate-400">
           Digite seu texto no editor abaixo ou importe seu documento (.txt, .pdf, .docx) para receber a avaliação imediata.
+        </p>
+        <p className="text-[11px] text-amber-300/90 bg-amber-950/30 border border-amber-800/40 rounded-lg px-3 py-2 inline-block">
+          Sem um plano ativo, sua redação é corrigida normalmente, mas a nota e a análise completa aparecem borradas até a assinatura.
         </p>
       </div>
 
@@ -100,11 +103,11 @@ export default function NovaRedacaoPage() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <RequerAssinatura>
+        <RequerLogin>
           <Suspense fallback={<div className="text-center text-sm text-slate-400 py-12">Carregando editor...</div>}>
             <NovaRedacaoContent />
           </Suspense>
-        </RequerAssinatura>
+        </RequerLogin>
       </main>
 
       <Footer />

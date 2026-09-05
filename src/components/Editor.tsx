@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { TEMAS_ENEM_SUGERIDOS, salvarRedacao } from '@/lib/storage';
 import { gerarId } from '@/lib/ids';
+import { supabase } from '@/lib/supabase';
 import { Redacao } from '@/types';
 import { SeletorTema } from './editor/SeletorTema';
 import { AreaProducaoTextual } from './editor/AreaProducaoTextual';
@@ -127,9 +128,15 @@ export function Editor({
     }, 2000);
 
     try {
+      const { data: sessionData } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error('Sua sessão expirou. Faça login novamente.');
+      }
+
       const res = await fetch('/api/corrigir', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           texto,
           tema: temaAtual,

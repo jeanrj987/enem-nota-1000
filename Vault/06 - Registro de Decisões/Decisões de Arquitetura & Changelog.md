@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-05 (autenticação real via Supabase Auth)
+updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -85,9 +85,23 @@ updated: 2026-09-05 (autenticação real via Supabase Auth)
 - **Impacto**: Compra e acesso agora exigem conta real; histórico e assinatura acompanham o usuário entre dispositivos; elimina a possibilidade de herdar acesso pago copiando um identificador do navegador.
 - **Pendências**: habilitar o provider Google no Supabase Dashboard exige um OAuth Client ID criado manualmente no Google Cloud Console (ação humana, fora do alcance do agente) — ver [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|seção de configuração]]. Recuperação de senha ("esqueci minha senha") ainda não tem fluxo implementado.
 
+### ADR 012: Correção Gratuita com Resultado Borrado (Paywall) + Cadastro Obrigatório com Dados de Contato
+- **Status**: Aprovado e Implementado
+- **Contexto**: O pedido original (ADR 010/011) bloqueava `/nova-redacao` inteira até haver pagamento. O usuário decidiu mudar a estratégia de conversão: deixar qualquer usuário logado escrever e receber a correção de verdade (a IA roda normalmente), mas exibir nota, competências, erros marcados, versão reescrita e plano de ação **borrados** (blur + overlay com CTA para `/vendas`) até a assinatura — modelo comum de paywall "freemium com prova de valor". Também pediu que o cadastro colete nome completo, WhatsApp, cidade/estado, data de nascimento e curso dos sonhos, para uso em vendas via WhatsApp e ofertas de outros produtos (não só o corretor).
+- **Decisão — gate dividido em dois componentes**: `RequerLogin` (`src/components/RequerLogin.tsx`) substitui `RequerAssinatura` em `/nova-redacao` e `/correcao/[id]` — exige login + perfil completo, mas **não** exige assinatura. `RequerAssinatura` continua como estava (login + perfil + assinatura) para `/dashboard` e `/historico`, que seguem 100% pagas. `CorrecaoView` ganhou a prop `bloqueado`; quando `true`, a nota geral, o badge de classificação e todo o conteúdo das 3 abas (Análise, Reescrita, Plano) ficam com `blur-md` + um overlay central com ícone de cadeado e botão "Ver Planos"; a exportação em PDF fica desabilitada. `/api/corrigir` passou a exigir login (`Authorization: Bearer`, mesmo padrão do `/api/checkout`) — mas não checa assinatura, só autentica.
+- **Decisão — perfil obrigatório**: nova tabela `public.perfis` (`supabase/schema-perfis.sql`) com os 5 campos, RLS restrita ao próprio usuário, populada automaticamente por um trigger `security definer` em `auth.users` que lê `raw_user_meta_data`. Cadastro por e-mail/senha manda os 5 campos nesse metadata (`cadastrarComEmail` em `src/lib/auth.ts` aceita um objeto de perfil); login via Google não tem como coletar isso no fluxo OAuth, então nasce com perfil parcial e é forçado a completá-lo em `/completar-perfil` (nova rota) antes de acessar `/nova-redacao` ou `/dashboard` — checado por `perfilCompleto()` (`src/lib/perfil.ts`) dentro dos dois gates.
+- **Impacto**: qualquer usuário logado (mesmo sem pagar) já experimenta o produto de verdade, o que costuma converter melhor que uma tela de vendas fria; em compensação, cada correção gratuita ainda consome uma chamada real de LLM — o rate limiting do ADR 009 segue sendo a única defesa de custo contra abuso. O banco de contatos (`perfis`) fica pronto para campanhas de WhatsApp e cross-sell fora do produto atual, mas não existe hoje nenhuma automação de disparo — é consulta manual direto no Supabase.
+- **Pendência**: não há validação de formato para WhatsApp/data de nascimento além dos tipos nativos do input HTML (`tel`/`date`) — se os dados forem usados em disparo automatizado de WhatsApp no futuro, vale adicionar validação de formato mais rígida no cadastro.
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v1.7.0] - 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
+- **Adicionado**: `RequerLogin` (login + perfil completo, sem exigir assinatura) — usado em `/nova-redacao` e `/correcao/[id]`, que deixaram de exigir pagamento para escrever/corrigir. `RequerAssinatura` segue exigindo pagamento em `/dashboard` e `/historico`.
+- **Adicionado**: paywall visual em `CorrecaoView` (prop `bloqueado`) — nota geral, badge de classificação e as 3 abas (Análise, Reescrita, Plano) ficam borradas com overlay "Ver Planos" quando não há assinatura ativa; exportação em PDF desabilitada nesse estado.
+- **Adicionado**: tabela `public.perfis` (nome completo, WhatsApp, cidade/estado, data de nascimento, curso dos sonhos) com trigger automático em `auth.users` — ver ADR 012. Campos obrigatórios no cadastro por e-mail/senha; nova rota `/completar-perfil` força quem entra via Google a preenchê-los antes de usar o produto.
+- **Corrigido**: `/api/corrigir` passou a exigir sessão autenticada (`Authorization: Bearer`) — antes era completamente anônimo, só protegido por rate limit de IP.
 
 ### [v1.6.0] - 2026-09-05 (autenticação real via Supabase Auth)
 - **Adicionado**: login/cadastro reais via Supabase Auth (e-mail/senha + Google OAuth) — ver ADR 011. `src/lib/auth.ts`, `src/contexts/AuthContext.tsx`, `/auth/callback`.

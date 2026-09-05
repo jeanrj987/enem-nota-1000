@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-05 (autenticação real via Supabase Auth)
+updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -47,11 +47,13 @@ src/app/
 ├── vendas/
 │   └── page.tsx              # Rota "/vendas" (Página de Vendas de Alta Conversão)
 ├── nova-redacao/
-│   └── page.tsx              # Rota "/nova-redacao" (Editor Tiptap / Upload) — atrás de RequerAssinatura
+│   └── page.tsx              # Rota "/nova-redacao" (Editor Tiptap / Upload) — atrás de RequerLogin (login + perfil completo, SEM exigir assinatura)
 ├── correcao/[id]/
-│   └── page.tsx              # Rota "/correcao/:id" (Visualizador de Correção) — atrás de RequerAssinatura
+│   └── page.tsx              # Rota "/correcao/:id" (Visualizador de Correção) — atrás de RequerLogin; conteúdo borrado (paywall) se não houver assinatura ativa
+├── completar-perfil/
+│   └── page.tsx              # Rota "/completar-perfil" (nome/WhatsApp/cidade-estado/nascimento/curso dos sonhos obrigatórios — força quem entrou via Google a completar o cadastro)
 ├── dashboard/
-│   └── page.tsx              # Rota "/dashboard" (Painel do Estudante) — atrás de RequerAssinatura
+│   └── page.tsx              # Rota "/dashboard" (Painel do Estudante) — atrás de RequerAssinatura (login + perfil completo + assinatura)
 ├── historico/
 │   └── page.tsx              # Rota "/historico" (Evolução & Gráficos Recharts) — atrás de RequerAssinatura
 ├── checkout/sucesso/

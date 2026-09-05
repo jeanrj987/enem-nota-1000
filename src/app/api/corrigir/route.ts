@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { corrigirRedacaoComDuplaCorrecao } from '@/lib/openai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // Redação ENEM real tem no máximo 30 linhas — 8000 caracteres é uma margem
 // generosa para não barrar texto legítimo, mas evita abuso de custo com
@@ -25,6 +26,18 @@ export async function POST(req: NextRequest) {
       },
       { status: 429, headers: { 'Retry-After': String(Math.ceil((rate.resetEm - Date.now()) / 1000)) } }
     );
+  }
+
+  const token = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json({ error: 'É necessário estar logado para corrigir uma redação.' }, { status: 401 });
+  }
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Autenticação não está configurada.' }, { status: 503 });
+  }
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  if (userError || !userData.user) {
+    return NextResponse.json({ error: 'Sessão inválida. Faça login novamente.' }, { status: 401 });
   }
 
   try {

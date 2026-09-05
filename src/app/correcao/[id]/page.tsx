@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { RequerAssinatura } from '@/components/RequerAssinatura';
+import { RequerLogin } from '@/components/RequerLogin';
 import { CorrecaoView } from '@/components/CorrecaoView';
 import { buscarRedacaoPorId } from '@/lib/storage';
+import { temAcessoAtivo } from '@/lib/assinatura';
 import { Redacao } from '@/types';
 
 export default function PaginaResultadoCorrecao() {
@@ -22,12 +23,14 @@ export default function PaginaResultadoCorrecao() {
   const id = params?.id as string;
 
   const [redacao, setRedacao] = useState<Redacao | null>(null);
+  const [assinaturaAtiva, setAssinaturaAtiva] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      buscarRedacaoPorId(id).then((encontrada) => {
+      Promise.all([buscarRedacaoPorId(id), temAcessoAtivo()]).then(([encontrada, ativa]) => {
         if (encontrada) setRedacao(encontrada);
+        setAssinaturaAtiva(ativa);
         setLoading(false);
       });
     }
@@ -38,7 +41,7 @@ export default function PaginaResultadoCorrecao() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
-        <RequerAssinatura>
+        <RequerLogin>
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard"
@@ -74,9 +77,9 @@ export default function PaginaResultadoCorrecao() {
             </div>
           </div>
         ) : (
-          <CorrecaoView redacao={redacao} correcao={redacao.correcao} />
+          <CorrecaoView redacao={redacao} correcao={redacao.correcao} bloqueado={!assinaturaAtiva} />
         )}
-        </RequerAssinatura>
+        </RequerLogin>
       </main>
 
       <Footer />

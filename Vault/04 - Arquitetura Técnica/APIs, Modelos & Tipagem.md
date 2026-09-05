@@ -6,7 +6,7 @@ tags:
   - interfaces
   - backend
   - endpoints
-updated: 2026-09-05 (autenticação real via Supabase Auth)
+updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
 ---
 
 # 🔌 APIs, Modelos de Dados & Tipagem TypeScript
@@ -128,6 +128,7 @@ export interface Redacao {
 
 ### 1. `POST /api/corrigir`
 - **Função**: Recebe o texto e tema da redação e invoca `corrigirRedacaoComDuplaCorrecao` (`src/lib/openai.ts`) — ver [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|fluxo de dupla correção]].
+- **Requer login**: header `Authorization: Bearer <access_token>`, validado via `supabaseAdmin.auth.getUser(token)` (`401` sem token ou token inválido) — checado *depois* do rate limit por IP (um 429 nunca vaza informação sobre se o IP tem ou não sessão válida). A correção em si roda para qualquer usuário logado, **independentemente de assinatura ativa** — o bloqueio de plano acontece na exibição do resultado (`CorrecaoView`), não aqui.
 - **Sem chave configurada ou falha total dos provedores**: retorna erro explícito (nunca uma nota fabricada).
 - **Limites** (`src/lib/rate-limit.ts`): 5 requisições/IP a cada 10min (`429`), texto máx. 8000 caracteres (`413`).
 - **Payload de Requisição**:

@@ -8,9 +8,31 @@ function exigirSupabase() {
   return supabase;
 }
 
-export async function cadastrarComEmail(email: string, senha: string) {
+export async function cadastrarComEmail(
+  email: string,
+  senha: string,
+  perfil: {
+    nomeCompleto: string;
+    whatsapp: string;
+    cidadeEstado: string;
+    dataNascimento: string;
+    cursoDosSonhos: string;
+  }
+) {
   const client = exigirSupabase();
-  return client.auth.signUp({ email, password: senha });
+  return client.auth.signUp({
+    email,
+    password: senha,
+    options: {
+      data: {
+        nome_completo: perfil.nomeCompleto,
+        whatsapp: perfil.whatsapp,
+        cidade_estado: perfil.cidadeEstado,
+        data_nascimento: perfil.dataNascimento,
+        curso_dos_sonhos: perfil.cursoDosSonhos,
+      },
+    },
+  });
 }
 
 export async function entrarComEmail(email: string, senha: string) {

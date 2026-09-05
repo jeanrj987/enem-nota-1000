@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-05 (autenticação real via Supabase Auth, migração de device_id para user_id)
+updated: 2026-09-05 (perfil obrigatório no cadastro + correção gratuita com resultado borrado)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -74,6 +74,36 @@ create policy "usuario le suas assinaturas" on public.assinaturas
 ```
 
 `src/lib/assinatura.ts` (`temAcessoAtivo`) resolve o usuário via `supabase.auth.getUser()` e consulta essa tabela filtrando por `user_id` + `status = 'ativa'` + `expira_em` no futuro. **Sem Supabase configurado ou sem usuário logado, nega acesso por padrão** — nunca libera "no escuro".
+
+---
+
+## 🧾 Perfil Obrigatório no Cadastro (`supabase/schema-perfis.sql`)
+
+> [!tip] **Coleta obrigatória para contato/vendas (WhatsApp, X1, outros produtos)**
+> Todo cadastro por e-mail/senha exige nome completo, WhatsApp, cidade e estado, data de nascimento e curso dos sonhos — pedido explícito do usuário para poder usar esses dados em vendas via WhatsApp e ofertas de outros produtos, não só para o corretor.
+
+```sql
+create table public.perfis (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  nome_completo text,
+  whatsapp text,
+  cidade_estado text,
+  data_nascimento date,
+  curso_dos_sonhos text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.perfis enable row level security;
+create policy "usuario le seu perfil" on public.perfis for select to authenticated using (auth.uid() = user_id);
+create policy "usuario grava seu perfil" on public.perfis for insert to authenticated with check (auth.uid() = user_id);
+create policy "usuario atualiza seu perfil" on public.perfis for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+Um trigger (`handle_new_user`, `security definer`) em `auth.users` cria a linha em `perfis` automaticamente a cada cadastro, lendo de `raw_user_meta_data`:
+- **E-mail/senha**: `cadastrarComEmail` (`src/lib/auth.ts`) passa os 5 campos via `signUp({options:{data:{...}}})` — o trigger encontra tudo pronto, perfil já nasce completo.
+- **Google OAuth**: só nome/e-mail vêm do Google — `whatsapp`, `cidade_estado`, `data_nascimento` e `curso_dos_sonhos` nascem `null`. `perfilCompleto()` (`src/lib/perfil.ts`) detecta isso e os gates (`RequerLogin`, `RequerAssinatura`) redirecionam para `/completar-perfil` até o usuário preencher o resto.
+
+Essas informações ficam disponíveis para consulta/exportação manual direto no Supabase (tabela `perfis`) para uso em campanhas de WhatsApp e cross-sell — não há painel de exportação no app, é consulta direta ao banco.
 
 ---
 
