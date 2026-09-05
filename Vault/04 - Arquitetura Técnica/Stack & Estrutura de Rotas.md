@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-05 (checkout Stripe + gate de acesso)
+updated: 2026-09-05 (removido link direto de /vendas do menu)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -80,6 +80,7 @@ src/app/
 
 ### 2. Página de Vendas (`/vendas`)
 - Página de conversão com termômetro interativo de risco, comparativo tradicional vs IA, tabela de preços, bônus e garantia incondicional de 7 dias. Os 3 CTAs de plano criam uma sessão real do Stripe Checkout via `/api/checkout` (sem cronômetro nem "vagas restantes" — removidos por serem falsos, ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog]]).
+- **Não há mais link direto para `/vendas` no menu principal** (`src/components/Navbar.tsx`) — o item "⚡ Planos & Oferta" foi removido a pedido do usuário, que não queria essa rota exposta como destino de navegação livre. O único caminho de entrada agora é o redirecionamento automático feito por `RequerAssinatura` quando alguém sem assinatura ativa tenta abrir `/nova-redacao`, `/dashboard`, `/historico` ou `/correcao/[id]`. O link continua existindo no rodapé (`Footer.tsx`).
 
 ### 3. Nova Redação (`/nova-redacao`)
 - Editor inteligente com contagem de palavras/linhas, seleção de temas oficiais/inéditos do ENEM e aba de upload para arquivos `.pdf`, `.docx` e `.txt`.

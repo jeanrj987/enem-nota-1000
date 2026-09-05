@@ -21,7 +21,6 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Início', icon: Sparkles },
-    { href: '/vendas', label: '⚡ Planos & Oferta', icon: Sparkles, highlight: true },
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/nova-redacao', label: 'Nova Redação', icon: PenTool },
     { href: '/historico', label: 'Histórico & Evolução', icon: TrendingUp },
@@ -51,20 +50,17 @@ export function Navbar() {
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
-              const isHighlight = (link as any).highlight;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isHighlight
-                      ? 'bg-gradient-to-r from-red-500/20 via-amber-500/20 to-rose-500/20 text-amber-300 border border-amber-500/40 hover:border-amber-400 hover:text-amber-200 shadow-sm shadow-amber-500/10 font-bold animate-pulse'
-                      : isActive
+                    isActive
                       ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isHighlight ? 'text-amber-400' : isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
                   {link.label}
                 </Link>
               );
