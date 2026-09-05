@@ -1,24 +1,20 @@
 {
   "main": {
-    "id": "206d020f15189a04",
+    "id": "fa62d640bbe6c003",
     "type": "split",
     "children": [
       {
-        "id": "2fe0355b2d443414",
+        "id": "91f4f099c97ad21b",
         "type": "tabs",
         "children": [
           {
-            "id": "a78563770236f11c",
+            "id": "8e3763f6acf5bab8",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "06 - Registro de Decisões/Decisões de Arquitetura & Changelog.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Decisões de Arquitetura & Changelog"
+              "title": "Nova aba"
             }
           }
         ]
@@ -27,15 +23,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "2511c76d0ff797fc",
+    "id": "08fa610c7b1f910d",
     "type": "split",
     "children": [
       {
-        "id": "516254de114d95e4",
+        "id": "98126678f4bbf213",
         "type": "tabs",
         "children": [
           {
-            "id": "685e7962780a42c5",
+            "id": "b41fd5bae4fea2f9",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -50,7 +46,7 @@
             }
           },
           {
-            "id": "e45b4c3f0476a213",
+            "id": "a7f1a0262f47d5d0",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -67,7 +63,7 @@
             }
           },
           {
-            "id": "29fcd8c00d2e10d5",
+            "id": "bf8957130df908fb",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -86,15 +82,15 @@
     "width": 300
   },
   "right": {
-    "id": "fe73721bea6b5e58",
+    "id": "407cf3f114fc5d01",
     "type": "split",
     "children": [
       {
-        "id": "debe15224c17af36",
+        "id": "77e137d8b5d4f0c7",
         "type": "tabs",
         "children": [
           {
-            "id": "8a7663a188c17fbe",
+            "id": "e7aa8d564b3d20ca",
             "type": "leaf",
             "state": {
               "type": "backlink",
@@ -112,7 +108,7 @@
             }
           },
           {
-            "id": "da7649213aeee014",
+            "id": "29258f2bf7d157d1",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
@@ -125,7 +121,7 @@
             }
           },
           {
-            "id": "89b772b62b04a5be",
+            "id": "4d961aef46dbe440",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -140,7 +136,7 @@
             }
           },
           {
-            "id": "dd5417f7a85c2669",
+            "id": "60ef4d7ca9d26171",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -154,11 +150,12 @@
             }
           },
           {
-            "id": "818f1d73d2718963",
+            "id": "1e71faf251ae4976",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
+                "file": "Bem-vindo.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -185,28 +182,12 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "685e7962780a42c5",
+  "active": "8e3763f6acf5bab8",
   "lastOpenFiles": [
-    "04 - Arquitetura Técnica/APIs, Modelos & Tipagem.md.tmp.9352.a79f7592d4a7",
-    "05 - Banco de Dados & Integrações/Supabase, Storage & Env.md",
-    "00 - Índice Principal.md",
-    "00 - Regras de Manutenção do Vault.md",
-    "Bem-vindo.md",
-    "06 - Registro de Decisões/Decisões de Arquitetura & Changelog.md",
-    "06 - Registro de Decisões",
-    "05 - Banco de Dados & Integrações",
-    "04 - Arquitetura Técnica/APIs, Modelos & Tipagem.md",
-    "04 - Arquitetura Técnica/Componentes & Design System.md",
-    "04 - Arquitetura Técnica/Stack & Estrutura de Rotas.md",
-    "04 - Arquitetura Técnica",
-    "03 - Inteligência Artificial/Arquitetura de IA & Prompts.md",
-    "03 - Inteligência Artificial",
-    "02 - Metodologia ENEM/Competências Detalhadas C1 a C5.md",
-    "02 - Metodologia ENEM/Matriz Oficial do INEP.md",
-    "02 - Metodologia ENEM",
-    "01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting.md",
-    "01 - Visão Geral & Negócio/Persona & Dores dos Vestibulandos.md",
-    "01 - Visão Geral & Negócio/Visão do Produto.md",
-    "01 - Visão Geral & Negócio"
+    "2026-09-05.md",
+    "Nota 1000 AI.md",
+    "Nota 1000 AI.md.tmp.9352.5077e8a06e26",
+    "crie um link.md",
+    "Bem-vindo.md"
   ]
 }
