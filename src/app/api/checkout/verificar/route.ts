@@ -33,14 +33,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ativo: false });
     }
 
-    const deviceId = session.client_reference_id || session.metadata?.device_id;
+    const userId = session.client_reference_id || session.metadata?.user_id;
     const planoId = session.metadata?.plano_id as PlanoId | undefined;
 
-    if (!deviceId || !planoId) {
-      return NextResponse.json({ error: 'Sessão sem device_id/plano_id.' }, { status: 400 });
+    if (!userId || !planoId) {
+      return NextResponse.json({ error: 'Sessão sem user_id/plano_id.' }, { status: 400 });
     }
 
-    const resultado = await ativarAssinatura({ sessionId: session.id, deviceId, planoId });
+    const resultado = await ativarAssinatura({ sessionId: session.id, userId, planoId });
     if (!resultado.sucesso) {
       return NextResponse.json({ error: resultado.erro }, { status: 500 });
     }

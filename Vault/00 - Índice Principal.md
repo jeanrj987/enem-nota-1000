@@ -6,7 +6,7 @@ tags:
   - arquitetura
   - enem
   - documentacao
-updated: 2026-09-05 (checkout Stripe + gate de acesso pago)
+updated: 2026-09-05 (autenticação real via Supabase Auth)
 ---
 
 # 📚 Índice Principal — Base de Conhecimento Obsidian (Nota 1000 AI)
@@ -55,7 +55,8 @@ updated: 2026-09-05 (checkout Stripe + gate de acesso pago)
 | `/correcao/[id]` | Diagnóstico Linha a Linha & Versão 1000 | [[04 - Arquitetura Técnica/Componentes & Design System]] |
 | `/dashboard` | Painel do Aluno & Gestão de Redações | [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas]] |
 | `/historico` | Gráficos de Evolução & Radar C1-C5 | [[04 - Arquitetura Técnica/Componentes & Design System]] |
-| `/auth` | Autenticação do Usuário | [[05 - Banco de Dados & Integrações/Supabase, Storage & Env]] |
+| `/auth` | Login/Cadastro real (e-mail/senha + Google) | [[05 - Banco de Dados & Integrações/Supabase, Storage & Env]] |
+| `/auth/callback` | Retorno do OAuth do Google | [[05 - Banco de Dados & Integrações/Supabase, Storage & Env]] |
 | `/checkout/sucesso` | Confirmação pós-pagamento do Stripe | [[05 - Banco de Dados & Integrações/Supabase, Storage & Env]] |
 
 ---

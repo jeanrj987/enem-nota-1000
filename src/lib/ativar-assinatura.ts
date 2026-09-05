@@ -12,7 +12,7 @@ import { PLANOS, PlanoId } from '@/lib/planos';
  */
 export async function ativarAssinatura(params: {
   sessionId: string;
-  deviceId: string;
+  userId: string;
   planoId: PlanoId;
 }): Promise<{ sucesso: boolean; erro?: string }> {
   if (!supabaseAdmin) {
@@ -27,7 +27,7 @@ export async function ativarAssinatura(params: {
 
   const { error } = await supabaseAdmin.from('assinaturas').upsert({
     id: params.sessionId,
-    device_id: params.deviceId,
+    user_id: params.userId,
     plano_id: params.planoId,
     status: 'ativa',
     expira_em: expiraEm,
@@ -39,7 +39,7 @@ export async function ativarAssinatura(params: {
   }
 
   console.log(
-    JSON.stringify({ evento: 'assinatura_ativada', device_id: params.deviceId, plano_id: params.planoId, expira_em: expiraEm })
+    JSON.stringify({ evento: 'assinatura_ativada', user_id: params.userId, plano_id: params.planoId, expira_em: expiraEm })
   );
   return { sucesso: true };
 }

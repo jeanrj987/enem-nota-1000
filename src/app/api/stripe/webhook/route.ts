@@ -30,15 +30,15 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    const deviceId = session.client_reference_id || session.metadata?.device_id;
+    const userId = session.client_reference_id || session.metadata?.user_id;
     const planoId = session.metadata?.plano_id as PlanoId | undefined;
 
-    if (!deviceId || !planoId || !PLANOS[planoId]) {
-      console.error('Webhook checkout.session.completed sem device_id/plano_id válidos:', session.id);
+    if (!userId || !planoId || !PLANOS[planoId]) {
+      console.error('Webhook checkout.session.completed sem user_id/plano_id válidos:', session.id);
       return NextResponse.json({ received: true });
     }
 
-    const resultado = await ativarAssinatura({ sessionId: session.id, deviceId, planoId });
+    const resultado = await ativarAssinatura({ sessionId: session.id, userId, planoId });
     if (!resultado.sucesso) {
       return NextResponse.json({ error: resultado.erro }, { status: 500 });
     }

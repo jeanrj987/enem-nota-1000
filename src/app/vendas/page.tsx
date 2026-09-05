@@ -20,10 +20,14 @@ import {
   GraduationCap,
   Loader2,
 } from 'lucide-react';
-import { getDeviceId } from '@/lib/device-id';
+import { useRouter } from 'next/navigation';
 import { PlanoId } from '@/lib/planos';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PaginaDeVendas() {
+  const router = useRouter();
+  const { usuario } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
   const [erroCheckout, setErroCheckout] = useState<string | null>(null);
@@ -39,12 +43,25 @@ export default function PaginaDeVendas() {
 
   const iniciarCheckout = async (planoId: PlanoId) => {
     setErroCheckout(null);
+
+    if (!usuario) {
+      router.push(`/auth?redirect=/vendas`);
+      return;
+    }
+
     setPlanoCarregando(planoId);
     try {
+      const { data: sessionData } = await supabase!.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        router.push('/auth?redirect=/vendas');
+        return;
+      }
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planoId, deviceId: getDeviceId() }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ planoId }),
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
@@ -266,17 +283,17 @@ export default function PaginaDeVendas() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
                 <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 1</div>
-                <h3 className="text-sm font-bold text-white">Escolha seu plano</h3>
+                <h3 className="text-sm font-bold text-white">Crie sua conta</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Selecione o período de acesso ideal para o seu cronograma de estudos.
+                  Cadastre-se com e-mail e senha ou entre direto com sua conta Google.
                 </p>
               </div>
 
               <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
                 <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 2</div>
-                <h3 className="text-sm font-bold text-white">Liberação imediata</h3>
+                <h3 className="text-sm font-bold text-white">Escolha seu plano e pague</h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Os dados de login são enviados automaticamente para seu e-mail após a confirmação.
+                  Pagamento seguro via Stripe. O acesso é liberado automaticamente após a confirmação.
                 </p>
               </div>
 
@@ -488,7 +505,7 @@ export default function PaginaDeVendas() {
                 },
                 {
                   q: 'Como recebo o acesso após a compra?',
-                  a: 'A liberação é automática e imediata. Logo após a confirmação do pagamento, você recebe os dados de acesso diretamente no seu e-mail.',
+                  a: 'A liberação é automática e imediata. Basta criar sua conta (e-mail/senha ou Google) antes de pagar — assim que o pagamento é confirmado, o acesso já aparece na sua própria conta.',
                 },
                 {
                   q: 'Posso enviar redações em arquivo ou apenas digitando?',

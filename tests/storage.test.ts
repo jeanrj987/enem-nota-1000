@@ -3,12 +3,14 @@ import type { Redacao } from '@/types';
 
 const mockState: {
   isSupabaseConfigured: boolean;
+  usuario: { id: string } | null;
   selectResult: { data: any; error: any };
   maybeSingleResult: { data: any; error: any };
   upsertResult: { error: any };
   upsertCalls: any[];
 } = {
   isSupabaseConfigured: true,
+  usuario: { id: 'user-teste' },
   selectResult: { data: [], error: null },
   maybeSingleResult: { data: null, error: null },
   upsertResult: { error: null },
@@ -22,6 +24,9 @@ vi.mock('@/lib/supabase', () => ({
   get supabase() {
     if (!mockState.isSupabaseConfigured) return null;
     return {
+      auth: {
+        getUser: async () => ({ data: { user: mockState.usuario } }),
+      },
       from: (_table: string) => ({
         select: (_cols: string) => ({
           eq: (_field: string, _value: string) => ({
@@ -36,10 +41,6 @@ vi.mock('@/lib/supabase', () => ({
       }),
     };
   },
-}));
-
-vi.mock('@/lib/device-id', () => ({
-  getDeviceId: () => 'device-teste',
 }));
 
 // Importa depois dos mocks para que storage.ts resolva as versões mockadas.
@@ -82,6 +83,7 @@ function redacaoDeTeste(overrides: Partial<Redacao> = {}): Redacao {
 
 beforeEach(() => {
   mockState.isSupabaseConfigured = true;
+  mockState.usuario = { id: 'user-teste' };
   mockState.selectResult = { data: [], error: null };
   mockState.maybeSingleResult = { data: null, error: null };
   mockState.upsertResult = { error: null };
@@ -113,12 +115,12 @@ describe('storage.ts com Supabase configurado', () => {
     expect(lista[0].correcao?.nota_geral).toBe(720);
   });
 
-  it('salvarRedacao envia device_id e os campos da redação no upsert', async () => {
+  it('salvarRedacao envia user_id e os campos da redação no upsert', async () => {
     await salvarRedacao(redacaoDeTeste());
     expect(mockState.upsertCalls).toHaveLength(1);
     expect(mockState.upsertCalls[0]).toMatchObject({
       id: 'red_1',
-      device_id: 'device-teste',
+      user_id: 'user-teste',
       titulo: 'Teste',
     });
     expect(mockState.upsertCalls[0].correcao.nota_geral).toBe(800);

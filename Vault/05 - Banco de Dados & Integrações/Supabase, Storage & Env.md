@@ -6,27 +6,27 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-05 (checkout Stripe + gate de acesso)
+updated: 2026-09-05 (autenticação real via Supabase Auth, migração de device_id para user_id)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
 
 > [!tip] **Persistência real ativa (projeto `jzsudeviiosbhgkeljaf`)**
-> `src/lib/storage.ts` usa Supabase quando `isSupabaseConfigured` é verdadeiro, com fallback/mirror em LocalStorage se a chamada remota falhar ou não houver credenciais. Testado de ponta a ponta (insert/select/delete) em 2026-09-05.
+> `src/lib/storage.ts` usa Supabase quando `isSupabaseConfigured` é verdadeiro, com fallback/mirror em LocalStorage se a chamada remota falhar ou não houver credenciais.
 
-> [!warning] **Sem autenticação real — RLS permissiva por device_id**
-> Não existe `auth.users` em uso ainda (login continua simulado). A tabela usa um `device_id` anônimo gerado no navegador (`src/lib/device-id.ts`, `crypto.randomUUID()` em localStorage) só para organizar o histórico — **não é uma fronteira de segurança**. A policy de RLS libera tudo para o role `anon`. Migrar para policies por `auth.uid()` quando a autenticação real for implementada.
+> [!tip] **Autenticação real via Supabase Auth**
+> Login/cadastro deixou de ser simulado. `src/lib/auth.ts` + `src/contexts/AuthContext.tsx` usam `supabase.auth` (e-mail/senha e Google OAuth). Toda a identidade do usuário — histórico de redações, assinatura ativa — passou a girar em torno do `user_id` (`auth.users.id`), substituindo o antigo `device_id` anônimo de navegador. Ver ADR 011.
 
 ---
 
-## 🗃️ Schema Real (`supabase/schema.sql`)
+## 🗃️ Schema Real (`supabase/schema-auth-migration.sql`)
 
-Substituiu o schema anterior de 2 tabelas (`redacoes` + `correcoes` com FK) por uma única tabela com a correção embutida em JSONB — mais simples e reflete que `Correcao` já é sempre 1:1 com `Redacao` no código (`src/types/index.ts`).
+Substitui os schemas anteriores baseados em `device_id` (que dropavam e recriavam as tabelas). Este script novamente dropa `redacoes`/`assinaturas` para reancorar em `auth.users` — só faz sentido rodar por não haver dados de produção reais ainda (só uma assinatura de teste).
 
 ```sql
 create table public.redacoes (
   id text primary key, -- não é uuid! IDs do app são "red_<uuid>" (src/lib/ids.ts)
-  device_id text not null,
+  user_id uuid not null references auth.users (id) on delete cascade,
   titulo text not null,
   tema text not null,
   texto text not null,
@@ -37,26 +37,29 @@ create table public.redacoes (
   created_at timestamptz not null default now()
 );
 
-create index redacoes_device_id_idx on public.redacoes (device_id, created_at desc);
-
+create index redacoes_user_id_idx on public.redacoes (user_id, created_at desc);
 alter table public.redacoes enable row level security;
 
-create policy "anon pode tudo (sem auth real ainda)"
-  on public.redacoes for all to anon using (true) with check (true);
+create policy "usuario le suas redacoes" on public.redacoes
+  for select to authenticated using (auth.uid() = user_id);
+create policy "usuario grava suas redacoes" on public.redacoes
+  for insert to authenticated with check (auth.uid() = user_id);
+create policy "usuario atualiza suas redacoes" on public.redacoes
+  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
-> [!bug] **Armadilha real encontrada**: a primeira versão do schema usava `id uuid`. Os IDs gerados pelo app (`gerarId('red')` → `red_${crypto.randomUUID()}`) são strings prefixadas, não UUIDs puros — todo insert falhava com `invalid input syntax for type uuid`. Corrigido para `id text`.
+> [!bug] **Armadilha real encontrada (histórico)**: a primeira versão do schema usava `id uuid`. Os IDs gerados pelo app (`gerarId('red')` → `red_${crypto.randomUUID()}`) são strings prefixadas, não UUIDs puros — todo insert falhava com `invalid input syntax for type uuid`. Corrigido para `id text` (mantido nesta versão).
 
 ---
 
-## 💳 Schema de Assinaturas (`supabase/schema-assinaturas.sql`)
+## 💳 Schema de Assinaturas (`supabase/schema-auth-migration.sql`)
 
-Ao contrário de `redacoes` (RLS permissiva para `anon`), aqui o cliente só pode **ler**. Toda escrita vem do webhook do Stripe usando a **service role key** (`src/lib/supabase-admin.ts`, `supabaseAdmin` — ignora RLS, uso exclusivo em código de servidor, nunca importar em componente client-side). Isso impede que qualquer um forje uma assinatura paga inserindo uma linha direto com a anon key.
+Ao contrário de `redacoes` (RLS de leitura/escrita para o próprio dono), aqui o usuário autenticado só pode **ler**. Toda escrita vem do webhook do Stripe ou da rota de verificação síncrona, ambas usando a **service role key** (`src/lib/supabase-admin.ts`, `supabaseAdmin` — ignora RLS, uso exclusivo em código de servidor, nunca importar em componente client-side). Isso impede que qualquer um forje uma assinatura paga inserindo uma linha direto com a chave anon/sessão do usuário.
 
 ```sql
 create table public.assinaturas (
   id text primary key, -- id da Checkout Session do Stripe
-  device_id text not null,
+  user_id uuid not null references auth.users (id) on delete cascade,
   plano_id text not null,
   status text not null default 'pendente', -- 'pendente' | 'ativa'
   expira_em timestamptz,
@@ -65,12 +68,22 @@ create table public.assinaturas (
 
 alter table public.assinaturas enable row level security;
 
-create policy "anon pode ler assinaturas"
-  on public.assinaturas for select to anon using (true);
--- nenhuma policy de insert/update/delete para anon
+create policy "usuario le suas assinaturas" on public.assinaturas
+  for select to authenticated using (auth.uid() = user_id);
+-- nenhuma policy de insert/update/delete para authenticated
 ```
 
-`src/lib/assinatura.ts` (`temAcessoAtivo`) consulta essa tabela filtrando por `device_id` + `status = 'ativa'` + `expira_em` no futuro. **Sem Supabase configurado, nega acesso por padrão** — nunca libera "no escuro".
+`src/lib/assinatura.ts` (`temAcessoAtivo`) resolve o usuário via `supabase.auth.getUser()` e consulta essa tabela filtrando por `user_id` + `status = 'ativa'` + `expira_em` no futuro. **Sem Supabase configurado ou sem usuário logado, nega acesso por padrão** — nunca libera "no escuro".
+
+---
+
+## 🔑 Login com Google (Supabase Auth)
+
+O provider Google precisa ser habilitado manualmente (não é código, é configuração de infraestrutura):
+1. Criar um **OAuth Client ID** em [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials), tipo "Web application".
+2. Authorized redirect URI: `https://<ref-do-projeto>.supabase.co/auth/v1/callback`.
+3. Colar Client ID + Client Secret em **Supabase Dashboard → Authentication → Providers → Google**.
+4. No app, `entrarComGoogle()` (`src/lib/auth.ts`) chama `supabase.auth.signInWithOAuth({provider:'google', options:{redirectTo: origin + '/auth/callback'}})`. O SDK (`detectSessionInUrl`, padrão) troca o código pela sessão sozinho ao voltar em `/auth/callback` (`src/app/auth/callback/page.tsx`) — não há troca manual no servidor.
 
 ---
 
@@ -92,9 +105,9 @@ create policy "anon pode ler assinaturas"
 ## 💾 Camada de Storage (`src/lib/storage.ts`)
 
 `getRedacoesSalvas`, `salvarRedacao` e `buscarRedacaoPorId` agora são `async`:
-1. Se Supabase configurado: lê/escreve na tabela `redacoes`, filtrando por `device_id` (não por usuário — ainda não existe usuário real).
+1. Se Supabase configurado e há usuário logado (`supabase.auth.getUser()`): lê/escreve na tabela `redacoes` filtrando por `user_id`.
 2. `salvarRedacao` sempre grava em LocalStorage também (cache/fallback imediato), e tenta Supabase sem bloquear nem falhar a operação principal se a escrita remota der erro.
-3. Sem credenciais Supabase ou com falha de rede: cai para LocalStorage puro (comportamento anterior).
+3. Sem credenciais Supabase, sem usuário logado ou com falha de rede: cai para LocalStorage puro (comportamento anterior).
 
 `calcularEstatisticas` e `gerarHistoricoGraficos` continuam síncronas — operam sobre o array já carregado, sem I/O.
 

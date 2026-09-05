@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-05 (removido link direto de /vendas do menu)
+updated: 2026-09-05 (autenticação real via Supabase Auth)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -57,7 +57,9 @@ src/app/
 ├── checkout/sucesso/
 │   └── page.tsx              # Rota "/checkout/sucesso" (confirmação pós-pagamento do Stripe)
 ├── auth/
-│   └── page.tsx              # Rota "/auth" (Login / Cadastro — ainda simulado)
+│   ├── page.tsx              # Rota "/auth" (Login / Cadastro real via Supabase Auth: e-mail/senha + Google)
+│   └── callback/
+│       └── page.tsx          # Rota "/auth/callback" (retorno do OAuth do Google)
 └── api/
     ├── corrigir/
     │   └── route.ts          # Endpoint POST /api/corrigir

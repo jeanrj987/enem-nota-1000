@@ -1,6 +1,11 @@
 import { Redacao, Correcao, HistoricoItem, EstatisticasUsuario, TemaRedacao } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { getDeviceId } from '@/lib/device-id';
+
+async function getUserId(): Promise<string | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
 
 export const TEMAS_ENEM_SUGERIDOS: TemaRedacao[] = [
   {
@@ -214,17 +219,18 @@ function linhaParaRedacao(row: RedacaoRow): Redacao {
 }
 
 /**
- * Busca o histórico de redações. Usa Supabase (persistência real, entre
- * dispositivos que compartilhem o mesmo device_id) quando configurado;
- * cai para localStorage em caso de ausência de configuração ou falha de
- * rede, para nunca travar a experiência do usuário.
+ * Busca o histórico de redações. Usa Supabase (persistência real, vinculada
+ * ao usuário autenticado) quando configurado e logado; cai para
+ * localStorage em caso de ausência de configuração, usuário deslogado ou
+ * falha de rede, para nunca travar a experiência do usuário.
  */
 export async function getRedacoesSalvas(): Promise<Redacao[]> {
-  if (isSupabaseConfigured && supabase) {
+  const userId = await getUserId();
+  if (isSupabaseConfigured && supabase && userId) {
     const { data, error } = await supabase
       .from('redacoes')
       .select('*')
-      .eq('device_id', getDeviceId())
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -238,16 +244,18 @@ export async function getRedacoesSalvas(): Promise<Redacao[]> {
 
 /**
  * Salva/atualiza uma redação. Sempre grava em localStorage (cache/fallback
- * imediato) e, se o Supabase estiver configurado, tenta persistir lá também
- * — sem bloquear nem falhar a operação principal se a escrita remota falhar.
+ * imediato) e, se houver usuário autenticado com Supabase configurado,
+ * tenta persistir lá também — sem bloquear nem falhar a operação principal
+ * se a escrita remota falhar.
  */
 export async function salvarRedacao(redacao: Redacao): Promise<void> {
   salvarRedacaoLocal(redacao);
 
-  if (isSupabaseConfigured && supabase) {
+  const userId = await getUserId();
+  if (isSupabaseConfigured && supabase && userId) {
     const { error } = await supabase.from('redacoes').upsert({
       id: redacao.id,
-      device_id: getDeviceId(),
+      user_id: userId,
       titulo: redacao.titulo,
       tema: redacao.tema,
       texto: redacao.texto,

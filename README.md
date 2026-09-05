@@ -34,7 +34,9 @@ Configure `.env.local` a partir de `.env.example`:
 | `STRIPE_SECRET_KEY` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Criar sessões de checkout |
 | `STRIPE_WEBHOOK_SECRET` | Verificar a assinatura dos eventos do Stripe |
 
-Depois de configurar as chaves do Supabase, rode os schemas no SQL Editor do projeto, nesta ordem: `supabase/schema.sql` e `supabase/schema-assinaturas.sql`. Depois de configurar a chave secreta do Stripe, rode `npm run stripe:setup` para criar os produtos/preços dos 3 planos (idempotente — roda de novo sem duplicar) e colar os Price IDs gerados em `src/lib/planos.ts`.
+Depois de configurar as chaves do Supabase, rode `supabase/schema-auth-migration.sql` no SQL Editor do projeto (substitui os schemas antigos baseados em `device_id` por tabelas ligadas a `auth.users`; apaga qualquer dado de teste anterior). Depois de configurar a chave secreta do Stripe, rode `npm run stripe:setup` para criar os produtos/preços dos 3 planos (idempotente — roda de novo sem duplicar) e colar os Price IDs gerados em `src/lib/planos.ts`.
+
+Para habilitar login com Google, crie um OAuth Client ID no [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e cole o Client ID/Secret em Supabase Dashboard → Authentication → Providers → Google. O redirect URI a cadastrar no Google é `https://<seu-projeto>.supabase.co/auth/v1/callback`.
 
 ## Scripts
 
@@ -66,13 +68,13 @@ A extração de texto de PDF (`src/app/api/upload/route.ts`) usa `pdf-parse` (qu
 
 Testes em `tests/`: `correcao-schema.test.ts` e `reconciliacao.test.ts` cobrem as regras de negócio isoladamente (sem chamar API); `regressao.test.ts` trava casos reais já verificados manualmente contra a matriz do ENEM; `storage.test.ts`, `assinatura.test.ts`, `rate-limit.test.ts` e as rotas de API têm o Supabase/Stripe mockados — nenhum teste automatizado faz chamada de rede real.
 
-## Persistência & cobrança
+## Autenticação, persistência & cobrança
 
-Sem autenticação real implementada ainda (login continua simulado), tanto o histórico de redações quanto o acesso pago são ancorados num `device_id` anônimo gerado no navegador (`src/lib/device-id.ts`). Fluxo de compra: `/vendas` → `/api/checkout` cria uma sessão do Stripe Checkout → após pagamento, o webhook (`/api/stripe/webhook`) marca a assinatura como ativa no Supabase para aquele `device_id` → páginas do avaliador (`/nova-redacao`, `/dashboard`, `/historico`, `/correcao/[id]`) checam acesso ativo via `RequerAssinatura` antes de renderizar, redirecionando para `/vendas` senão.
+Login real via Supabase Auth (`src/lib/auth.ts`, `src/contexts/AuthContext.tsx`): e-mail/senha ou Google OAuth. Tanto o histórico de redações quanto o acesso pago são ancorados no `user_id` da sessão autenticada (RLS no Postgres restringe cada linha ao próprio dono via `auth.uid() = user_id`). Fluxo de compra: `/vendas` exige login antes de checkout → `/api/checkout` valida o token da sessão e cria uma sessão do Stripe Checkout com `user_id` em `client_reference_id`/`metadata` → após pagamento, o webhook (`/api/stripe/webhook`) marca a assinatura como ativa no Supabase para aquele `user_id` (com verificação síncrona de reforço em `/api/checkout/verificar`, chamada pelo redirect de sucesso) → páginas do avaliador (`/nova-redacao`, `/dashboard`, `/historico`, `/correcao/[id]`) checam login + assinatura ativa via `RequerAssinatura` antes de renderizar, redirecionando para `/auth` (sem login) ou `/vendas` (sem assinatura).
 
 ## Limitações conhecidas
 
-- Sem autenticação real — o gate de acesso pago usa `device_id` de navegador, não conta de usuário; trocar de navegador/limpar dados perde o vínculo com a assinatura.
+- A "conta demo" e a simulação de login foram removidas; toda sessão agora exige Supabase Auth real (e-mail/senha ou Google).
 - A calibração de acurácia (`npm run calibrar`) só tem gabarito oficial para redações nota 1000 (teto); falta corpus de nota mediana/baixa avaliado por corretor humano.
 - Rate limiting em memória — não é compartilhado entre instâncias serverless frias.
 - Sem LGPD: nenhum documento de privacidade/termos/consentimento parental existe ainda.

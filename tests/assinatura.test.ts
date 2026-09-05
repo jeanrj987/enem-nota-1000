@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockState: {
   isSupabaseConfigured: boolean;
+  usuario: { id: string } | null;
   maybeSingleResult: { data: any; error: any };
-  ultimaChamada: { device_id?: string; status?: string; expiraAposIso?: string };
+  ultimaChamada: { user_id?: string; status?: string; expiraAposIso?: string };
 } = {
   isSupabaseConfigured: true,
+  usuario: { id: 'user-teste-assinatura' },
   maybeSingleResult: { data: null, error: null },
   ultimaChamada: {},
 };
@@ -17,10 +19,13 @@ vi.mock('@/lib/supabase', () => ({
   get supabase() {
     if (!mockState.isSupabaseConfigured) return null;
     return {
+      auth: {
+        getUser: async () => ({ data: { user: mockState.usuario } }),
+      },
       from: (_table: string) => ({
         select: (_cols: string) => ({
           eq: (field: string, value: string) => {
-            if (field === 'device_id') mockState.ultimaChamada.device_id = value;
+            if (field === 'user_id') mockState.ultimaChamada.user_id = value;
             if (field === 'status') mockState.ultimaChamada.status = value;
             return {
               eq: (field2: string, value2: string) => {
@@ -44,14 +49,11 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-vi.mock('@/lib/device-id', () => ({
-  getDeviceId: () => 'device-teste-assinatura',
-}));
-
 const { temAcessoAtivo } = await import('@/lib/assinatura');
 
 beforeEach(() => {
   mockState.isSupabaseConfigured = true;
+  mockState.usuario = { id: 'user-teste-assinatura' };
   mockState.maybeSingleResult = { data: null, error: null };
   mockState.ultimaChamada = {};
 });
@@ -62,7 +64,12 @@ describe('temAcessoAtivo', () => {
     expect(await temAcessoAtivo()).toBe(false);
   });
 
-  it('retorna false quando não há assinatura ativa para o device_id', async () => {
+  it('retorna false sem usuário autenticado', async () => {
+    mockState.usuario = null;
+    expect(await temAcessoAtivo()).toBe(false);
+  });
+
+  it('retorna false quando não há assinatura ativa para o usuário', async () => {
     mockState.maybeSingleResult = { data: null, error: null };
     expect(await temAcessoAtivo()).toBe(false);
   });
@@ -77,9 +84,9 @@ describe('temAcessoAtivo', () => {
     expect(await temAcessoAtivo()).toBe(false);
   });
 
-  it('filtra por device_id, status ativa e expira_em no futuro', async () => {
+  it('filtra por user_id, status ativa e expira_em no futuro', async () => {
     await temAcessoAtivo();
-    expect(mockState.ultimaChamada.device_id).toBe('device-teste-assinatura');
+    expect(mockState.ultimaChamada.user_id).toBe('user-teste-assinatura');
     expect(mockState.ultimaChamada.status).toBe('ativa');
     expect(mockState.ultimaChamada.expiraAposIso).toBeTruthy();
   });
