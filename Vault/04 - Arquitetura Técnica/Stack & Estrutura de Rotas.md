@@ -64,7 +64,9 @@ src/app/
     ├── upload/
     │   └── route.ts          # Endpoint POST /api/upload
     ├── checkout/
-    │   └── route.ts          # Endpoint POST /api/checkout (cria Stripe Checkout Session)
+    │   ├── route.ts          # Endpoint POST /api/checkout (cria Stripe Checkout Session)
+    │   └── verificar/
+    │       └── route.ts      # Endpoint POST /api/checkout/verificar (confirma pagamento pelo session_id)
     └── stripe/webhook/
         └── route.ts          # Endpoint POST /api/stripe/webhook (ativa assinatura no Supabase)
 ```

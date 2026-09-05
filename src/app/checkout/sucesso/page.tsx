@@ -20,6 +20,17 @@ function ConteudoSucesso() {
     let tentativas = 0;
     let cancelado = false;
 
+    // Verifica direto na Stripe (session_id do redirect) em vez de esperar
+    // passivamente o webhook — necessário em dev (Stripe não alcança
+    // localhost) e reforça produção contra webhook atrasado/perdido.
+    if (sessionId) {
+      fetch('/api/checkout/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      }).catch(() => {});
+    }
+
     const checar = async () => {
       const ativo = await temAcessoAtivo();
       if (cancelado) return;
@@ -39,7 +50,7 @@ function ConteudoSucesso() {
     return () => {
       cancelado = true;
     };
-  }, []);
+  }, [sessionId]);
 
   return (
     <div className="glass-panel p-10 sm:p-16 rounded-3xl border border-slate-800 text-center space-y-5 max-w-lg mx-auto">

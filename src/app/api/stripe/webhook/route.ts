@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { PLANOS, PlanoId } from '@/lib/planos';
+import { ativarAssinatura } from '@/lib/ativar-assinatura';
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -37,23 +38,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const diasDeAcesso = PLANOS[planoId].diasDeAcesso;
-    const expiraEm = new Date(Date.now() + diasDeAcesso * 24 * 60 * 60 * 1000).toISOString();
-
-    const { error } = await supabaseAdmin.from('assinaturas').upsert({
-      id: session.id,
-      device_id: deviceId,
-      plano_id: planoId,
-      status: 'ativa',
-      expira_em: expiraEm,
-    });
-
-    if (error) {
-      console.error('Erro ao ativar assinatura no Supabase:', error);
-      return NextResponse.json({ error: 'Falha ao registrar assinatura.' }, { status: 500 });
+    const resultado = await ativarAssinatura({ sessionId: session.id, deviceId, planoId });
+    if (!resultado.sucesso) {
+      return NextResponse.json({ error: resultado.erro }, { status: 500 });
     }
-
-    console.log(JSON.stringify({ evento: 'assinatura_ativada', device_id: deviceId, plano_id: planoId, expira_em: expiraEm }));
   }
 
   return NextResponse.json({ received: true });

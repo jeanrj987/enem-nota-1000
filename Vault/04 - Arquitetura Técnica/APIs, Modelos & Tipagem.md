@@ -164,7 +164,10 @@ export interface Redacao {
 - Sem `STRIPE_SECRET_KEY` configurada: retorna erro explícito (`503`), nunca finge que o pagamento foi processado.
 
 ### 4. `POST /api/stripe/webhook`
-- **Função**: Recebe eventos do Stripe. Valida a assinatura HMAC do payload (`stripe-signature` + `STRIPE_WEBHOOK_SECRET`) antes de processar qualquer coisa — payload sem assinatura válida é rejeitado com `400`. Em `checkout.session.completed`, grava/atualiza a assinatura como `ativa` no Supabase via `supabaseAdmin` (service role).
+- **Função**: Recebe eventos do Stripe. Valida a assinatura HMAC do payload (`stripe-signature` + `STRIPE_WEBHOOK_SECRET`) antes de processar qualquer coisa — payload sem assinatura válida é rejeitado com `400`. Em `checkout.session.completed`, ativa a assinatura via `ativarAssinatura()` (`src/lib/ativar-assinatura.ts`).
+
+### 5. `POST /api/checkout/verificar`
+- **Função**: Verificação síncrona chamada por `/checkout/sucesso` no redirect pós-pagamento. Recebe `{ sessionId }`, consulta a Checkout Session direto na API do Stripe e, se `payment_status === 'paid'`, ativa a assinatura pelo mesmo `ativarAssinatura()` do webhook. Existe porque o Stripe não entrega webhooks em `localhost` e como reforço em produção contra webhook atrasado/perdido. Idempotente — chamar de novo para a mesma sessão não duplica nada.
 
 ---
 
