@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { RequerAssinatura } from '@/components/RequerAssinatura';
 import { CorrecaoView } from '@/components/CorrecaoView';
 import { buscarRedacaoPorId } from '@/lib/storage';
 import { Redacao } from '@/types';
@@ -37,6 +38,7 @@ export default function PaginaResultadoCorrecao() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-6">
+        <RequerAssinatura>
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard"
@@ -74,6 +76,7 @@ export default function PaginaResultadoCorrecao() {
         ) : (
           <CorrecaoView redacao={redacao} correcao={redacao.correcao} />
         )}
+        </RequerAssinatura>
       </main>
 
       <Footer />

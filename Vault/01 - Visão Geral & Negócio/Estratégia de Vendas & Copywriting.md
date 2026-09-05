@@ -6,13 +6,16 @@ tags:
   - marketing
   - landing-page
   - oferta
-updated: 2026-09-01
+updated: 2026-09-05 (checkout real integrado)
 ---
 
-# 📑 Estrutura de Copywriting & Página de Vendas Independente (`/vendas`)
+# 📑 Estrutura de Copywriting & Página de Vendas (`/vendas`)
 
 > [!tip] **Diretriz de Comunicação**
-> A página de vendas `/vendas` é completamente independente do sistema de correção em si. Ela adota um tom sóbrio, humano, transparente e focado em clareza, eliminando clichês de infoproduto e mantendo foco no benefício real para o vestibulando.
+> A página de vendas `/vendas` adota um tom sóbrio, humano, transparente e focado em clareza, eliminando clichês de infoproduto e mantendo foco no benefício real para o vestibulando.
+
+> [!warning] **Não é mais independente do produto — acesso é bloqueado até pagar**
+> Até 2026-09-05, os botões de `/vendas` levavam direto para `/nova-redacao` sem nenhuma verificação, tornando a página apenas decorativa. Isso foi corrigido: os 3 planos agora criam uma sessão real do Stripe Checkout, e `/nova-redacao`, `/dashboard`, `/historico` e `/correcao/[id]` verificam assinatura ativa antes de renderizar (componente `RequerAssinatura`), redirecionando para `/vendas` quando não há pagamento confirmado. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 010]] e [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|Supabase, Storage & Env]].
 
 ---
 
@@ -58,9 +61,9 @@ graph TD
 > - Avaliação 100% orientada pelas diretrizes públicas do Manual de Corretores do INEP.
 > - Diagnóstico transparente com demonstração linha por linha e identificação de regras gramaticais e de coesão.
 
-### 6. Como Funciona (Fluxo Simplificado)
+### 6. Como Funciona (Fluxo Real)
 1. **Passo 1 — Escolha seu plano**: Selecione o período de acesso ideal para o seu cronograma de estudos.
-2. **Passo 2 — Liberação imediata**: Os dados de login são enviados automaticamente para seu e-mail após a confirmação.
+2. **Passo 2 — Pagamento no Stripe Checkout**: Redirecionado para a página segura do Stripe; ao confirmar, o webhook libera o acesso automaticamente no mesmo navegador (sem conta/login — ver limitação de auth em [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog]]).
 3. **Passo 3 — Envie sua redação**: Digite direto no editor ou faça upload do seu arquivo em PDF, Word ou texto.
 4. **Passo 4 — Receba o relatório**: Veja a nota, as marcações de erro e a versão nota 1000 em menos de 10 segundos.
 

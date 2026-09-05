@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-05
+updated: 2026-09-05 (checkout Stripe + gate de acesso)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -31,8 +31,9 @@ updated: 2026-09-05
 | **IA & LLMs** | `@google/genai` + `openai` | Modelos Gemini 3.6 Flash e GPT-4o-mini |
 | **Parsing de Arquivos** | `mammoth`, `pdf-parse` | Extração de texto de DOCX, PDF e TXT |
 | **Geração de PDF** | `jspdf` | Exportação de relatórios de correção em PDF |
-| **Gamificação** | `canvas-confetti` | Disparo de confete em notas 900+ e no checkout |
-| **Banco de Dados & Auth** | Supabase (`@supabase/supabase-js`) | PostgreSQL, RLS, Storage de redações |
+| **Gamificação** | `canvas-confetti` | Disparo de confete em notas 900+ |
+| **Banco de Dados** | Supabase (`@supabase/supabase-js`) | Persistência de redações e assinaturas (sem Auth real ainda) |
+| **Cobrança** | `stripe` | Checkout Sessions dos 3 planos de acesso |
 
 ---
 
@@ -46,20 +47,26 @@ src/app/
 ├── vendas/
 │   └── page.tsx              # Rota "/vendas" (Página de Vendas de Alta Conversão)
 ├── nova-redacao/
-│   └── page.tsx              # Rota "/nova-redacao" (Editor Tiptap / Upload)
+│   └── page.tsx              # Rota "/nova-redacao" (Editor Tiptap / Upload) — atrás de RequerAssinatura
 ├── correcao/[id]/
-│   └── page.tsx              # Rota "/correcao/:id" (Visualizador de Correção)
+│   └── page.tsx              # Rota "/correcao/:id" (Visualizador de Correção) — atrás de RequerAssinatura
 ├── dashboard/
-│   └── page.tsx              # Rota "/dashboard" (Painel do Estudante)
+│   └── page.tsx              # Rota "/dashboard" (Painel do Estudante) — atrás de RequerAssinatura
 ├── historico/
-│   └── page.tsx              # Rota "/historico" (Evolução & Gráficos Recharts)
+│   └── page.tsx              # Rota "/historico" (Evolução & Gráficos Recharts) — atrás de RequerAssinatura
+├── checkout/sucesso/
+│   └── page.tsx              # Rota "/checkout/sucesso" (confirmação pós-pagamento do Stripe)
 ├── auth/
-│   └── page.tsx              # Rota "/auth" (Login / Cadastro)
+│   └── page.tsx              # Rota "/auth" (Login / Cadastro — ainda simulado)
 └── api/
     ├── corrigir/
     │   └── route.ts          # Endpoint POST /api/corrigir
-    └── upload/
-        └── route.ts          # Endpoint POST /api/upload
+    ├── upload/
+    │   └── route.ts          # Endpoint POST /api/upload
+    ├── checkout/
+    │   └── route.ts          # Endpoint POST /api/checkout (cria Stripe Checkout Session)
+    └── stripe/webhook/
+        └── route.ts          # Endpoint POST /api/stripe/webhook (ativa assinatura no Supabase)
 ```
 
 ---
@@ -70,7 +77,7 @@ src/app/
 - Apresentação do produto, demonstração em vídeo/mockup, as 5 competências do INEP e primeiros passos para o vestibulando.
 
 ### 2. Página de Vendas (`/vendas`)
-- Página de conversão com cronômetro de urgência, termômetro interativo de risco, comparativo tradicional vs IA, tabela de preços, bônus e garantia incondicional de 7 dias.
+- Página de conversão com termômetro interativo de risco, comparativo tradicional vs IA, tabela de preços, bônus e garantia incondicional de 7 dias. Os 3 CTAs de plano criam uma sessão real do Stripe Checkout via `/api/checkout` (sem cronômetro nem "vagas restantes" — removidos por serem falsos, ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog]]).
 
 ### 3. Nova Redação (`/nova-redacao`)
 - Editor inteligente com contagem de palavras/linhas, seleção de temas oficiais/inéditos do ENEM e aba de upload para arquivos `.pdf`, `.docx` e `.txt`.

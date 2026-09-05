@@ -18,10 +18,15 @@ import {
   HelpCircle,
   Mail,
   GraduationCap,
+  Loader2,
 } from 'lucide-react';
+import { getDeviceId } from '@/lib/device-id';
+import { PlanoId } from '@/lib/planos';
 
 export default function PaginaDeVendas() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
+  const [erroCheckout, setErroCheckout] = useState<string | null>(null);
 
   const toggleFaq = (idx: number) => {
     setOpenFaq(openFaq === idx ? null : idx);
@@ -30,6 +35,26 @@ export default function PaginaDeVendas() {
   const scrollToPricing = () => {
     const el = document.getElementById('oferta');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const iniciarCheckout = async (planoId: PlanoId) => {
+    setErroCheckout(null);
+    setPlanoCarregando(planoId);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planoId, deviceId: getDeviceId() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'Não foi possível iniciar o pagamento.');
+      }
+      window.location.href = data.url;
+    } catch (err: any) {
+      setErroCheckout(err.message || 'Erro ao iniciar o pagamento.');
+      setPlanoCarregando(null);
+    }
   };
 
   return (
@@ -284,6 +309,11 @@ export default function PaginaDeVendas() {
               <p className="text-xs sm:text-sm text-slate-400">
                 Acesso direto e sem contratos de longo prazo. Escolha a melhor opção para a sua rotina:
               </p>
+              {erroCheckout && (
+                <p className="text-xs text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg px-4 py-2 inline-block">
+                  {erroCheckout}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
@@ -315,12 +345,13 @@ export default function PaginaDeVendas() {
                   </ul>
                 </div>
 
-                <Link
-                  href="/nova-redacao"
-                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all block cursor-pointer"
+                <button
+                  onClick={() => iniciarCheckout('mensal')}
+                  disabled={planoCarregando !== null}
+                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
-                  Assinar Plano Mensal
-                </Link>
+                  {planoCarregando === 'mensal' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar Plano Mensal'}
+                </button>
               </div>
 
               {/* Plano Anual (Destaque) */}
@@ -365,12 +396,13 @@ export default function PaginaDeVendas() {
 
                 {/* 7. CTA Principal */}
                 <div className="space-y-2">
-                  <Link
-                    href="/nova-redacao"
-                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center shadow-lg shadow-blue-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all block cursor-pointer"
+                  <button
+                    onClick={() => iniciarCheckout('anual')}
+                    disabled={planoCarregando !== null}
+                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center shadow-lg shadow-blue-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                   >
-                    Garantir Acesso ao Avaliador
-                  </Link>
+                    {planoCarregando === 'anual' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Garantir Acesso ao Avaliador'}
+                  </button>
                   <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                     <Lock className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Pagamento seguro • Acesso imediato</span>
@@ -406,12 +438,13 @@ export default function PaginaDeVendas() {
                   </ul>
                 </div>
 
-                <Link
-                  href="/nova-redacao"
-                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all block cursor-pointer"
+                <button
+                  onClick={() => iniciarCheckout('semestral')}
+                  disabled={planoCarregando !== null}
+                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
-                  Assinar Plano Semestral
-                </Link>
+                  {planoCarregando === 'semestral' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar Plano Semestral'}
+                </button>
               </div>
             </div>
 

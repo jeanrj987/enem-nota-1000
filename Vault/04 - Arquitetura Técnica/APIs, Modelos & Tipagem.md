@@ -6,7 +6,7 @@ tags:
   - interfaces
   - backend
   - endpoints
-updated: 2026-09-05 (rate limiting + persistência)
+updated: 2026-09-05 (checkout Stripe + gate de acesso)
 ---
 
 # 🔌 APIs, Modelos de Dados & Tipagem TypeScript
@@ -158,6 +158,13 @@ export interface Redacao {
     "fileSize": 18450
   }
   ```
+
+### 3. `POST /api/checkout`
+- **Função**: Cria uma Stripe Checkout Session para o plano escolhido. Payload: `{ planoId: 'mensal'|'anual'|'semestral', deviceId: string }`. Resposta: `{ url: string }` — o cliente redireciona `window.location.href` para essa URL.
+- Sem `STRIPE_SECRET_KEY` configurada: retorna erro explícito (`503`), nunca finge que o pagamento foi processado.
+
+### 4. `POST /api/stripe/webhook`
+- **Função**: Recebe eventos do Stripe. Valida a assinatura HMAC do payload (`stripe-signature` + `STRIPE_WEBHOOK_SECRET`) antes de processar qualquer coisa — payload sem assinatura válida é rejeitado com `400`. Em `checkout.session.completed`, grava/atualiza a assinatura como `ativa` no Supabase via `supabaseAdmin` (service role).
 
 ---
 

@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-05 (auditoria de viés + testes + copy honesto)
+updated: 2026-09-05 (checkout Stripe + gate de acesso pago)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -69,9 +69,24 @@ updated: 2026-09-05 (auditoria de viés + testes + copy honesto)
 - **Decisão**: `src/lib/rate-limit.ts` implementa um limitador em memória, por IP, janela fixa (sem dependência externa). `/api/corrigir`: 5 requisições/10min, texto máx. 8000 caracteres. `/api/upload`: 15 requisições/10min, arquivo máx. 10MB. Ambas retornam `429`/`413` com mensagem clara.
 - **Limitação conhecida**: o contador é por processo — não é compartilhado entre instâncias serverless frias (cada cold start zera a janela). Suficiente para MVP; produção com múltiplas instâncias concorrentes precisa de um store compartilhado (Upstash Redis é o candidato natural, já que evita adicionar infra própria).
 
+### ADR 010: Checkout Real via Stripe + Gate de Acesso por device_id
+- **Status**: Aprovado e Implementado (modo de teste do Stripe)
+- **Contexto**: `/vendas` era uma landing page decorativa — os 3 botões de plano levavam direto para `/nova-redacao` sem nenhuma verificação de pagamento, então qualquer um usava o corretor de graça. O usuário pediu explicitamente que o acesso ao produto ficasse condicionado à compra.
+- **Decisão**: `npm run stripe:setup` cria os 3 produtos/preços via API do Stripe (Mensal R$29,90, Anual R$147,00, Semestral R$89,00 — **pagamento único**, não assinatura recorrente do Stripe: cada plano concede acesso por um número fixo de dias, 30/365/180, controlado por `expira_em` no Supabase). `/api/checkout` cria uma Stripe Checkout Session com `client_reference_id` = device_id. `/api/stripe/webhook` verifica a assinatura HMAC do evento e, em `checkout.session.completed`, grava a assinatura como `ativa` na tabela `assinaturas` via `supabaseAdmin` (service role, ignora RLS). `RequerAssinatura` (componente client-side) chama `temAcessoAtivo()` antes de renderizar `/nova-redacao`, `/dashboard`, `/historico` e `/correcao/[id]`, redirecionando para `/vendas` se não houver assinatura ativa.
+- **Simplificação deliberada**: pagamento único com prazo de acesso, não `Stripe Subscription` com renovação automática/cancelamento/portal do cliente — implementar o ciclo de vida completo de assinatura recorrente é um escopo maior que o pedido original. Pode evoluir para isso depois sem quebrar o schema (a tabela já modela `status`/`expira_em` de forma agnóstica à origem).
+- **Testado sem CLI do Stripe** (não instalado no ambiente): sessão de checkout real criada via API (confirma integração Stripe→URL); processamento do webhook validado assinando um payload sintético localmente com `stripe.webhooks.generateTestHeaderString` e o mesmo `STRIPE_WEBHOOK_SECRET` usado pela rota — confirma verificação de assinatura + escrita no Supabase + leitura por `temAcessoAtivo()` end-to-end, sem depender de completar um pagamento real no navegador.
+- **Pendências para produção**: (1) autenticação real — hoje troca de navegador/limpeza de dados perde o vínculo com a assinatura, pois não há conta de usuário; (2) `STRIPE_WEBHOOK_SECRET` atual foi gerado para um endpoint de teste (`https://example.com/...`), só serve para assinar payloads localmente — em produção é preciso criar um endpoint real no dashboard do Stripe apontando para a URL pública e usar o secret dele; (3) migrar chaves de teste (`sk_test_`/`pk_test_`) para chaves live quando for cobrar de verdade.
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v1.5.0] - 2026-09-05 (checkout Stripe real + gate de acesso)
+- **Adicionado**: cobrança real via Stripe Checkout (3 planos: Mensal/Anual/Semestral), gate de acesso pago (`RequerAssinatura`) bloqueando `/nova-redacao`, `/dashboard`, `/historico` e `/correcao/[id]` até confirmação de pagamento — ver ADR 010.
+- **Adicionado**: tabela `assinaturas` no Supabase (`supabase/schema-assinaturas.sql`), escrita restrita ao service role (webhook), leitura liberada por `device_id` para o cliente.
+- **Adicionado**: `src/lib/supabase-admin.ts` (cliente service role, uso exclusivo server-side), `src/lib/planos.ts`, `src/lib/assinatura.ts`, `scripts/stripe-setup.ts`.
+- **Adicionado**: página `/checkout/sucesso` com confirmação assíncrona (poll de `temAcessoAtivo` após o redirect do Stripe).
+- **Corrigido**: página `/vendas` deixou de ser decorativa — os 3 CTAs agora criam sessões reais de checkout em vez de linkar direto para o corretor.
 
 ### [v1.4.0] - 2026-09-05 (copy honesto + testes + auditoria de viés)
 - **Removido**: cronômetro falso (reiniciava sozinho ao chegar a zero) e "5 vagas restantes" fixo do `SalesStickyBar.tsx` — publicidade enganosa vedada pelo CDC. Componente estava presente no código mas não era renderizado em nenhuma página no momento da correção; corrigido preventivamente.

@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-05
+updated: 2026-09-05 (checkout Stripe + gate de acesso)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -49,6 +49,31 @@ create policy "anon pode tudo (sem auth real ainda)"
 
 ---
 
+## 💳 Schema de Assinaturas (`supabase/schema-assinaturas.sql`)
+
+Ao contrário de `redacoes` (RLS permissiva para `anon`), aqui o cliente só pode **ler**. Toda escrita vem do webhook do Stripe usando a **service role key** (`src/lib/supabase-admin.ts`, `supabaseAdmin` — ignora RLS, uso exclusivo em código de servidor, nunca importar em componente client-side). Isso impede que qualquer um forje uma assinatura paga inserindo uma linha direto com a anon key.
+
+```sql
+create table public.assinaturas (
+  id text primary key, -- id da Checkout Session do Stripe
+  device_id text not null,
+  plano_id text not null,
+  status text not null default 'pendente', -- 'pendente' | 'ativa'
+  expira_em timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.assinaturas enable row level security;
+
+create policy "anon pode ler assinaturas"
+  on public.assinaturas for select to anon using (true);
+-- nenhuma policy de insert/update/delete para anon
+```
+
+`src/lib/assinatura.ts` (`temAcessoAtivo`) consulta essa tabela filtrando por `device_id` + `status = 'ativa'` + `expira_em` no futuro. **Sem Supabase configurado, nega acesso por padrão** — nunca libera "no escuro".
+
+---
+
 ## 🔐 Variáveis de Ambiente (`.env.local`)
 
 | Variável | Obrigatória? | Descrição |
@@ -57,7 +82,10 @@ create policy "anon pode tudo (sem auth real ainda)"
 | `OPENAI_API_KEY` | Opcional (Fallback) | Chave da OpenAI para o modelo `gpt-4o-mini`. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Configurada | `https://jzsudeviiosbhgkeljaf.supabase.co` — pode ser derivada do claim `ref` do JWT da anon key. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Configurada | Chave anônima pública do Supabase. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Não usada ainda | Reservada para quando operações administrativas (bypass de RLS) forem necessárias. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Configurada | Usada só pelo webhook do Stripe (`src/lib/supabase-admin.ts`) para gravar assinaturas, ignorando RLS. |
+| `STRIPE_SECRET_KEY` | Configurada (modo teste) | Cria sessões de checkout e produtos/preços (`npm run stripe:setup`). |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Configurada (modo teste) | Chave pública do Stripe (não usada diretamente ainda — Checkout hospedado dispensa Stripe.js no cliente). |
+| `STRIPE_WEBHOOK_SECRET` | Configurada (endpoint de teste local) | Verifica a assinatura HMAC dos eventos do Stripe em `/api/stripe/webhook`. **Ao publicar em produção, criar um endpoint novo no dashboard do Stripe apontando para a URL real e usar o secret dele** — o valor atual foi gerado para um endpoint de teste (`https://example.com/...`) usado só para assinar payloads localmente, nunca recebe eventos reais. |
 
 ---
 
@@ -90,5 +118,6 @@ Ambas retornam `429` com header `Retry-After` quando o limite é excedido; `/api
 ## 🔗 Links Relacionados
 - [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript e Endpoints]]
 - [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|Uso das Chaves de IA no Backend]]
-- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 008, 009]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Fluxo de Checkout em /vendas]]
+- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 008, 009, 010]]
 - [[00 - Índice Principal|Retornar ao Índice Principal]]

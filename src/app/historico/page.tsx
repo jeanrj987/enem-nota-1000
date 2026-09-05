@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { RequerAssinatura } from '@/components/RequerAssinatura';
 import { GraficoEvolucao } from '@/components/GraficoEvolucao';
 import { getRedacoesSalvas, calcularEstatisticas, gerarHistoricoGraficos } from '@/lib/storage';
 import { Redacao, HistoricoItem, EstatisticasUsuario } from '@/types';
@@ -54,6 +55,7 @@ export default function HistoricoPage() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
+        <RequerAssinatura>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
           <div className="space-y-1">
@@ -198,6 +200,7 @@ export default function HistoricoPage() {
             </div>
           )}
         </div>
+        </RequerAssinatura>
       </main>
 
       <Footer />
