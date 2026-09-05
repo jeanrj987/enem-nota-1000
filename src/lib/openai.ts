@@ -3,6 +3,7 @@ import { GoogleGenAI } from '@google/genai';
 import { Correcao, ErroIdentificado } from '@/types';
 import { SYSTEM_PROMPT_ENEM } from './prompt-agente';
 import { contarParagrafos, montarCorrecao, validarCorrecaoIA } from './correcao-schema';
+import { LIMIAR_DIVERGENCIA, reconciliarCorrecoes } from './reconciliacao';
 
 export async function corrigirRedacaoComIA(
   texto: string,
@@ -122,6 +123,58 @@ ${texto}
   throw new Error(
     'Não foi possível corrigir a redação no momento. Todos os provedores de IA falharam ou estão indisponíveis.'
   );
+}
+
+/**
+ * Réplica do protocolo oficial do ENEM: duas correções independentes da mesma
+ * redação. Se divergirem mais que LIMIAR_DIVERGENCIA pontos na nota geral, uma
+ * terceira correção é acionada para arbitrar, e a nota final usa o par mais
+ * próximo entre as três. Custa 2x (ou 3x, em caso de divergência) o preço e o
+ * tempo de uma correção única — é a troca deliberada entre custo/latência e
+ * consistência, motivada por termos medido variação real de até 120 pontos
+ * entre execuções da mesma redação.
+ *
+ * Se uma das duas chamadas falhar (provedor indisponível) mas a outra
+ * suceder, a correção que teve sucesso é usada sozinha — nunca fabricamos uma
+ * segunda opinião falsa só para completar o par.
+ */
+export async function corrigirRedacaoComDuplaCorrecao(
+  texto: string,
+  tema: string = 'Tema Livre',
+  titulo: string = 'Sem título'
+): Promise<Correcao> {
+  const [resultado1, resultado2] = await Promise.allSettled([
+    corrigirRedacaoComIA(texto, tema, titulo),
+    corrigirRedacaoComIA(texto, tema, titulo),
+  ]);
+
+  const sucesso1 = resultado1.status === 'fulfilled' ? resultado1.value : null;
+  const sucesso2 = resultado2.status === 'fulfilled' ? resultado2.value : null;
+
+  if (resultado1.status === 'rejected' && resultado2.status === 'rejected') {
+    // Ambas falharam: propaga o erro da primeira, mantendo a mensagem honesta do R1.
+    throw resultado1.reason;
+  }
+
+  if (sucesso1 && !sucesso2) return reconciliarCorrecoes([sucesso1]);
+  if (!sucesso1 && sucesso2) return reconciliarCorrecoes([sucesso2]);
+
+  const [c1, c2] = [sucesso1!, sucesso2!];
+  const divergencia = Math.abs(c1.nota_geral - c2.nota_geral);
+
+  if (divergencia <= LIMIAR_DIVERGENCIA) {
+    return reconciliarCorrecoes([c1, c2]);
+  }
+
+  // Divergência alta: aciona uma terceira correção de arbitragem.
+  try {
+    const c3 = await corrigirRedacaoComIA(texto, tema, titulo);
+    return reconciliarCorrecoes([c1, c2, c3]);
+  } catch {
+    // Terceira correção falhou (ex: cota esgotada) — reconcilia com as duas
+    // que já temos, mesmo divergentes, em vez de falhar a correção inteira.
+    return reconciliarCorrecoes([c1, c2]);
+  }
 }
 
 // Fixture para testes locais/offline. Não é chamada pelo caminho de produção:

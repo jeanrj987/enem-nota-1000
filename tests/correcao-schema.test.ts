@@ -15,6 +15,18 @@ function competencia(numero: 1 | 2 | 3 | 4 | 5, nota: number) {
     nota,
     nivel: nota / 40,
     comentario: 'x',
+    habilidades_c1: undefined as
+      | { ortografia_e_acentuacao: boolean; concordancia_e_regencia: boolean; pontuacao_adequada: boolean; registro_formal_sem_oralidade: boolean }
+      | undefined,
+    habilidades_c3: undefined as
+      | { tese_clara: boolean; argumentos_bem_selecionados: boolean; progressao_logica: boolean; conclusao_articulada: boolean }
+      | undefined,
+    habilidades_c4: undefined as
+      | { conectivos_interparagrafos: boolean; conectivos_intraparagrafos_variados: boolean; ausencia_repeticao_excessiva: boolean; ausencia_marcadores_orais: boolean }
+      | undefined,
+    elementos_c5: undefined as
+      | { agente: boolean; acao: boolean; meio: boolean; efeito: boolean; detalhamento: boolean }
+      | undefined,
   };
 }
 
@@ -153,5 +165,180 @@ describe('validarCorrecaoIA — descarte de trechos alucinados', () => {
     if (r.success) {
       expect(r.data.erros).toHaveLength(1);
     }
+  });
+});
+
+describe('validarCorrecaoIA — consistência dos elementos de C5', () => {
+  it('rejeita 4 elementos declarados presentes com nota abaixo de 160 (bug real encontrado em teste manual)', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[4].elementos_c5 = { agente: true, acao: true, meio: true, efeito: true, detalhamento: false };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita 4 elementos presentes com nota 160', () => {
+    const data = correcaoBase([120, 120, 120, 120, 160]);
+    data.competencias[4].elementos_c5 = { agente: true, acao: true, meio: true, efeito: true, detalhamento: false };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita 0 elementos presentes com nota diferente de 0', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[4].elementos_c5 = { agente: false, acao: false, meio: false, efeito: false, detalhamento: false };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita 2-3 elementos presentes com nota 120 (faixa intermediária não travada)', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[4].elementos_c5 = { agente: true, acao: true, meio: false, efeito: true, detalhamento: false };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+
+  it('não aplica a regra quando elementos_c5 não foi enviado (compatibilidade)', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+});
+
+describe('validarCorrecaoIA — consistência das habilidades de C1', () => {
+  it('rejeita 4 habilidades presentes com nota abaixo de 160', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[0].habilidades_c1 = {
+      ortografia_e_acentuacao: true,
+      concordancia_e_regencia: true,
+      pontuacao_adequada: true,
+      registro_formal_sem_oralidade: true,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita 4 habilidades presentes com nota 160', () => {
+    const data = correcaoBase([160, 120, 120, 120, 120]);
+    data.competencias[0].habilidades_c1 = {
+      ortografia_e_acentuacao: true,
+      concordancia_e_regencia: true,
+      pontuacao_adequada: true,
+      registro_formal_sem_oralidade: true,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita 0 habilidades presentes com nota acima de 80', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[0].habilidades_c1 = {
+      ortografia_e_acentuacao: false,
+      concordancia_e_regencia: false,
+      pontuacao_adequada: false,
+      registro_formal_sem_oralidade: false,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita 0 habilidades presentes com nota 80', () => {
+    const data = correcaoBase([80, 120, 120, 120, 120]);
+    data.competencias[0].habilidades_c1 = {
+      ortografia_e_acentuacao: false,
+      concordancia_e_regencia: false,
+      pontuacao_adequada: false,
+      registro_formal_sem_oralidade: false,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+
+  it('rejeita nota 200 em C1 quando há 2 ou mais erros grounded relacionados à Competência I', () => {
+    const data = correcaoBase([200, 120, 120, 120, 120]);
+    (data as any).erros = [
+      { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'concordancia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
+      { id: 'e2', trecho: 'Parágrafo três com outro', tipo: 'ortografia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
+    ];
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita nota 200 em C1 com apenas 1 erro grounded relacionado à Competência I', () => {
+    const data = correcaoBase([200, 120, 120, 120, 120]);
+    (data as any).erros = [
+      { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'concordancia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
+    ];
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+});
+
+describe('validarCorrecaoIA — consistência das habilidades de C3', () => {
+  it('rejeita 4 habilidades presentes com nota abaixo de 160', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[2].habilidades_c3 = {
+      tese_clara: true,
+      argumentos_bem_selecionados: true,
+      progressao_logica: true,
+      conclusao_articulada: true,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('rejeita 0 habilidades presentes com nota acima de 80', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[2].habilidades_c3 = {
+      tese_clara: false,
+      argumentos_bem_selecionados: false,
+      progressao_logica: false,
+      conclusao_articulada: false,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('aceita 2-3 habilidades presentes na faixa intermediária', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[2].habilidades_c3 = {
+      tese_clara: true,
+      argumentos_bem_selecionados: true,
+      progressao_logica: false,
+      conclusao_articulada: false,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+  });
+});
+
+describe('validarCorrecaoIA — consistência das habilidades de C4', () => {
+  it('rejeita 4 habilidades presentes com nota abaixo de 160', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[3].habilidades_c4 = {
+      conectivos_interparagrafos: true,
+      conectivos_intraparagrafos_variados: true,
+      ausencia_repeticao_excessiva: true,
+      ausencia_marcadores_orais: true,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('rejeita 0 habilidades presentes com nota acima de 80', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    data.competencias[3].habilidades_c4 = {
+      conectivos_interparagrafos: false,
+      conectivos_intraparagrafos_variados: false,
+      ausencia_repeticao_excessiva: false,
+      ausencia_marcadores_orais: false,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('não aplica a regra quando habilidades_c4 não foi enviado (compatibilidade)', () => {
+    const data = correcaoBase([120, 120, 120, 120, 120]);
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
   });
 });

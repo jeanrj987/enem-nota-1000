@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corrigirRedacaoComIA } from '@/lib/openai';
+import { corrigirRedacaoComDuplaCorrecao } from '@/lib/openai';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const correcao = await corrigirRedacaoComIA(
+    const correcao = await corrigirRedacaoComDuplaCorrecao(
       texto,
       tema || 'Tema Livre',
       titulo || 'Sem título'

@@ -17,6 +17,35 @@ export function contarParagrafos(texto: string): number {
   return Math.max(porQuebraSimples.length, 1);
 }
 
+const ElementosC5Schema = z.object({
+  agente: z.boolean(),
+  acao: z.boolean(),
+  meio: z.boolean(),
+  efeito: z.boolean(),
+  detalhamento: z.boolean(),
+});
+
+const HabilidadesC1Schema = z.object({
+  ortografia_e_acentuacao: z.boolean(),
+  concordancia_e_regencia: z.boolean(),
+  pontuacao_adequada: z.boolean(),
+  registro_formal_sem_oralidade: z.boolean(),
+});
+
+const HabilidadesC3Schema = z.object({
+  tese_clara: z.boolean(),
+  argumentos_bem_selecionados: z.boolean(),
+  progressao_logica: z.boolean(),
+  conclusao_articulada: z.boolean(),
+});
+
+const HabilidadesC4Schema = z.object({
+  conectivos_interparagrafos: z.boolean(),
+  conectivos_intraparagrafos_variados: z.boolean(),
+  ausencia_repeticao_excessiva: z.boolean(),
+  ausencia_marcadores_orais: z.boolean(),
+});
+
 const CompetenciaSchema = z.object({
   numero: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
   nome: z.string().min(1),
@@ -28,6 +57,12 @@ const CompetenciaSchema = z.object({
   comentario: z.string().min(1),
   pontos_fortes: z.array(z.string()).optional().default([]),
   pontos_melhoria: z.array(z.string()).optional().default([]),
+  // Cada campo abaixo é preenchido apenas na competência correspondente — ver
+  // regras de consistência em validarCorrecaoIA.
+  habilidades_c1: HabilidadesC1Schema.optional(),
+  habilidades_c3: HabilidadesC3Schema.optional(),
+  habilidades_c4: HabilidadesC4Schema.optional(),
+  elementos_c5: ElementosC5Schema.optional(),
 });
 
 const TipoErroSchema = z.enum([
@@ -156,6 +191,66 @@ export function validarCorrecaoIA(raw: unknown, textoOriginal: string): Validaca
     }
   }
 
+  // Regra de consistência de C5: o modelo declara quais dos 5 elementos da
+  // proposta de intervenção (Agente, Ação, Meio, Efeito, Detalhamento) estão
+  // presentes como campos estruturados, em vez de só descrever em texto livre.
+  // Só travamos as faixas inequívocas da matriz (4-5 elementos ⇒ nota alta;
+  // 0 elementos ⇒ nota 0) — as faixas intermediárias (1, 2-3 elementos, ou
+  // "proposta genérica") envolvem julgamento qualitativo que não dá pra reduzir
+  // a uma contagem mecânica, então não são travadas aqui.
+  if (!data.anulada) {
+    const c5 = data.competencias.find((c) => c.numero === 5);
+    if (c5?.elementos_c5) {
+      const presentes = Object.values(c5.elementos_c5).filter(Boolean).length;
+      if (presentes >= 4 && c5.nota < 160) {
+        return {
+          success: false,
+          error: `Competência V declara ${presentes} de 5 elementos presentes, mas recebeu nota ${c5.nota} — 4 ou 5 elementos exige nota mínima de 160`,
+        };
+      }
+      if (presentes === 0 && c5.nota !== 0) {
+        return {
+          success: false,
+          error: `Competência V declara 0 elementos presentes, mas recebeu nota ${c5.nota} em vez de 0`,
+        };
+      }
+    }
+  }
+
+  // Regra de consistência de C1, C3 e C4: cada uma declara 4 habilidades
+  // estruturadas (ver schemas acima). Mesma lógica de C5 — só travamos as
+  // pontas inequívocas: se as 4 habilidades foram marcadas como presentes,
+  // a nota não pode ficar na faixa "mediana ou pior" (< 160); se nenhuma foi
+  // marcada como presente, a nota não pode ficar na faixa "boa ou melhor" (> 80).
+  // As faixas do meio continuam por conta do julgamento qualitativo do modelo.
+  if (!data.anulada) {
+    const regrasHabilidades: { numero: 1 | 3 | 4; campo: 'habilidades_c1' | 'habilidades_c3' | 'habilidades_c4' }[] = [
+      { numero: 1, campo: 'habilidades_c1' },
+      { numero: 3, campo: 'habilidades_c3' },
+      { numero: 4, campo: 'habilidades_c4' },
+    ];
+
+    for (const { numero, campo } of regrasHabilidades) {
+      const competencia = data.competencias.find((c) => c.numero === numero);
+      const habilidades = competencia?.[campo];
+      if (!competencia || !habilidades) continue;
+
+      const presentes = Object.values(habilidades).filter(Boolean).length;
+      if (presentes === 4 && competencia.nota < 160) {
+        return {
+          success: false,
+          error: `Competência ${numero} declara as 4 habilidades presentes, mas recebeu nota ${competencia.nota} — deveria ser no mínimo 160`,
+        };
+      }
+      if (presentes === 0 && competencia.nota > 80) {
+        return {
+          success: false,
+          error: `Competência ${numero} declara 0 habilidades presentes, mas recebeu nota ${competencia.nota} — não pode passar de 80`,
+        };
+      }
+    }
+  }
+
   const errosValidos = data.erros.filter((erro) => {
     const existeNoTexto = textoOriginal.includes(erro.trecho.trim());
     if (!existeNoTexto) {
@@ -163,6 +258,23 @@ export function validarCorrecaoIA(raw: unknown, textoOriginal: string): Validaca
     }
     return existeNoTexto;
   });
+
+  // Checagem cruzada de C1: se a nota for a máxima (200 — "poucos ou nenhum
+  // deslize"), mas o próprio modelo listou 2 ou mais erros gramaticais válidos
+  // (grounded) relacionados a C1 em erros[], há uma contradição entre a nota
+  // e os próprios apontamentos do modelo.
+  if (!data.anulada) {
+    const c1 = data.competencias.find((c) => c.numero === 1);
+    if (c1 && c1.nota === 200) {
+      const errosC1 = errosValidos.filter((e) => e.competencia_relacionada === 1);
+      if (errosC1.length >= 2) {
+        return {
+          success: false,
+          error: `Competência I recebeu nota 200 ("poucos ou nenhum deslize"), mas o próprio modelo listou ${errosC1.length} erros gramaticais válidos relacionados a essa competência`,
+        };
+      }
+    }
+  }
 
   return {
     success: true,

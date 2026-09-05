@@ -233,6 +233,20 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
         </div>
       )}
 
+      {correcao.reconciliacao && !correcao.reconciliacao.correcaoUnica && (
+        <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/60 flex items-start gap-3">
+          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Esta nota é o resultado de <strong className="text-slate-300">duas correções independentes</strong>,
+            reconciliadas (mesmo protocolo usado pela banca do ENEM: dois corretores, com um terceiro em caso de
+            divergência). Notas obtidas nas correções individuais:{' '}
+            <span className="font-mono">{correcao.reconciliacao.notasIndividuais.join(' / ')}</span>
+            {correcao.reconciliacao.terceiraCorrecaoAcionada &&
+              ' — a divergência entre as duas primeiras exigiu uma terceira correção de arbitragem.'}
+          </p>
+        </div>
+      )}
+
       {/* Top Banner de Resumo da Nota */}
       <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />

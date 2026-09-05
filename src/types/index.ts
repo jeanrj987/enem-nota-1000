@@ -12,6 +12,35 @@ export type TipoErro =
   | 'proposta_intervencao'
   | 'outro';
 
+export interface ElementosC5 {
+  agente: boolean;
+  acao: boolean;
+  meio: boolean;
+  efeito: boolean;
+  detalhamento: boolean;
+}
+
+export interface HabilidadesC1 {
+  ortografia_e_acentuacao: boolean;
+  concordancia_e_regencia: boolean;
+  pontuacao_adequada: boolean;
+  registro_formal_sem_oralidade: boolean;
+}
+
+export interface HabilidadesC3 {
+  tese_clara: boolean;
+  argumentos_bem_selecionados: boolean;
+  progressao_logica: boolean;
+  conclusao_articulada: boolean;
+}
+
+export interface HabilidadesC4 {
+  conectivos_interparagrafos: boolean;
+  conectivos_intraparagrafos_variados: boolean;
+  ausencia_repeticao_excessiva: boolean;
+  ausencia_marcadores_orais: boolean;
+}
+
 export interface Competencia {
   numero: CompetenciaNumero;
   nome: string;
@@ -21,6 +50,10 @@ export interface Competencia {
   comentario: string;
   pontos_fortes?: string[];
   pontos_melhoria?: string[];
+  habilidades_c1?: HabilidadesC1; // preenchido apenas na Competência 1
+  habilidades_c3?: HabilidadesC3; // preenchido apenas na Competência 3
+  habilidades_c4?: HabilidadesC4; // preenchido apenas na Competência 4
+  elementos_c5?: ElementosC5; // preenchido apenas na Competência 5
 }
 
 export interface ErroIdentificado {
@@ -30,6 +63,14 @@ export interface ErroIdentificado {
   correcao: string;
   explicacao: string;
   competencia_relacionada: CompetenciaNumero;
+}
+
+export interface ReconciliacaoInfo {
+  notasIndividuais: number[]; // nota_geral de cada correção independente realizada
+  divergencia: number; // diferença entre as duas notas usadas na média final
+  terceiraCorrecaoAcionada: boolean; // true se a divergência exigiu uma 3ª correção de arbitragem
+  correcaoUnica: boolean; // true se só 1 correção pôde ser usada (a outra falhou)
+  divergenciaDeAnulacao?: boolean; // true se as correções discordaram sobre anulação total
 }
 
 export interface Correcao {
@@ -46,6 +87,7 @@ export interface Correcao {
   proximos_passos: string[];
   tempo_analise_ms?: number;
   created_at: string;
+  reconciliacao?: ReconciliacaoInfo; // presente quando a nota vem de dupla correção
 }
 
 export interface Redacao {

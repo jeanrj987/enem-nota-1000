@@ -9,6 +9,13 @@
  *
  * Requer GEMINI_API_KEY e/ou OPENAI_API_KEY em .env.local — cada execução é
  * uma chamada real e paga ao provedor configurado.
+ *
+ * IMPORTANTE: este harness usa corrigirRedacaoComIA (correção única), de
+ * propósito — é o que mede a variância "crua" do modelo entre execuções. Em
+ * produção, /api/corrigir usa corrigirRedacaoComDuplaCorrecao (duas correções
+ * reconciliadas, ver src/lib/reconciliacao.ts), que reduz mas não elimina essa
+ * variância. Os números de consistência aqui são um limite superior da
+ * variância real que o aluno recebe, não uma medição direta dela.
  */
 import fs from 'fs';
 import path from 'path';

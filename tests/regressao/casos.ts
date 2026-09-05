@@ -182,4 +182,47 @@ Portanto, o governo deveria criar projetos para manter os jovens na escola, como
       proximos_passos: [],
     },
   },
+  {
+    id: 'evasao_escolar_gravidez_c5_consistente_2026_09_04',
+    descricao:
+      'Redação que originalmente revelou a inconsistência de C5 (comentário descrevia 4 elementos presentes, mas nota era de 3 elementos). Caso abaixo é a resposta JÁ CORRIGIDA, capturada ao vivo após a implementação da regra elementos_c5 — serve para travar essa regra especificamente.',
+    data: '2026-09-04',
+    tema: 'Evasão escolar no Brasil',
+    texto: `A escola é um lugar importante para a formação das pessoas. No entanto, muitos jovens abandonam a escola todos os anos no Brasil. A evasão escolar é um problema sério que precisa ser discutido pela sociedade.
+
+Um dos motivos da evasão é a gravidez na adolescência. Muitas meninas engravidam e não conseguem continuar estudando. Além disso, o trabalho infantil e a necessidade de ajudar em casa também fazem os jovens desistirem. Além disso, a falta de estrutura das escolas, como a falta de professores, atrapalha o aprendizado.
+
+Outro motivo é que muitos jovens não veem sentido no que estudam. Eles acham que a escola não vai ajudar na vida deles e preferem fazer outras coisas. Isso é um reflexo da desigualdade social, que é um problema antigo do Brasil.
+
+Concluindo, o governo deveria fazer mais pela educação, dando apoio às famílias e melhorando as escolas. Também é importante que a sociedade cobre das autoridades. Assim, os jovens vão permanecer na escola e ter um futuro melhor.`,
+    camposCompletos: false,
+    respostaModelo: {
+      anulada: false,
+      motivo_anulacao: null,
+      nota_geral: 600,
+      competencias: [
+        { numero: 1, nome: 'Competência 1', descricao_curta: 'x', nota: 120, nivel: 3, comentario: 'Domínio mediano da norma culta.', pontos_fortes: [], pontos_melhoria: [] },
+        { numero: 2, nome: 'Competência 2', descricao_curta: 'x', nota: 120, nivel: 3, comentario: '4 parágrafos reais, sem repertório legitimado.', pontos_fortes: [], pontos_melhoria: [] },
+        { numero: 3, nome: 'Competência 3', descricao_curta: 'x', nota: 120, nivel: 3, comentario: 'Causas listadas sem aprofundamento crítico.', pontos_fortes: [], pontos_melhoria: [] },
+        { numero: 4, nome: 'Competência 4', descricao_curta: 'x', nota: 120, nivel: 3, comentario: 'Conectivos simples, repertório limitado.', pontos_fortes: [], pontos_melhoria: [] },
+        {
+          numero: 5,
+          nome: 'Competência 5',
+          descricao_curta: 'x',
+          nota: 120,
+          nivel: 3,
+          comentario:
+            "Sua proposta de intervenção apresenta 3 dos 5 elementos obrigatórios: Agente ('o governo'), Ação ('fazer mais pela educação') e Efeito ('Assim, os jovens vão permanecer na escola e ter um futuro melhor'). Faltaram o Meio/Modo (explicar COMO o governo fará isso de forma prática) e o Detalhamento de algum dos elementos.",
+          pontos_fortes: [],
+          pontos_melhoria: [],
+          elementos_c5: { agente: true, acao: true, meio: false, efeito: true, detalhamento: false },
+        },
+      ],
+      erros: [],
+      versao_reescrita: '[placeholder — não capturado na resposta original]',
+      feedback_pedagogico: '[placeholder — não capturado na resposta original]',
+      pontos_positivos: [],
+      proximos_passos: [],
+    },
+  },
 ];
