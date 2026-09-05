@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Competencia, Correcao, ErroIdentificado } from '@/types';
+import { gerarId } from './ids';
 
 const NOTAS_VALIDAS = [0, 40, 80, 120, 160, 200] as const;
 
@@ -288,8 +289,8 @@ export function montarCorrecao(
   duracaoMs: number
 ): Correcao {
   return {
-    id: 'cor_' + Math.random().toString(36).substring(2, 9),
-    redacao_id: 'red_' + Math.random().toString(36).substring(2, 9),
+    id: gerarId('cor'),
+    redacao_id: gerarId('red'),
     anulada: data.anulada,
     motivo_anulacao: data.motivo_anulacao,
     nota_geral: data.nota_geral,

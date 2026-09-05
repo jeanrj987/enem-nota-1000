@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nota 1000 AI
 
-## Getting Started
+Corretor de redações do ENEM com IA: o aluno digita ou envia (PDF/DOCX/TXT) uma redação dissertativo-argumentativa e recebe, em segundos, nota por competência (0-1000), erros marcados no texto, versão reescrita em padrão nota 1000 e um plano de ação pedagógico — tudo ancorado na matriz oficial de correção do INEP.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, Turbopack) + React 19 + TypeScript
+- **Tailwind CSS 4**
+- **Zod** para validação estrutural da resposta da IA
+- **Gemini** (principal) e **OpenAI** (fallback) como provedores de correção
+- **Vitest** para testes automatizados
+- **Supabase** (opcional, ainda não integrado — ver Vault/05)
+
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Configure `.env.local` a partir de `.env.example` com pelo menos uma chave de API (`GEMINI_API_KEY` e/ou `OPENAI_API_KEY`) para a correção funcionar de verdade — sem chave configurada, a rota `/api/corrigir` retorna erro explícito em vez de inventar uma nota.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Sobe o servidor de desenvolvimento |
+| `npm run build` / `npm run start` | Build e execução em produção |
+| `npm run lint` | ESLint |
+| `npm run test` | Roda a suíte de testes (Vitest) uma vez |
+| `npm run test:watch` | Roda os testes em modo watch |
+| `npm run calibrar` | Harness de calibração (R8): mede acurácia/consistência do corretor contra redações com nota oficial conhecida — faz chamadas reais e pagas à API |
 
-To learn more about Next.js, take a look at the following resources:
+## Arquitetura da correção
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+A lógica de correção fica em `src/lib/`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **`openai.ts`** — chama o(s) provedor(es) de IA. `corrigirRedacaoComDuplaCorrecao` (usada em produção) faz duas correções independentes em paralelo e reconcilia pela média — se divergirem mais de 100 pontos, uma terceira correção arbitra, no mesmo espírito do protocolo de dois corretores do ENEM.
+- **`correcao-schema.ts`** — schema Zod e regras de consistência da resposta da IA: soma das competências bate com a nota geral, cada competência declara "habilidades" estruturadas (não só texto livre) com trava nas faixas inequívocas, teto de nota em texto sem parágrafos (monobloco), e regra de anulação total (fuga de tema, tipo textual incorreto, texto curto, cópia dos motivadores).
+- **`reconciliacao.ts`** — lógica de média/arbitragem entre múltiplas correções.
+- **`prompt-agente.ts`** — o system prompt com a matriz oficial do INEP.
+- **`calibracao/`** e **`scripts/calibrar.ts`** — conjunto de redações com nota oficial conhecida, usado para medir acurácia real do corretor.
 
-## Deploy on Vercel
+Testes em `tests/`: `correcao-schema.test.ts` e `reconciliacao.test.ts` cobrem as regras de negócio isoladamente (sem chamar API), e `regressao.test.ts` trava casos reais já verificados manualmente contra a matriz do ENEM.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Limitações conhecidas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Autenticação, cobrança e persistência (Supabase) ainda não estão implementadas — hoje o app roda inteiramente em `localStorage`.
+- A calibração de acurácia (`npm run calibrar`) só tem gabarito oficial para redações nota 1000 (teto); falta corpus de nota mediana/baixa avaliado por corretor humano.
+- Sem rate limiting nas rotas públicas — não expor `/api/corrigir` a tráfego não controlado sem adicionar isso primeiro.
+
+Mais contexto de arquitetura e decisões em `Vault/`.

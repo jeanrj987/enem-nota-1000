@@ -4,6 +4,7 @@ import { Correcao, ErroIdentificado } from '@/types';
 import { SYSTEM_PROMPT_ENEM } from './prompt-agente';
 import { contarParagrafos, montarCorrecao, validarCorrecaoIA } from './correcao-schema';
 import { LIMIAR_DIVERGENCIA, reconciliarCorrecoes } from './reconciliacao';
+import { gerarId } from './ids';
 
 export async function corrigirRedacaoComIA(
   texto: string,
@@ -279,8 +280,8 @@ export function gerarCorrecaoMock(
   const nota_geral = c1 + c2 + c3 + c4 + c5;
 
   return {
-    id: 'cor_' + Math.random().toString(36).substring(2, 9),
-    redacao_id: 'red_' + Math.random().toString(36).substring(2, 9),
+    id: gerarId('cor'),
+    redacao_id: gerarId('red'),
     anulada: false,
     motivo_anulacao: null,
     nota_geral,

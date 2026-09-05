@@ -1,4 +1,5 @@
 import { Correcao, Competencia, ReconciliacaoInfo } from '@/types';
+import { gerarId } from './ids';
 
 /**
  * Limiar de divergência entre correções, em pontos de nota_geral, acima do
@@ -55,8 +56,8 @@ export function reconciliarCorrecoes(correcoes: Correcao[]): Correcao {
     const escolhida = a.nota_geral >= b.nota_geral ? a : b;
     return {
       ...escolhida,
-      id: 'cor_' + Math.random().toString(36).substring(2, 9),
-      redacao_id: 'red_' + Math.random().toString(36).substring(2, 9),
+      id: gerarId('cor'),
+      redacao_id: gerarId('red'),
       reconciliacao: {
         notasIndividuais: correcoes.map((c) => c.nota_geral),
         divergencia: menorDivergencia,
@@ -86,8 +87,8 @@ export function reconciliarCorrecoes(correcoes: Correcao[]): Correcao {
 
   return {
     ...representativa,
-    id: 'cor_' + Math.random().toString(36).substring(2, 9),
-    redacao_id: 'red_' + Math.random().toString(36).substring(2, 9),
+    id: gerarId('cor'),
+    redacao_id: gerarId('red'),
     nota_geral: notaGeralMedia,
     competencias: competenciasMedia,
     reconciliacao: {
