@@ -96,7 +96,22 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ---
 
+### ADR 013: Paywall aplicado na origem do dado, não na interface
+- **Status**: Aprovado e Implementado
+- **Contexto**: Uma revisão de código encontrou que o paywall do ADR 012 era puramente cosmético. A correção completa (nota, competências, erros, reescrita) era gerada, devolvida ao navegador pela `/api/corrigir`, **gravada no banco pelo próprio cliente** e só então borrada com CSS. Bastava abrir o inspetor e remover o `blur` — ou ler a resposta da requisição — para obter o produto pago de graça. A RLS de `redacoes` também não ajudava: só verificava se a linha pertencia ao usuário, nunca se ele havia pagado.
+- **Decisão**: mover a fronteira do paywall da tela para o dado. (1) A correção saiu da coluna `redacoes.correcao` para a tabela `correcoes` (`supabase/schema-paywall.sql`), cuja policy de `select` exige, além de posse, `exists (... assinaturas ativa e não expirada)` — quem não pagou não recebe a linha do banco, e isso não é uma decisão de interface. (2) A persistência deixou de ser feita pelo cliente: `/api/corrigir` grava redação e correção com service role (`src/lib/salvar-correcao.ts`) e decide o que devolver conforme `assinaturaAtivaDoUsuario()` — correção completa para assinante, apenas `chamariz` (`total_erros`, `anulada`) para os demais. (3) Nova tela `CorrecaoBloqueada` mostra o chamariz real e um **esqueleto** borrado, deliberadamente vazio: borrar dado verdadeiro seria falso conforto, já que o inspetor o revelaria.
+- **Consequência**: o cliente perdeu a capacidade de gravar ou alterar o próprio diagnóstico, o que também fecha a porta para forjar nota. `salvarRedacao` deixou de existir em `storage.ts`.
+- **Pendência**: o fixture `MOCK_REDACOES_INICIAIS` do localStorage ainda traz uma correção completa de demonstração; ela não é o texto do usuário, mas convém revisar se deve continuar aparecendo no histórico como se fosse.
+
+---
+
 ## 📋 Changelog do Projeto
+
+### [v1.9.0] - 2026-09-05 (paywall real, aplicado no banco)
+- **Corrigido**: o paywall era apenas visual — a correção completa ia inteira para o navegador e só era borrada com CSS. Agora a correção vive na tabela `correcoes`, cuja RLS exige assinatura ativa, e a persistência passou para o servidor. Ver ADR 013.
+- **Adicionado**: `supabase/schema-paywall.sql` (migra as correções existentes sem perda), `src/lib/assinatura-servidor.ts`, `src/lib/salvar-correcao.ts` e o componente `CorrecaoBloqueada`.
+- **Removido**: `salvarRedacao` de `storage.ts` — o cliente não grava mais redação nem correção, o que também impede forjar a própria nota.
+- **Testes**: 92 → 93, incluindo um caso que trava a regressão ("nunca inventa nota quando a correção está bloqueada").
 
 ### [v1.8.0] - 2026-09-05 (redesign da página de vendas — identidade "placar")
 - **Alterado**: `/vendas` redesenhada por completo. O usuário apontou que o visual estava com "cara de IA" — diagnóstico confirmado no CSS: fundo quase preto azulado, glassmorphism, gradiente azul→roxo→rosa, orbes desfocados e todo card idêntico com ícone colorido em caixa arredondada. Nova identidade **"placar"**: a nota vira o herói (`540 → 920` em condensada pesada), competências viram painel de estatísticas com barras, um único acento (verde-limão `#C6F24E`), superfícies chapadas e cantos retos. Ver [[04 - Arquitetura Técnica/Componentes & Design System]].

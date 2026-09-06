@@ -13,8 +13,8 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { RequerLogin } from '@/components/RequerLogin';
 import { CorrecaoView } from '@/components/CorrecaoView';
+import { CorrecaoBloqueada } from '@/components/CorrecaoBloqueada';
 import { buscarRedacaoPorId } from '@/lib/storage';
-import { temAcessoAtivo } from '@/lib/assinatura';
 import { Redacao } from '@/types';
 
 export default function PaginaResultadoCorrecao() {
@@ -23,14 +23,15 @@ export default function PaginaResultadoCorrecao() {
   const id = params?.id as string;
 
   const [redacao, setRedacao] = useState<Redacao | null>(null);
-  const [assinaturaAtiva, setAssinaturaAtiva] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Não é preciso consultar a assinatura aqui: a correção só vem do banco
+  // quando há plano ativo (RLS de `correcoes`). Se veio `chamariz` em vez
+  // de `correcao`, é porque o acesso está bloqueado — na origem, não na tela.
   useEffect(() => {
     if (id) {
-      Promise.all([buscarRedacaoPorId(id), temAcessoAtivo()]).then(([encontrada, ativa]) => {
+      buscarRedacaoPorId(id).then((encontrada) => {
         if (encontrada) setRedacao(encontrada);
-        setAssinaturaAtiva(ativa);
         setLoading(false);
       });
     }
@@ -57,6 +58,8 @@ export default function PaginaResultadoCorrecao() {
             <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto" />
             <p className="text-sm text-slate-400">Carregando relatório da redação...</p>
           </div>
+        ) : redacao && !redacao.correcao && redacao.chamariz ? (
+          <CorrecaoBloqueada redacao={redacao} chamariz={redacao.chamariz} />
         ) : !redacao || !redacao.correcao ? (
           <div className="glass-panel p-16 rounded-3xl border border-slate-800 text-center space-y-4">
             <div className="w-12 h-12 rounded-xl bg-red-950/50 border border-red-800/60 flex items-center justify-center mx-auto text-red-400">
@@ -77,7 +80,7 @@ export default function PaginaResultadoCorrecao() {
             </div>
           </div>
         ) : (
-          <CorrecaoView redacao={redacao} correcao={redacao.correcao} bloqueado={!assinaturaAtiva} />
+          <CorrecaoView redacao={redacao} correcao={redacao.correcao} />
         )}
         </RequerLogin>
       </main>

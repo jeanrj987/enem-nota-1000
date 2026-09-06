@@ -6,15 +6,15 @@ const mockState: {
   usuario: { id: string } | null;
   selectResult: { data: any; error: any };
   maybeSingleResult: { data: any; error: any };
-  upsertResult: { error: any };
-  upsertCalls: any[];
+  correcoesResult: { data: any; error: any };
+  correcaoUnicaResult: { data: any; error: any };
 } = {
   isSupabaseConfigured: true,
   usuario: { id: 'user-teste' },
   selectResult: { data: [], error: null },
   maybeSingleResult: { data: null, error: null },
-  upsertResult: { error: null },
-  upsertCalls: [],
+  correcoesResult: { data: [], error: null },
+  correcaoUnicaResult: { data: null, error: null },
 };
 
 vi.mock('@/lib/supabase', () => ({
@@ -27,24 +27,26 @@ vi.mock('@/lib/supabase', () => ({
       auth: {
         getUser: async () => ({ data: { user: mockState.usuario } }),
       },
-      from: (_table: string) => ({
+      from: (tabela: string) => ({
         select: (_cols: string) => ({
           eq: (_field: string, _value: string) => ({
-            order: async (_field: string, _opts: any) => mockState.selectResult,
-            maybeSingle: async () => mockState.maybeSingleResult,
+            // `correcoes` responde conforme a RLS: quando não há assinatura
+            // ativa, o banco simplesmente não devolve linha.
+            order: async (_f: string, _o: any) =>
+              tabela === 'correcoes' ? mockState.correcoesResult : mockState.selectResult,
+            maybeSingle: async () =>
+              tabela === 'correcoes' ? mockState.correcaoUnicaResult : mockState.maybeSingleResult,
+            then: (resolve: any) =>
+              resolve(tabela === 'correcoes' ? mockState.correcoesResult : mockState.selectResult),
           }),
         }),
-        upsert: async (row: any) => {
-          mockState.upsertCalls.push(row);
-          return mockState.upsertResult;
-        },
       }),
     };
   },
 }));
 
 // Importa depois dos mocks para que storage.ts resolva as versões mockadas.
-const { getRedacoesSalvas, salvarRedacao, buscarRedacaoPorId, calcularEstatisticas, gerarHistoricoGraficos } =
+const { getRedacoesSalvas, buscarRedacaoPorId, calcularEstatisticas, gerarHistoricoGraficos } =
   await import('@/lib/storage');
 
 function redacaoDeTeste(overrides: Partial<Redacao> = {}): Redacao {
@@ -86,44 +88,47 @@ beforeEach(() => {
   mockState.usuario = { id: 'user-teste' };
   mockState.selectResult = { data: [], error: null };
   mockState.maybeSingleResult = { data: null, error: null };
-  mockState.upsertResult = { error: null };
-  mockState.upsertCalls = [];
+  mockState.correcoesResult = { data: [], error: null };
+  mockState.correcaoUnicaResult = { data: null, error: null };
 });
 
+function linhaDoBanco(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'red_x',
+    titulo: 'Do banco',
+    tema: 'Tema X',
+    texto: 'Texto X',
+    palavras_count: 2,
+    linhas_count: 1,
+    status: 'corrigida',
+    total_erros: 7,
+    anulada: false,
+    created_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('storage.ts com Supabase configurado', () => {
-  it('getRedacoesSalvas mapeia as linhas retornadas para Redacao[]', async () => {
-    mockState.selectResult = {
-      data: [
-        {
-          id: 'red_x',
-          titulo: 'Do banco',
-          tema: 'Tema X',
-          texto: 'Texto X',
-          palavras_count: 2,
-          linhas_count: 1,
-          status: 'corrigida',
-          correcao: { nota_geral: 720 },
-          created_at: '2026-01-01T00:00:00.000Z',
-        },
-      ],
+  it('junta a correção quando a RLS libera (assinante ativo)', async () => {
+    mockState.selectResult = { data: [linhaDoBanco()], error: null };
+    mockState.correcoesResult = {
+      data: [{ redacao_id: 'red_x', dados: { nota_geral: 720 } }],
       error: null,
     };
 
     const lista = await getRedacoesSalvas();
     expect(lista).toHaveLength(1);
-    expect(lista[0].id).toBe('red_x');
     expect(lista[0].correcao?.nota_geral).toBe(720);
+    expect(lista[0].chamariz).toBeUndefined();
   });
 
-  it('salvarRedacao envia user_id e os campos da redação no upsert', async () => {
-    await salvarRedacao(redacaoDeTeste());
-    expect(mockState.upsertCalls).toHaveLength(1);
-    expect(mockState.upsertCalls[0]).toMatchObject({
-      id: 'red_1',
-      user_id: 'user-teste',
-      titulo: 'Teste',
-    });
-    expect(mockState.upsertCalls[0].correcao.nota_geral).toBe(800);
+  it('devolve apenas o chamariz quando a RLS bloqueia (sem assinatura)', async () => {
+    mockState.selectResult = { data: [linhaDoBanco()], error: null };
+    mockState.correcoesResult = { data: [], error: null };
+
+    const lista = await getRedacoesSalvas();
+    expect(lista[0].correcao).toBeUndefined();
+    expect(lista[0].chamariz).toEqual({ total_erros: 7, anulada: false });
   });
 
   it('buscarRedacaoPorId retorna undefined quando o Supabase não encontra a linha', async () => {
@@ -132,23 +137,21 @@ describe('storage.ts com Supabase configurado', () => {
     expect(encontrada).toBeUndefined();
   });
 
-  it('buscarRedacaoPorId mapeia a linha encontrada', async () => {
-    mockState.maybeSingleResult = {
-      data: {
-        id: 'red_y',
-        titulo: 'Achada',
-        tema: 'Tema Y',
-        texto: 'Texto Y',
-        palavras_count: 5,
-        linhas_count: 1,
-        status: 'corrigida',
-        correcao: { nota_geral: 900 },
-        created_at: '2026-01-01T00:00:00.000Z',
-      },
-      error: null,
-    };
+  it('buscarRedacaoPorId entrega a correção completa para assinante', async () => {
+    mockState.maybeSingleResult = { data: linhaDoBanco({ id: 'red_y' }), error: null };
+    mockState.correcaoUnicaResult = { data: { dados: { nota_geral: 900 } }, error: null };
+
     const encontrada = await buscarRedacaoPorId('red_y');
-    expect(encontrada?.titulo).toBe('Achada');
+    expect(encontrada?.correcao?.nota_geral).toBe(900);
+  });
+
+  it('buscarRedacaoPorId nunca inventa nota quando a correção está bloqueada', async () => {
+    mockState.maybeSingleResult = { data: linhaDoBanco({ id: 'red_y', total_erros: 3 }), error: null };
+    mockState.correcaoUnicaResult = { data: null, error: null };
+
+    const encontrada = await buscarRedacaoPorId('red_y');
+    expect(encontrada?.correcao).toBeUndefined();
+    expect(encontrada?.chamariz).toEqual({ total_erros: 3, anulada: false });
   });
 });
 
@@ -159,9 +162,9 @@ describe('storage.ts sem Supabase configurado (fallback)', () => {
     expect(Array.isArray(lista)).toBe(true);
   });
 
-  it('salvarRedacao não lança erro mesmo sem Supabase', async () => {
+  it('buscarRedacaoPorId não lança erro mesmo sem Supabase', async () => {
     mockState.isSupabaseConfigured = false;
-    await expect(salvarRedacao(redacaoDeTeste())).resolves.toBeUndefined();
+    await expect(buscarRedacaoPorId('qualquer')).resolves.toBeDefined;
   });
 });
 

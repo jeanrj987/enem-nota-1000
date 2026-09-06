@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corrigirRedacaoComDuplaCorrecao } from '@/lib/openai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { assinaturaAtivaDoUsuario } from '@/lib/assinatura-servidor';
+import { salvarCorrecao } from '@/lib/salvar-correcao';
+import { gerarId } from '@/lib/ids';
 
 // Redação ENEM real tem no máximo 30 linhas — 8000 caracteres é uma margem
 // generosa para não barrar texto legítimo, mas evita abuso de custo com
@@ -60,15 +63,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const correcao = await corrigirRedacaoComDuplaCorrecao(
+    const temaFinal = tema || 'Tema Livre';
+    const tituloFinal = (titulo || '').trim() || `Redação sobre ${temaFinal.slice(0, 30)}`;
+
+    const correcao = await corrigirRedacaoComDuplaCorrecao(texto, temaFinal, tituloFinal);
+
+    // A persistência acontece aqui, e não no cliente: é o que permite guardar
+    // a correção completa mesmo para quem não pagou (ela fica esperando a
+    // assinatura) sem nunca entregá-la ao navegador.
+    const redacaoId = gerarId('red');
+    const chamariz = {
+      total_erros: correcao.erros.length,
+      anulada: correcao.anulada,
+    };
+
+    const persistiu = await salvarCorrecao({
+      redacaoId,
+      userId: userData.user.id,
       texto,
-      tema || 'Tema Livre',
-      titulo || 'Sem título'
-    );
+      tema: temaFinal,
+      titulo: tituloFinal,
+      correcao,
+      chamariz,
+    });
+
+    if (!persistiu) {
+      return NextResponse.json(
+        { error: 'Corrigimos sua redação, mas não conseguimos salvá-la. Tente novamente.' },
+        { status: 503 }
+      );
+    }
+
+    const assinante = await assinaturaAtivaDoUsuario(userData.user.id);
 
     return NextResponse.json({
       success: true,
-      correcao,
+      redacaoId,
+      ...(assinante ? { correcao } : { chamariz }),
     });
   } catch (error: any) {
     console.error('Erro na rota /api/corrigir:', error);

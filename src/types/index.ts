@@ -100,7 +100,19 @@ export interface Redacao {
   linhas_count: number;
   status: 'pendente' | 'corrigindo' | 'corrigida' | 'erro';
   created_at: string;
+  /** Só vem preenchida para quem tem assinatura ativa. Sem assinatura, a
+   * correção sequer sai do servidor — a RLS de `correcoes` bloqueia a
+   * leitura, e o cliente recebe apenas `chamariz`. */
   correcao?: Correcao;
+  /** Substitui a correção quando o acesso está bloqueado: dados suficientes
+   * para provar que a correção existe e criar interesse, sem entregar o
+   * diagnóstico pago. */
+  chamariz?: ChamarizCorrecao;
+}
+
+export interface ChamarizCorrecao {
+  total_erros: number;
+  anulada: boolean;
 }
 
 export interface TemaRedacao {

@@ -3,10 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Sparkles, Loader2 } from 'lucide-react';
-import { TEMAS_ENEM_SUGERIDOS, salvarRedacao } from '@/lib/storage';
-import { gerarId } from '@/lib/ids';
+import { TEMAS_ENEM_SUGERIDOS } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
-import { Redacao } from '@/types';
 import { SeletorTema } from './editor/SeletorTema';
 import { AreaProducaoTextual } from './editor/AreaProducaoTextual';
 import { ModalCarregamento } from './editor/ModalCarregamento';
@@ -146,27 +144,14 @@ export function Editor({
 
       const data = await res.json();
 
-      if (!res.ok || !data.correcao) {
+      if (!res.ok || !data.redacaoId) {
         throw new Error(data.error || 'Erro na resposta do corretor de IA.');
       }
 
-      const novaRedacao: Redacao = {
-        id: data.correcao.redacao_id || gerarId('red'),
-        titulo: titulo.trim() || `Redação sobre ${temaAtual.slice(0, 30)}...`,
-        tema: temaAtual,
-        texto,
-        palavras_count: palavras,
-        linhas_count: linhasAproximadas,
-        status: 'corrigida',
-        created_at: new Date().toISOString(),
-        correcao: data.correcao,
-      };
-
-      // Salvar (Supabase quando configurado, com fallback/mirror em localStorage)
-      await salvarRedacao(novaRedacao);
-
+      // A rota já persistiu a redação e a correção com service role — o
+      // cliente não grava nada e, sem assinatura, sequer recebe o diagnóstico.
       clearInterval(interval);
-      router.push(`/correcao/${novaRedacao.id}`);
+      router.push(`/correcao/${data.redacaoId}`);
     } catch (err: any) {
       clearInterval(interval);
       setIsCorrigindo(false);

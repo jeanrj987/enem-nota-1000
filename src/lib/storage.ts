@@ -174,24 +174,6 @@ function getRedacoesSalvasLocal(): Redacao[] {
   }
 }
 
-function salvarRedacaoLocal(redacao: Redacao): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const atuais = getRedacoesSalvasLocal();
-    const index = atuais.findIndex(r => r.id === redacao.id);
-    let novas: Redacao[];
-    if (index >= 0) {
-      novas = [...atuais];
-      novas[index] = redacao;
-    } else {
-      novas = [redacao, ...atuais];
-    }
-    localStorage.setItem(STORAGE_KEY_REDACOES, JSON.stringify(novas));
-  } catch (err) {
-    console.error('Erro ao salvar no localStorage:', err);
-  }
-}
-
 interface RedacaoRow {
   id: string;
   titulo: string;
@@ -200,11 +182,15 @@ interface RedacaoRow {
   palavras_count: number;
   linhas_count: number;
   status: Redacao['status'];
-  correcao: Correcao | null;
+  total_erros: number | null;
+  anulada: boolean | null;
   created_at: string;
 }
 
-function linhaParaRedacao(row: RedacaoRow): Redacao {
+/** A correção vem de `correcoes`, tabela cuja RLS exige assinatura ativa.
+ * Quando o usuário não tem plano, a consulta simplesmente não devolve a
+ * linha — não é uma decisão de interface, é o banco negando. */
+function linhaParaRedacao(row: RedacaoRow, correcao?: Correcao): Redacao {
   return {
     id: row.id,
     titulo: row.titulo,
@@ -214,7 +200,10 @@ function linhaParaRedacao(row: RedacaoRow): Redacao {
     linhas_count: row.linhas_count,
     status: row.status,
     created_at: row.created_at,
-    correcao: row.correcao ?? undefined,
+    correcao,
+    chamariz: correcao
+      ? undefined
+      : { total_erros: row.total_erros ?? 0, anulada: row.anulada ?? false },
   };
 }
 
@@ -234,42 +223,21 @@ export async function getRedacoesSalvas(): Promise<Redacao[]> {
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      return data.map(linhaParaRedacao);
+      const { data: correcoes } = await supabase
+        .from('correcoes')
+        .select('redacao_id, dados')
+        .eq('user_id', userId);
+
+      const porRedacao = new Map<string, Correcao>(
+        (correcoes ?? []).map((c) => [c.redacao_id as string, c.dados as Correcao])
+      );
+
+      return data.map((row) => linhaParaRedacao(row, porRedacao.get(row.id)));
     }
     console.error('Erro ao buscar redações no Supabase, usando localStorage:', error);
   }
 
   return getRedacoesSalvasLocal();
-}
-
-/**
- * Salva/atualiza uma redação. Sempre grava em localStorage (cache/fallback
- * imediato) e, se houver usuário autenticado com Supabase configurado,
- * tenta persistir lá também — sem bloquear nem falhar a operação principal
- * se a escrita remota falhar.
- */
-export async function salvarRedacao(redacao: Redacao): Promise<void> {
-  salvarRedacaoLocal(redacao);
-
-  const userId = await getUserId();
-  if (isSupabaseConfigured && supabase && userId) {
-    const { error } = await supabase.from('redacoes').upsert({
-      id: redacao.id,
-      user_id: userId,
-      titulo: redacao.titulo,
-      tema: redacao.tema,
-      texto: redacao.texto,
-      palavras_count: redacao.palavras_count,
-      linhas_count: redacao.linhas_count,
-      status: redacao.status,
-      correcao: redacao.correcao ?? null,
-      created_at: redacao.created_at,
-    });
-
-    if (error) {
-      console.error('Erro ao salvar redação no Supabase (mantida em localStorage):', error);
-    }
-  }
 }
 
 export async function buscarRedacaoPorId(id: string): Promise<Redacao | undefined> {
@@ -280,12 +248,22 @@ export async function buscarRedacaoPorId(id: string): Promise<Redacao | undefine
       .eq('id', id)
       .maybeSingle();
 
-    if (!error && data) return linhaParaRedacao(data);
+    if (!error && data) {
+      // Sem assinatura ativa, a RLS de `correcoes` não devolve nada aqui e a
+      // redação volta apenas com o chamariz.
+      const { data: correcao } = await supabase
+        .from('correcoes')
+        .select('dados')
+        .eq('redacao_id', id)
+        .maybeSingle();
+
+      return linhaParaRedacao(data, (correcao?.dados as Correcao) ?? undefined);
+    }
     if (error) console.error('Erro ao buscar redação no Supabase, tentando localStorage:', error);
   }
 
   const redacoes = getRedacoesSalvasLocal();
-  return redacoes.find(r => r.id === id);
+  return redacoes.find((r) => r.id === id);
 }
 
 export function calcularEstatisticas(redacoes: Redacao[]): EstatisticasUsuario {
