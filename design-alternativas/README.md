@@ -20,15 +20,22 @@ semanas~~ *hoje mesmo*".
 
 ### Como restaurar
 
-1. Copiar o arquivo para `src/app/vendas/page.tsx`.
-2. Conferir se as fontes ainda estão carregadas em `src/app/layout.tsx`:
-   `Newsreader` (`--font-serifada`), `Karla` (`--font-humanista`) e `Caveat`
-   (`--font-manuscrita`). Se tiverem sido removidas por limpeza, re-adicionar
-   via `next/font/google` e incluir as variáveis no `className` do `<html>`.
-3. Conferir se o bloco `.tema-papel` e os utilitários `.fonte-serifada`,
-   `.fonte-humanista`, `.fonte-manuscrita`, `.margem-caderno`,
-   `.bloco-pautado`, `.risco-corretor` e `.carimbo` continuam em
-   `src/app/globals.css`.
+1. Copiar `vendas-caderno-e-caneta-vermelha.tsx` para `src/app/vendas/page.tsx`.
+2. Colar o conteúdo de `vendas-caderno.css` no fim de `src/app/globals.css`
+   (foi removido de lá para não deixar CSS morto no site em produção).
+3. Recarregar as três fontes em `src/app/layout.tsx` — também removidas por
+   estarem sendo baixadas por todo visitante sem nenhuma tela usá-las:
+
+   ```ts
+   import { Newsreader, Karla, Caveat } from 'next/font/google';
+
+   const newsreader = Newsreader({ subsets: ['latin'], variable: '--font-serifada' });
+   const karla = Karla({ subsets: ['latin'], variable: '--font-humanista' });
+   const caveat = Caveat({ subsets: ['latin'], variable: '--font-manuscrita' });
+   ```
+
+   E incluir `${newsreader.variable} ${karla.variable} ${caveat.variable}` no
+   `className` do elemento `<html>`.
 
 O componente depende apenas do que a versão em produção já usa
 (`useAuth`, `supabase`, `PlanoId`, `/api/checkout`), então o fluxo de compra

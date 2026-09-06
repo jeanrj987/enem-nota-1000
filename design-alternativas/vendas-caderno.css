@@ -1,0 +1,73 @@
+/* ---------------------------------------------------------------------------
+   Identidade "caderno & caneta vermelha" (/vendas).
+   Fundo de papel, tinta quente, marcações do corretor em vermelho e a caneta
+   azul do aluno. Nada de gradiente, glass ou orbe desfocado: a página imita
+   uma folha de redação corrigida à mão, que é o próprio produto.
+   --------------------------------------------------------------------------- */
+.tema-papel {
+  --papel: #f7f4ed;
+  --folha: #fffdf8;
+  --tinta: #1c1917;
+  --tinta-suave: #57534e;
+  --tinta-fraca: #8a827a;
+  --pauta: #e6ddcd;
+  --regua: #ded6c6;
+  --vermelho: #c0392b;
+  --vermelho-claro: #f6e4e1;
+  --azul-caneta: #29487d;
+}
+
+.fonte-serifada {
+  font-family: var(--font-serifada), Georgia, "Times New Roman", serif;
+}
+
+.fonte-humanista {
+  font-family: var(--font-humanista), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.fonte-manuscrita {
+  font-family: var(--font-manuscrita), "Segoe Script", cursive;
+}
+
+/* Margem de caderno: filete vermelho vertical à esquerda da folha. */
+.margem-caderno {
+  position: relative;
+}
+.margem-caderno::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: rgba(192, 57, 43, 0.35);
+}
+
+/* Bloco pautado — line-height precisa casar com o passo da pauta (32px),
+   senão o texto desalinha das linhas e parece defeito em vez de papel. */
+.bloco-pautado {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    #e6ddcd 31px,
+    #e6ddcd 32px
+  );
+  line-height: 32px;
+}
+
+/* Correção do corretor sobre o texto do aluno. */
+.risco-corretor {
+  text-decoration: line-through;
+  text-decoration-color: #c0392b;
+  text-decoration-thickness: 2px;
+  color: #8a827a;
+}
+
+/* Carimbo de garantia — objeto real do universo escolar/burocrático. */
+.carimbo {
+  border: 2px solid #c0392b;
+  color: #c0392b;
+  transform: rotate(-3deg);
+}
+
