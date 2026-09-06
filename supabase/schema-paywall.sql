@@ -20,19 +20,35 @@ create table if not exists public.correcoes (
 create index if not exists correcoes_user_id_idx on public.correcoes (user_id);
 
 -- 3. Migra o que já existia, para nenhuma correção antiga se perder.
-insert into public.correcoes (redacao_id, user_id, dados)
-select r.id, r.user_id, r.correcao
-from public.redacoes r
-where r.correcao is not null
-on conflict (redacao_id) do nothing;
+--    Envolvido em DO/EXECUTE porque o Postgres analisa o lote inteiro antes
+--    de executar: uma referência literal a `r.correcao` quebraria o script
+--    numa segunda execução, quando a coluna já foi removida. Assim o trecho
+--    só é compilado se a coluna de fato existir, e rodar duas vezes é seguro.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'redacoes' and column_name = 'correcao'
+  ) then
+    execute $mig$
+      insert into public.correcoes (redacao_id, user_id, dados)
+      select r.id, r.user_id, r.correcao
+      from public.redacoes r
+      where r.correcao is not null
+      on conflict (redacao_id) do nothing;
+    $mig$;
 
-update public.redacoes r
-set
-  total_erros = coalesce(jsonb_array_length(r.correcao -> 'erros'), 0),
-  anulada = coalesce((r.correcao ->> 'anulada')::boolean, false)
-where r.correcao is not null;
+    execute $mig$
+      update public.redacoes r
+      set
+        total_erros = coalesce(jsonb_array_length(r.correcao -> 'erros'), 0),
+        anulada = coalesce((r.correcao ->> 'anulada')::boolean, false)
+      where r.correcao is not null;
+    $mig$;
 
-alter table public.redacoes drop column if exists correcao;
+    execute 'alter table public.redacoes drop column correcao';
+  end if;
+end $$;
 
 -- 4. A trava. Ler a correção exige ser o dono E ter assinatura ativa.
 alter table public.correcoes enable row level security;

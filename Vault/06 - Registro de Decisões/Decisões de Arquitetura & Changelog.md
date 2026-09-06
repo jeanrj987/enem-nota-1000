@@ -107,6 +107,9 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v1.9.1] - 2026-09-06 (migração do paywall tornada idempotente)
+- **Corrigido**: `supabase/schema-paywall.sql` falhava com `ERROR 42703: column r.correcao does not exist` quando executado numa base em que a coluna `redacoes.correcao` já não existia (segunda execução, ou base criada depois da mudança). A causa é que o Postgres analisa o lote inteiro antes de executar, então a referência literal a `r.correcao` quebrava o script mesmo dentro de um `where` que nunca casaria. O bloco de migração passou para `DO $$ ... EXECUTE ... $$` guardado por uma checagem em `information_schema.columns`: o SQL só é compilado se a coluna existir. O script agora pode ser rodado quantas vezes for preciso, sem efeito colateral.
+
 ### [v1.9.0] - 2026-09-05 (paywall real, aplicado no banco)
 - **Corrigido**: o paywall era apenas visual — a correção completa ia inteira para o navegador e só era borrada com CSS. Agora a correção vive na tabela `correcoes`, cuja RLS exige assinatura ativa, e a persistência passou para o servidor. Ver ADR 013.
 - **Adicionado**: `supabase/schema-paywall.sql` (migra as correções existentes sem perda), `src/lib/assinatura-servidor.ts`, `src/lib/salvar-correcao.ts` e o componente `CorrecaoBloqueada`.
