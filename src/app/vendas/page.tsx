@@ -1,29 +1,78 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import {
-  CheckCircle2,
-  ShieldCheck,
-  ArrowRight,
-  Lock,
-  ChevronDown,
-  ChevronUp,
-  Award,
-  Zap,
-  BookOpen,
-  FileCheck,
-  Target,
-  Sparkles,
-  HelpCircle,
-  Mail,
-  GraduationCap,
-  Loader2,
-} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ArrowRight, Check, ChevronDown, Loader2 } from 'lucide-react';
 import { PlanoId } from '@/lib/planos';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+
+/** Faixas usadas no painel de competências do topo. São ilustrativas: mostram
+ * como o sistema pontua cada competência, não o resultado de nenhum aluno
+ * real — a página deixa isso explícito em vez de sugerir um caso verídico. */
+const COMPETENCIAS = [
+  { sigla: 'C1', nome: 'Norma culta', antes: 120, depois: 200 },
+  { sigla: 'C2', nome: 'Tema e repertório', antes: 120, depois: 200 },
+  { sigla: 'C3', nome: 'Argumentação', antes: 100, depois: 160 },
+  { sigla: 'C4', nome: 'Coesão', antes: 120, depois: 200 },
+  { sigla: 'C5', nome: 'Proposta de intervenção', antes: 80, depois: 160 },
+];
+
+const ENTREGAS = [
+  {
+    numero: '01',
+    titulo: 'Nota em cada competência, não um "está bom"',
+    texto:
+      'De 0 a 200 pontos em C1, C2, C3, C4 e C5, com a justificativa de cada faixa. Você sabe exatamente onde perdeu ponto e quantos.',
+  },
+  {
+    numero: '02',
+    titulo: 'Cada erro marcado onde ele acontece',
+    texto:
+      'Concordância, regência, pontuação, conectivo repetido — tudo destacado no seu texto, com a regra que explica e a reescrita no lugar.',
+  },
+  {
+    numero: '03',
+    titulo: 'A Competência 5 auditada elemento por elemento',
+    texto:
+      'Agente, ação, meio, efeito e detalhamento. É onde a maioria perde 40 a 80 pontos sem perceber que faltou um deles.',
+  },
+  {
+    numero: '04',
+    titulo: 'A sua redação reescrita em padrão nota 1000',
+    texto:
+      'O sistema pega os seus argumentos e mostra como eles ficariam num texto de nota máxima. Você compara lado a lado.',
+  },
+  {
+    numero: '05',
+    titulo: 'Resultado em menos de 10 segundos',
+    texto:
+      'Dá tempo de corrigir e reescrever no mesmo dia, com o tema ainda fresco na cabeça. É isso que faz a nota subir.',
+  },
+];
+
+const FAQ = [
+  {
+    q: 'A avaliação segue os critérios reais do ENEM?',
+    a: 'Sim. A avaliação é orientada pela matriz oficial do INEP, atribuindo de 0 a 200 pontos em cada uma das cinco competências e verificando a presença dos cinco elementos da proposta de intervenção.',
+  },
+  {
+    q: 'Quanto tempo leva para a redação ser corrigida?',
+    a: 'Menos de dez segundos após o envio. Notas, marcações de erro e sugestões aparecem prontas na tela.',
+  },
+  {
+    q: 'Preciso pagar para testar?',
+    a: 'Não. Você cria a conta, escreve ou envia sua redação e ela é corrigida de verdade. O relatório completo — nota detalhada, erros marcados, reescrita e plano de ação — é o que fica liberado com o plano.',
+  },
+  {
+    q: 'Posso enviar arquivo ou só digitando?',
+    a: 'Os dois. Editor da plataforma ou upload em PDF, Word (.docx) e texto simples. Foto de redação manuscrita em PDF também é lida.',
+  },
+  {
+    q: 'Como recebo o acesso depois de pagar?',
+    a: 'Na hora, na sua própria conta. Não precisa esperar e-mail nem digitar código: assim que o pagamento é confirmado, o relatório completo destrava.',
+  },
+];
 
 export default function PaginaDeVendas() {
   const router = useRouter();
@@ -32,20 +81,15 @@ export default function PaginaDeVendas() {
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
   const [erroCheckout, setErroCheckout] = useState<string | null>(null);
 
-  const toggleFaq = (idx: number) => {
-    setOpenFaq(openFaq === idx ? null : idx);
-  };
-
-  const scrollToPricing = () => {
-    const el = document.getElementById('oferta');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  const irParaPlanos = () => {
+    document.getElementById('oferta')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const iniciarCheckout = async (planoId: PlanoId) => {
     setErroCheckout(null);
 
     if (!usuario) {
-      router.push(`/auth?redirect=/vendas`);
+      router.push('/auth?redirect=/vendas');
       return;
     }
 
@@ -75,289 +119,261 @@ export default function PaginaDeVendas() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col justify-between">
-      {/* Top Header Independente & Sóbrio */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/20">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <span className="font-bold text-base text-white tracking-tight">
-              Avaliador <span className="text-blue-400">Nota 1000</span>
-            </span>
-          </div>
-
+    <div className="tema-placar fonte-ui min-h-screen bg-[#0b1b2b] text-[#f2f7fb]">
+      {/* Cabeçalho */}
+      <header className="sticky top-0 z-40 border-b border-[#23415e] bg-[#0b1b2b]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+          <span className="fonte-placar text-xl uppercase tracking-wide">
+            Nota <span className="text-[#c6f24e]">1000</span>
+          </span>
           <button
-            onClick={scrollToPricing}
-            className="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer"
+            onClick={irParaPlanos}
+            className="cursor-pointer bg-[#c6f24e] px-5 py-2 text-[13px] font-bold uppercase tracking-wide text-[#0b1b2b] transition-colors hover:bg-[#a5ce35]"
           >
-            Ver Planos
+            Ver planos
           </button>
         </div>
       </header>
 
-      <main className="flex-1">
-        {/* 1. Headline & Subtítulo (Hero Section) */}
-        <section className="pt-12 pb-16 md:pt-20 md:pb-24 border-b border-slate-900 relative overflow-hidden">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-950/70 border border-blue-800/60 text-blue-300 text-xs font-medium">
-              <Award className="w-3.5 h-3.5 text-blue-400" />
-              <span>Matriz Oficial do INEP</span>
-            </div>
-
-            {/* Headline: Direta, benefício central, 11 palavras */}
-            <h1 className="text-3xl sm:text-5xl md:text-[52px] font-extrabold text-white leading-[1.15] tracking-tight max-w-3xl mx-auto">
-              Garanta mais de 900 pontos na redação do ENEM com correções imediatas
-            </h1>
-
-            {/* Subtítulo: 2 linhas, linguagem natural */}
-            <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-normal">
-              Receba avaliações detalhadas pelas 5 competências oficiais em segundos, com marcação exata dos erros e versão reescrita sugerida para o seu tema.
+      <main>
+        {/* HERO — o placar é a manchete */}
+        <section className="border-b border-[#23415e]">
+          <div className="mx-auto max-w-6xl px-5 py-14 sm:py-20">
+            <p className="mb-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#93a8bc]">
+              Avaliador de redação · Matriz oficial do INEP
             </p>
 
-            {/* CTA Inicial */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                onClick={scrollToPricing}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-base shadow-lg shadow-blue-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 cursor-pointer"
-              >
-                <span>Garantir Acesso ao Avaliador</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+              {/* Lado esquerdo: o placar */}
+              <div>
+                <div className="flex items-end gap-5 sm:gap-8">
+                  <div>
+                    <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-[#93a8bc]">
+                      Sua nota hoje
+                    </span>
+                    <span className="fonte-placar block text-[68px] leading-[0.85] text-[#4a6178] tabular-nums sm:text-[92px]">
+                      540
+                    </span>
+                  </div>
 
-            <div className="flex items-center justify-center gap-6 pt-2 text-xs text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                Garantia incondicional de 7 dias
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-slate-400" />
-                Liberação imediata
-              </span>
+                  <ArrowRight className="mb-4 h-8 w-8 shrink-0 text-[#4a6178]" strokeWidth={2.5} />
+
+                  <div>
+                    <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6f24e]">
+                      Sua nota treinada
+                    </span>
+                    <span className="fonte-placar block text-[68px] leading-[0.85] text-[#c6f24e] tabular-nums sm:text-[92px]">
+                      920
+                    </span>
+                  </div>
+                </div>
+
+                <h1 className="fonte-placar mt-10 max-w-xl text-[34px] uppercase leading-[1.05] text-balance sm:text-[46px]">
+                  A diferença entre essas duas notas é{' '}
+                  <span className="text-[#c6f24e]">saber onde você perde ponto</span>
+                </h1>
+
+                <p className="mt-6 max-w-lg text-[15px] leading-[1.7] text-[#93a8bc]">
+                  No cursinho você descobre isso em duas semanas, num bilhete vago na margem da
+                  folha. Aqui, em dez segundos, competência por competência, com cada erro marcado
+                  no lugar exato e a sua redação reescrita em padrão nota 1000.
+                </p>
+
+                <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  <button
+                    onClick={irParaPlanos}
+                    className="flex cursor-pointer items-center gap-2 bg-[#c6f24e] px-8 py-4 text-sm font-bold uppercase tracking-wide text-[#0b1b2b] transition-colors hover:bg-[#a5ce35]"
+                  >
+                    Começar agora
+                    <ArrowRight className="h-4 w-4" strokeWidth={3} />
+                  </button>
+                  <span className="text-[13px] text-[#93a8bc]">
+                    Corrija de graça · Garantia de 7 dias
+                  </span>
+                </div>
+              </div>
+
+              {/* Lado direito: painel de competências */}
+              <div className="border border-[#23415e] bg-[#0f2438] p-6 sm:p-7">
+                <div className="mb-6 flex items-baseline justify-between border-b border-[#23415e] pb-4">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#93a8bc]">
+                    Onde os pontos aparecem
+                  </span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#c6f24e]">
+                    /200 cada
+                  </span>
+                </div>
+
+                <ul className="space-y-5">
+                  {COMPETENCIAS.map((c) => (
+                    <li key={c.sigla}>
+                      <div className="mb-2 flex items-baseline justify-between gap-3">
+                        <span className="text-[13px] font-semibold text-[#f2f7fb]">
+                          <span className="fonte-placar mr-2 text-[#93a8bc]">{c.sigla}</span>
+                          {c.nome}
+                        </span>
+                        <span className="shrink-0 text-[13px] font-bold tabular-nums">
+                          <span className="text-[#4a6178]">{c.antes}</span>
+                          <span className="mx-1.5 text-[#4a6178]">→</span>
+                          <span className="text-[#c6f24e]">{c.depois}</span>
+                        </span>
+                      </div>
+                      <div className="barra-comp">
+                        <span style={{ width: `${(c.depois / 200) * 100}%` }} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="mt-6 border-t border-[#23415e] pt-4 text-[11px] leading-relaxed text-[#93a8bc]">
+                  Faixas ilustrativas para mostrar como o sistema pontua cada competência. Não são o
+                  resultado de um aluno específico.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* 2. Problema / Conexão */}
-        <section className="py-16 md:py-20 bg-slate-950/60 border-b border-slate-900">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              O gargalo silencioso na preparação da redação
+        {/* Contraste de volume de treino */}
+        <section className="border-b border-[#23415e] bg-[#0f2438]">
+          <div className="mx-auto max-w-6xl px-5 py-14">
+            <div className="grid gap-10 md:grid-cols-[1fr_1.3fr] md:items-center">
+              <div className="flex items-end gap-10">
+                <div>
+                  <span className="fonte-placar block text-[56px] leading-none text-[#4a6178] tabular-nums">
+                    3
+                  </span>
+                  <span className="mt-1 block text-[12px] font-semibold uppercase tracking-wide text-[#93a8bc]">
+                    correções por
+                    <br />
+                    semestre no cursinho
+                  </span>
+                </div>
+                <div>
+                  <span className="fonte-placar block text-[56px] leading-none text-[#c6f24e] tabular-nums">
+                    ∞
+                  </span>
+                  <span className="mt-1 block text-[12px] font-semibold uppercase tracking-wide text-[#93a8bc]">
+                    correções
+                    <br />
+                    aqui
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h2 className="fonte-placar text-[26px] uppercase leading-tight text-balance sm:text-[32px]">
+                  Redação não melhora lendo teoria. Melhora escrevendo e sendo corrigido.
+                </h2>
+                <p className="mt-4 max-w-xl text-[15px] leading-[1.7] text-[#93a8bc]">
+                  O limite nunca foi a sua vontade de treinar — é a fila de correção. Enquanto o
+                  retorno demora dez, quinze dias, você repete o mesmo desvio de norma culta e a
+                  mesma proposta de intervenção incompleta por meses, sem ninguém apontar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Demonstração da correção */}
+        <section className="border-b border-[#23415e]">
+          <div className="mx-auto max-w-6xl px-5 py-14">
+            <h2 className="fonte-placar mb-8 text-[26px] uppercase sm:text-[32px]">
+              É assim que o erro aparece
             </h2>
 
-            <div className="space-y-4 text-sm sm:text-base text-slate-300 leading-relaxed">
-              <p>
-                Praticar redação com frequência é o único caminho para alcançar uma nota competitiva no ENEM. No entanto, o modelo tradicional de correção cria barreiras que atrasam a sua evolução.
-              </p>
-              <p>
-                Na maioria dos cursinhos e plataformas, o estudante envia um texto e precisa esperar de 10 a 20 dias para receber o retorno. Quando a folha é devolvida, a linha de raciocínio daquele tema já foi esquecida, e os comentários costumam ser vagos: anotações como "melhore a coesão" ou "repertório insuficiente", sem indicar como reescrever.
-              </p>
-              <p>
-                Sem um feedback imediato e transparente sobre cada uma das 5 competências, o estudante continua repetindo os mesmos desvios gramaticais e falhas na proposta de intervenção sem perceber.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Apresentação da Solução */}
-        <section className="py-16 md:py-20 border-b border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-12">
-            <div className="space-y-3 text-center max-w-2xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Um avaliador rigoroso e disponível a qualquer momento
-              </h2>
-              <p className="text-sm sm:text-base text-slate-400">
-                O Avaliador Nota 1000 foi estruturado para fornecer o suporte técnico e pedagógico que você precisa para escrever com segurança.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Benefício 1 */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Correção em menos de 10 segundos</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Envie sua redação e receba o diagnóstico completo na hora. Isso permite corrigir o texto e produzir uma nova versão no mesmo dia.
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="border border-[#23415e] bg-[#0f2438] p-6 sm:p-7">
+                <span className="mb-4 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#93a8bc]">
+                  No seu texto
+                </span>
+                <p className="text-[15px] leading-[1.9] text-[#f2f7fb]">
+                  Nesse contexto, é evidente que{' '}
+                  <span className="bg-[#c6f24e]/15 px-1 pb-0.5 [border-bottom:2px_solid_#c6f24e]">
+                    os estudantes tem acesso
+                  </span>{' '}
+                  desigual à informação de qualidade.
                 </p>
               </div>
 
-              {/* Benefício 2 */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <Target className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Critérios oficiais do INEP (C1 a C5)</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Avaliação detalhada com notas de 0 a 200 pontos em cada competência, permitindo identificar com precisão onde você ganha ou perde pontos.
-                </p>
-              </div>
-
-              {/* Benefício 3 */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Marcação de erros linha por linha</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Cada desvio de concordância, pontuação, regência ou conectivo é destacado no texto com a justificativa da regra e a reescrita sugerida.
-                </p>
-              </div>
-
-              {/* Benefício 4 */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Auditoria completa da Competência 5</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Checagem rigorosa dos 5 elementos da proposta de intervenção: Agente, Ação, Modo/Meio, Efeito e Detalhamento, garantindo os 200 pontos.
-                </p>
-              </div>
-
-              {/* Benefício 5 */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3 md:col-span-2">
-                <div className="w-10 h-10 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-bold text-white">Versão reescrita no padrão nota 1000</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  O sistema reconstrói os seus próprios argumentos em um modelo exemplar de nota máxima, mostrando na prática como articular repertórios e conectivos no tema escolhido.
+              <div className="border border-[#23415e] bg-[#0f2438] p-6 sm:p-7">
+                <span className="mb-4 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#c6f24e]">
+                  Competência 1 · −40 pontos
+                </span>
+                <p className="text-[15px] leading-relaxed text-[#93a8bc]">
+                  &ldquo;Ter&rdquo; na terceira pessoa do plural exige acento circunflexo
+                  diferencial:{' '}
+                  <strong className="font-bold text-[#f2f7fb]">os estudantes têm acesso</strong>. É o
+                  tipo de desvio que derruba a C1 de 200 para 160 sem você notar.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 4. Prova de Valor e Confiança */}
-        <section className="py-16 bg-slate-950/70 border-b border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
-            <div className="text-center space-y-2 max-w-2xl mx-auto">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Rigor técnico baseado na grade oficial
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400">
-                A metodologia segue estritamente as diretrizes públicas da matriz de correção do ENEM.
-              </p>
-            </div>
+        {/* O que você recebe */}
+        <section className="border-b border-[#23415e] bg-[#0f2438]">
+          <div className="mx-auto max-w-6xl px-5 py-14">
+            <h2 className="fonte-placar mb-10 text-[26px] uppercase sm:text-[32px]">
+              O que vem em cada correção
+            </h2>
 
-            <div className="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 text-xs sm:text-sm">
-                <span className="font-semibold text-slate-300">Exemplo de Diagnóstico em Tempo Real</span>
-                <span className="font-bold text-blue-400">Análise da Competência 1</span>
-              </div>
-              <div className="space-y-3 text-xs sm:text-sm">
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                  <div className="text-slate-300">
-                    Trecho apontado: <span className="line-through text-red-400 font-mono">"os estudantes tem acesso"</span> → Correção: <strong className="text-emerald-400 font-mono">"os estudantes têm acesso"</strong>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    O verbo "ter" na 3ª pessoa do plural exige acento circunflexo diferencial obrigatório.
+            <ul className="divide-y divide-[#23415e] border-y border-[#23415e]">
+              {ENTREGAS.map((item) => (
+                <li key={item.numero} className="grid gap-3 py-6 md:grid-cols-[auto_1fr_1.5fr] md:gap-8">
+                  <span className="fonte-placar text-[22px] leading-none text-[#c6f24e] tabular-nums">
+                    {item.numero}
+                  </span>
+                  <h3 className="text-[16px] font-bold leading-snug text-[#f2f7fb]">
+                    {item.titulo}
+                  </h3>
+                  <p className="text-[14px] leading-[1.7] text-[#93a8bc]">{item.texto}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Planos */}
+        <section id="oferta" className="border-b border-[#23415e]">
+          <div className="mx-auto max-w-6xl px-5 py-14">
+            <h2 className="fonte-placar text-[26px] uppercase sm:text-[32px]">Escolha seu plano</h2>
+            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[#93a8bc]">
+              Correções ilimitadas em todos os planos. Sem fidelidade, com sete dias de garantia
+              incondicional.
+            </p>
+
+            {erroCheckout && (
+              <p className="mt-5 border-l-4 border-[#c6f24e] bg-[#0f2438] px-4 py-3 text-[13px] text-[#f2f7fb]">
+                {erroCheckout}
+              </p>
+            )}
+
+            <div className="mt-9 grid gap-5 md:grid-cols-3">
+              {/* Mensal */}
+              <div className="flex flex-col justify-between border border-[#23415e] bg-[#0f2438] p-7">
+                <div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#93a8bc]">
+                    Mensal
+                  </h3>
+                  <p className="fonte-placar mt-4 text-[42px] leading-none tabular-nums">
+                    R$ 29
+                    <span className="text-[24px] text-[#93a8bc]">,90</span>
                   </p>
-                </div>
-                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
-                  <div className="text-slate-300">
-                    Auditoria da Competência 5: <span className="text-emerald-400 font-semibold">5 de 5 elementos validados</span> (Agente, Ação, Meio, Efeito e Detalhamento presentes).
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+                  <p className="mt-1.5 text-[12px] text-[#93a8bc]">por mês · cancele quando quiser</p>
 
-        {/* 5. Como Funciona (Fluxo Simplificado em 4 Passos) */}
-        <section className="py-16 md:py-20 border-b border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-12">
-            <div className="text-center space-y-2 max-w-xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Como funciona o acesso
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Processo simples, prático e 100% digital.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
-                <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 1</div>
-                <h3 className="text-sm font-bold text-white">Crie sua conta</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Cadastre-se com e-mail e senha ou entre direto com sua conta Google.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
-                <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 2</div>
-                <h3 className="text-sm font-bold text-white">Escolha seu plano e pague</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Pagamento seguro via Stripe. O acesso é liberado automaticamente após a confirmação.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
-                <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 3</div>
-                <h3 className="text-sm font-bold text-white">Envie sua redação</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Digite direto no editor ou faça upload do seu arquivo em PDF, Word ou texto.
-                </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-left">
-                <div className="text-xs font-black text-blue-400 uppercase tracking-wider">Passo 4</div>
-                <h3 className="text-sm font-bold text-white">Receba o relatório</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Veja a nota, as marcações de erro e a versão nota 1000 em menos de 10 segundos.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. Oferta / Preço */}
-        <section id="oferta" className="py-16 md:py-24 bg-slate-950/80 border-b border-slate-900">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-12">
-            <div className="text-center space-y-3 max-w-xl mx-auto">
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Planos de Acesso ao Avaliador
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Acesso direto e sem contratos de longo prazo. Escolha a melhor opção para a sua rotina:
-              </p>
-              {erroCheckout && (
-                <p className="text-xs text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg px-4 py-2 inline-block">
-                  {erroCheckout}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-              {/* Plano Mensal */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-base font-bold text-white">Mensal</h3>
-                  <p className="text-xs text-slate-400">Ideal para testar a plataforma no seu ritmo.</p>
-                  <div>
-                    <div className="text-3xl font-bold text-white">
-                      R$ 29,90 <span className="text-xs font-normal text-slate-400">/mês</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">Renovação mensal, cancele quando quiser</span>
-                  </div>
-
-                  <ul className="space-y-2.5 pt-4 border-t border-slate-800 text-xs text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Correções ilimitadas no mês</span>
+                  <ul className="mt-6 space-y-3 border-t border-[#23415e] pt-5 text-[13px] text-[#93a8bc]">
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Correções ilimitadas no mês
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Avaliação pelas 5 competências</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Nota nas cinco competências
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Marcação de erros no texto</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Erros marcados no texto
                     </li>
                   </ul>
                 </div>
@@ -365,92 +381,91 @@ export default function PaginaDeVendas() {
                 <button
                   onClick={() => iniciarCheckout('mensal')}
                   disabled={planoCarregando !== null}
-                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="mt-7 flex cursor-pointer items-center justify-center border-2 border-[#23415e] py-3 text-[13px] font-bold uppercase tracking-wide text-[#f2f7fb] transition-colors hover:border-[#c6f24e] hover:text-[#c6f24e] disabled:opacity-50"
                 >
-                  {planoCarregando === 'mensal' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar Plano Mensal'}
+                  {planoCarregando === 'mensal' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Assinar mensal'
+                  )}
                 </button>
               </div>
 
-              {/* Plano Anual (Destaque) */}
-              <div className="p-6 sm:p-8 rounded-2xl bg-slate-900 border-2 border-blue-500 flex flex-col justify-between space-y-6 relative shadow-xl shadow-blue-500/10 scale-[1.02]">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-blue-600 text-white font-bold text-[11px] uppercase tracking-wide">
-                  Mais Escolhido
-                </div>
+              {/* Anual — destaque */}
+              <div className="relative flex flex-col justify-between border-2 border-[#c6f24e] bg-[#0f2438] p-7">
+                <span className="absolute -top-3 left-6 bg-[#c6f24e] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#0b1b2b]">
+                  Melhor custo
+                </span>
+                <div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#c6f24e]">
+                    Anual · até o ENEM
+                  </h3>
+                  <p className="fonte-placar mt-4 text-[42px] leading-none tabular-nums">
+                    R$ 147
+                    <span className="text-[24px] text-[#93a8bc]">,00</span>
+                  </p>
+                  <p className="mt-1.5 text-[12px] text-[#93a8bc]">ou 12x de R$ 14,90</p>
 
-                <div className="space-y-4 pt-1">
-                  <h3 className="text-lg font-bold text-white">Anual (Até o ENEM)</h3>
-                  <p className="text-xs text-slate-300">Acesso contínuo com todas as ferramentas inclusas.</p>
-                  <div>
-                    <div className="text-3xl sm:text-4xl font-extrabold text-blue-400">
-                      12x R$ 14,90
-                    </div>
-                    <span className="text-xs text-slate-300">ou R$ 147,00 à vista</span>
-                  </div>
-
-                  <ul className="space-y-2.5 pt-4 border-t border-slate-800 text-xs text-slate-200">
-                    <li className="flex items-center gap-2 font-medium text-white">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Correções ilimitadas 24h por dia</span>
+                  <ul className="mt-6 space-y-3 border-t border-[#23415e] pt-5 text-[13px] text-[#93a8bc]">
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Tudo do plano mensal
                     </li>
-                    <li className="flex items-center gap-2 font-medium text-white">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Versão reescrita nota 1000 em todas</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Reescrita nota 1000 em todas
                     </li>
-                    <li className="flex items-center gap-2 font-medium text-white">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Auditoria completa da Competência 5</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Auditoria completa da C5
                     </li>
-                    <li className="flex items-center gap-2 font-medium text-white">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Exportação de relatórios em PDF</span>
-                    </li>
-                    <li className="flex items-center gap-2 text-slate-300">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>Garantia incondicional de 7 dias</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Relatório exportável em PDF
                     </li>
                   </ul>
                 </div>
 
-                {/* 7. CTA Principal */}
-                <div className="space-y-2">
-                  <button
-                    onClick={() => iniciarCheckout('anual')}
-                    disabled={planoCarregando !== null}
-                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center shadow-lg shadow-blue-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-                  >
-                    {planoCarregando === 'anual' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Garantir Acesso ao Avaliador'}
-                  </button>
-                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
-                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Pagamento seguro • Acesso imediato</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => iniciarCheckout('anual')}
+                  disabled={planoCarregando !== null}
+                  className="mt-7 flex cursor-pointer items-center justify-center gap-2 bg-[#c6f24e] py-4 text-[13px] font-bold uppercase tracking-wide text-[#0b1b2b] transition-colors hover:bg-[#a5ce35] disabled:opacity-50"
+                >
+                  {planoCarregando === 'anual' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Garantir acesso
+                      <ArrowRight className="h-4 w-4" strokeWidth={3} />
+                    </>
+                  )}
+                </button>
               </div>
 
-              {/* Plano Semestral */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-base font-bold text-white">Semestral</h3>
-                  <p className="text-xs text-slate-400">Para intensificar o treino na reta de preparação.</p>
-                  <div>
-                    <div className="text-3xl font-bold text-white">
-                      R$ 89,00 <span className="text-xs font-normal text-slate-400">/semestre</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">Pagamento único para 6 meses</span>
-                  </div>
+              {/* Semestral */}
+              <div className="flex flex-col justify-between border border-[#23415e] bg-[#0f2438] p-7">
+                <div>
+                  <h3 className="text-[13px] font-bold uppercase tracking-[0.16em] text-[#93a8bc]">
+                    Semestral
+                  </h3>
+                  <p className="fonte-placar mt-4 text-[42px] leading-none tabular-nums">
+                    R$ 89
+                    <span className="text-[24px] text-[#93a8bc]">,00</span>
+                  </p>
+                  <p className="mt-1.5 text-[12px] text-[#93a8bc]">pagamento único · seis meses</p>
 
-                  <ul className="space-y-2.5 pt-4 border-t border-slate-800 text-xs text-slate-300">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Correções ilimitadas por 6 meses</span>
+                  <ul className="mt-6 space-y-3 border-t border-[#23415e] pt-5 text-[13px] text-[#93a8bc]">
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Correções ilimitadas por 6 meses
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Versão reescrita nota 1000 inclusa</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Reescrita nota 1000
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>Matriz das 5 competências</span>
+                    <li className="flex gap-2.5">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c6f24e]" strokeWidth={3} />
+                      Matriz das cinco competências
                     </li>
                   </ul>
                 </div>
@@ -458,117 +473,86 @@ export default function PaginaDeVendas() {
                 <button
                   onClick={() => iniciarCheckout('semestral')}
                   disabled={planoCarregando !== null}
-                  className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold text-center border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="mt-7 flex cursor-pointer items-center justify-center border-2 border-[#23415e] py-3 text-[13px] font-bold uppercase tracking-wide text-[#f2f7fb] transition-colors hover:border-[#c6f24e] hover:text-[#c6f24e] disabled:opacity-50"
                 >
-                  {planoCarregando === 'semestral' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Assinar Plano Semestral'}
+                  {planoCarregando === 'semestral' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    'Assinar semestral'
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Bloco de Garantia Honesta */}
-            <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 shrink-0">
-                <ShieldCheck className="w-6 h-6" />
+            {/* Garantia */}
+            <div className="mt-10 flex flex-col gap-5 border border-[#23415e] bg-[#0f2438] p-6 sm:flex-row sm:items-center sm:gap-8">
+              <div className="shrink-0 border-2 border-[#c6f24e] px-5 py-3 text-center">
+                <span className="fonte-placar block text-[28px] leading-none text-[#c6f24e]">7</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-[#c6f24e]">
+                  dias
+                </span>
               </div>
-              <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white">Garantia de 7 dias para testar</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Utilize o avaliador, envie suas redações e analise a qualidade dos diagnósticos. Se por qualquer motivo não for útil para seus estudos, solicite o reembolso em até 7 dias para devolução integral do valor pago.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 8. Objeções / Perguntas Frequentes (FAQ) */}
-        <section className="py-16 md:py-20 border-b border-slate-900">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-8">
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400">
-                <HelpCircle className="w-4 h-4" />
-                <span>Dúvidas Frequentes</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Perguntas Frequentes
-              </h2>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                {
-                  q: 'A avaliação segue os critérios reais do ENEM?',
-                  a: 'Sim. A avaliação é orientada estritamente pela matriz oficial do INEP, atribuindo notas de 0 a 200 pontos em cada uma das 5 competências e verificando a presença dos 5 elementos da proposta de intervenção.',
-                },
-                {
-                  q: 'Quanto tempo leva para a redação ser corrigida?',
-                  a: 'A resposta é gerada em menos de 10 segundos após o envio do texto, com todas as notas, marcações de erros e sugestões de melhoria prontas para visualização.',
-                },
-                {
-                  q: 'Como recebo o acesso após a compra?',
-                  a: 'A liberação é automática e imediata. Basta criar sua conta (e-mail/senha ou Google) antes de pagar — assim que o pagamento é confirmado, o acesso já aparece na sua própria conta.',
-                },
-                {
-                  q: 'Posso enviar redações em arquivo ou apenas digitando?',
-                  a: 'Você pode escrever diretamente no editor integrado da plataforma ou importar arquivos salvos nos formatos PDF, Word (.docx) ou bloco de notas (.txt).',
-                },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden transition-colors"
-                >
-                  <button
-                    onClick={() => toggleFaq(idx)}
-                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-white text-xs sm:text-sm hover:text-blue-400 transition-colors cursor-pointer"
-                  >
-                    <span>{item.q}</span>
-                    {openFaq === idx ? (
-                      <ChevronUp className="w-4 h-4 text-blue-400 shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
-                    )}
-                  </button>
-                  {openFaq === idx && (
-                    <div className="p-4 sm:p-5 pt-0 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/40">
-                      {item.a}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* CTA Final */}
-            <div className="pt-8 text-center space-y-3">
-              <button
-                onClick={scrollToPricing}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm sm:text-base shadow-lg shadow-blue-600/25 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Garantir Acesso ao Avaliador</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <p className="text-[11px] text-slate-400">
-                Acesso imediato • Garantia de 7 dias
+              <p className="max-w-2xl text-[14px] leading-relaxed text-[#93a8bc]">
+                Use o avaliador, envie quantas redações quiser e avalie a qualidade dos
+                diagnósticos. Se não for útil para os seus estudos, peça o reembolso em até sete
+                dias e receba o valor integral de volta, sem precisar justificar.
               </p>
             </div>
           </div>
         </section>
+
+        {/* FAQ */}
+        <section className="border-b border-[#23415e] bg-[#0f2438]">
+          <div className="mx-auto max-w-3xl px-5 py-14">
+            <h2 className="fonte-placar mb-8 text-[26px] uppercase sm:text-[32px]">
+              Perguntas frequentes
+            </h2>
+
+            <div className="divide-y divide-[#23415e] border-y border-[#23415e]">
+              {FAQ.map((item, idx) => (
+                <div key={item.q}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    className="flex w-full cursor-pointer items-center justify-between gap-6 py-5 text-left"
+                  >
+                    <span className="text-[15px] font-bold text-[#f2f7fb]">{item.q}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 text-[#c6f24e] transition-transform ${
+                        openFaq === idx ? 'rotate-180' : ''
+                      }`}
+                      strokeWidth={3}
+                    />
+                  </button>
+                  {openFaq === idx && (
+                    <p className="pb-5 pr-10 text-[14px] leading-[1.75] text-[#93a8bc]">{item.a}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA final */}
+        <section className="border-b border-[#23415e]">
+          <div className="mx-auto max-w-3xl px-5 py-16 text-center">
+            <h2 className="fonte-placar text-[30px] uppercase leading-tight text-balance sm:text-[40px]">
+              A próxima redação que você escrever pode já voltar corrigida
+            </h2>
+            <button
+              onClick={irParaPlanos}
+              className="mt-8 inline-flex cursor-pointer items-center gap-2 bg-[#c6f24e] px-9 py-4 text-sm font-bold uppercase tracking-wide text-[#0b1b2b] transition-colors hover:bg-[#a5ce35]"
+            >
+              Escolher meu plano
+              <ArrowRight className="h-4 w-4" strokeWidth={3} />
+            </button>
+          </div>
+        </section>
       </main>
 
-      {/* 9. Rodapé Sóbrio & Sem Distrações */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-8 text-xs text-slate-500">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-slate-400">
-            <GraduationCap className="w-4 h-4 text-blue-400" />
-            <span className="font-semibold text-slate-300">Avaliador Nota 1000</span>
-            <span>• Plataforma de apoio ao vestibulando</span>
-          </div>
-
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>Garantia de 7 dias</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5" /> suporte@avaliadornota1000.com
-            </span>
-          </div>
+      <footer className="mx-auto max-w-6xl px-5 py-8">
+        <div className="flex flex-col justify-between gap-2 text-[12px] text-[#93a8bc] sm:flex-row">
+          <span className="fonte-placar uppercase tracking-wide">Nota 1000</span>
+          <span>suporte@avaliadornota1000.com</span>
         </div>
       </footer>
     </div>

@@ -6,13 +6,31 @@ tags:
   - ui
   - tailwindcss
   - glassmorphism
-updated: 2026-09-05
+updated: 2026-09-05 (identidade "placar" na página de vendas)
 ---
 
 # 🎨 Design System & Componentes Reutilizáveis
 
-> [!tip] **Identidade Visual Premium**
-> O visual do **Nota 1000 AI** adota a estética de **Dark Mode Moderno**, **Glassmorphism** com desfoque de fundo (`backdrop-blur`), gradientes refinados (azul royal, índigo, púrpura e esmeralda) e micro-animações responsivas.
+> [!warning] **Duas identidades convivem hoje**
+> A área logada ainda usa a estética original (dark mode com glassmorphism e gradientes). A rota `/vendas` foi redesenhada com a identidade **"placar"** (ver abaixo) porque a antiga tinha "cara de IA" — o kit padrão de gradiente azul→roxo, glass, orbes desfocados e cards idênticos com ícone colorido. A propagação da nova identidade para o resto do sistema está pendente.
+
+---
+
+## 🏆 Identidade "Placar" (`/vendas`)
+
+Escolhida entre quatro direções propostas, com foco em conversão para o público de 16 a 19 anos: **a nota é o herói da página**. O topo é um placar `540 → 920`, e as cinco competências viram um painel de estatísticas com barras — transforma "melhore sua redação" em algo mensurável.
+
+**Paleta** (`.tema-placar` em `globals.css`): fundo `#0B1B2B` (azul-marinho, não o preto-azulado genérico), superfícies `#0F2438`/`#16304A`, linhas `#23415E`, texto `#F2F7FB`, texto suave `#93A8BC`, cinza "antes" `#4A6178` e **um único acento**: verde-limão `#C6F24E`, reservado ao estado "depois"/vitória e aos CTAs.
+
+**Tipografia**: `Anton` (`.fonte-placar`) só nas notas e títulos — condensada pesada, lê como placar esportivo; `Barlow` (`.fonte-ui`) no restante da interface.
+
+**Regras da identidade**: superfícies chapadas, cantos retos, zero gradiente, zero `backdrop-blur`, zero orbe desfocado. Números sempre com `tabular-nums`.
+
+> [!tip] **Honestidade na copy visual**
+> O placar `540 → 920` e as barras de competência levam uma nota explícita de que são **faixas ilustrativas** de como o sistema pontua, não o resultado de um aluno real. Sem isso seria um depoimento fabricado — mesmo problema do cronômetro falso removido na v1.4.0 (ver ADR 005 e o changelog).
+
+### Direção alternativa preservada
+A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada `Newsreader`, correções em vermelho de corretor, anotações manuscritas em `Caveat`) foi construída e descartada nesta rodada, aguardando avaliação de sócio. Os utilitários `.tema-papel`, `.margem-caderno`, `.bloco-pautado`, `.risco-corretor` e `.carimbo` continuam em `globals.css` para essa retomada.
 
 ---
 

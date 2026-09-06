@@ -98,6 +98,11 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v1.8.0] - 2026-09-05 (redesign da página de vendas — identidade "placar")
+- **Alterado**: `/vendas` redesenhada por completo. O usuário apontou que o visual estava com "cara de IA" — diagnóstico confirmado no CSS: fundo quase preto azulado, glassmorphism, gradiente azul→roxo→rosa, orbes desfocados e todo card idêntico com ícone colorido em caixa arredondada. Nova identidade **"placar"**: a nota vira o herói (`540 → 920` em condensada pesada), competências viram painel de estatísticas com barras, um único acento (verde-limão `#C6F24E`), superfícies chapadas e cantos retos. Ver [[04 - Arquitetura Técnica/Componentes & Design System]].
+- **Adicionado**: fontes `Anton` (notas/títulos) e `Barlow` (interface) via `next/font`, além de `Newsreader`/`Karla`/`Caveat` da direção alternativa "caderno".
+- **Copy**: alavancas de conversão passaram a ser numéricas e verificáveis (contraste `3` correções por semestre no cursinho vs. ilimitadas; erro demonstrado como "−40 pontos"), e o CTA principal usa o modelo freemium ("corrija de graça") em vez de pedir cartão de imediato. O placar ilustrativo leva aviso explícito de que **não** representa resultado de aluno real — mesma regra que motivou a remoção do cronômetro falso na v1.4.0.
+
 ### [v1.7.0] - 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
 - **Adicionado**: `RequerLogin` (login + perfil completo, sem exigir assinatura) — usado em `/nova-redacao` e `/correcao/[id]`, que deixaram de exigir pagamento para escrever/corrigir. `RequerAssinatura` segue exigindo pagamento em `/dashboard` e `/historico`.
 - **Adicionado**: paywall visual em `CorrecaoView` (prop `bloqueado`) — nota geral, badge de classificação e as 3 abas (Análise, Reescrita, Plano) ficam borradas com overlay "Ver Planos" quando não há assinatura ativa; exportação em PDF desabilitada nesse estado.
