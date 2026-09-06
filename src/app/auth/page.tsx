@@ -39,7 +39,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!carregando && usuario) {
-      router.replace('/dashboard');
+      router.replace('/nova-redacao');
     }
   }, [carregando, usuario, router]);
 
@@ -67,7 +67,7 @@ export default function AuthPage() {
           text: 'Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.',
         });
       }
-      setTimeout(() => router.push('/dashboard'), 800);
+      setTimeout(() => router.push('/nova-redacao'), 800);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Não foi possível concluir a operação.' });
     } finally {
