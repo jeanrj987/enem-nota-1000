@@ -8,6 +8,7 @@ import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarPerfil, salvarPerfil, perfilCompleto } from '@/lib/perfil';
 import { destinoSeguro, urlDeLogin } from '@/lib/redirecionamento';
+import { formatarWhatsapp, normalizarWhatsapp, validarWhatsapp } from '@/lib/whatsapp';
 
 function CompletarPerfilForm() {
   const router = useRouter();
@@ -21,6 +22,7 @@ function CompletarPerfilForm() {
   const [checando, setChecando] = useState(true);
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [erroWhatsapp, setErroWhatsapp] = useState<string | null>(null);
   const [cidadeEstado, setCidadeEstado] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
   const [cursoDosSonhos, setCursoDosSonhos] = useState('');
@@ -40,7 +42,8 @@ function CompletarPerfilForm() {
         return;
       }
       setNomeCompleto(perfil?.nome_completo || usuario.user_metadata?.full_name || usuario.user_metadata?.name || '');
-      setWhatsapp(perfil?.whatsapp || '');
+      // Vem do banco em E.164 (+5511912345678); remascara para leitura.
+      setWhatsapp(formatarWhatsapp(perfil?.whatsapp || ''));
       setCidadeEstado(perfil?.cidade_estado || '');
       setDataNascimento(perfil?.data_nascimento || '');
       setCursoDosSonhos(perfil?.curso_dos_sonhos || '');
@@ -51,12 +54,20 @@ function CompletarPerfilForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!usuario) return;
+
+    const problemaWhatsapp = validarWhatsapp(whatsapp);
+    if (problemaWhatsapp) {
+      setErroWhatsapp(problemaWhatsapp);
+      setErro(problemaWhatsapp);
+      return;
+    }
+
     setSalvando(true);
     setErro(null);
 
     const resultado = await salvarPerfil(usuario.id, {
       nomeCompleto,
-      whatsapp,
+      whatsapp: normalizarWhatsapp(whatsapp),
       cidadeEstado,
       dataNascimento,
       cursoDosSonhos,
@@ -119,13 +130,19 @@ function CompletarPerfilForm() {
             <Phone className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="tel"
+              inputMode="numeric"
               required
               placeholder="(11) 91234-5678"
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+              onChange={(e) => setWhatsapp(formatarWhatsapp(e.target.value))}
+              onBlur={() => setErroWhatsapp(validarWhatsapp(whatsapp))}
+              aria-invalid={erroWhatsapp ? true : undefined}
+              className={`w-full bg-folha/90 border rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho ${
+                erroWhatsapp ? 'border-vermelho' : 'border-regua/80'
+              }`}
             />
           </div>
+          {erroWhatsapp && <p className="text-[11px] text-vermelho">{erroWhatsapp}</p>}
         </div>
 
         <div className="space-y-1.5">

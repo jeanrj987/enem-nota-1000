@@ -132,9 +132,23 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Trade-off assumido**: sem confirmação, o e-mail pode ser inventado. É aceito conscientemente porque o canal de venda é o WhatsApp, não o e-mail.
 - **Pendência de configuração**: desligar "Confirm email" em Authentication → Sign In / Providers → Email, no painel do Supabase. Só o dono do projeto tem acesso. Enquanto estiver ligado, o cadastro continua exigindo confirmação — mas agora sem o vaivém.
 
+### ADR 017: Validação e normalização do WhatsApp, o ativo comercial do cadastro
+- **Status**: Aprovado e Implementado
+- **Contexto**: com a confirmação de e-mail descartada (ADR 016), o WhatsApp passou a ser o único canal confiável de contato — é por ele que a venda no X1 acontece. Mas o campo aceitava qualquer texto: um número errado não dava erro em lugar nenhum, só virava lead morto na lista, descoberto semanas depois.
+- **Decisão**: `src/lib/whatsapp.ts` concentra máscara, validação e normalização, usado nas duas portas de entrada do perfil (`/auth` no cadastro por e-mail e `/completar-perfil` para quem entra pelo Google).
+- **Máscara que não atrapalha**: `formatarWhatsapp` formata progressivamente e **nunca rejeita** o que foi digitado. Formatar é trabalho da máscara; recusar é trabalho da validação. Uma máscara que apaga caractere no meio da digitação é a forma mais rápida de fazer alguém abandonar o formulário.
+- **Validação estrita, com motivo explicado**: `validarWhatsapp` devolve a mensagem do problema em vez de um booleano, para a tela poder dizer "esse DDD não existe" em vez de só pintar a borda de vermelho. Recusa: DDD inexistente (lista explícita do Plano Nacional de Numeração, não a faixa 11–99 — boa parte dos intermediários nunca foi atribuída, e aceitá-los deixaria passar justamente o erro de digitação que se quer barrar), número que não começa com 9 depois do DDD (é fixo, e fixo não recebe WhatsApp), e dígitos repetidos como `(11) 99999-9999`, o preenchimento de fuga clássico.
+- **Armazenamento em E.164** (`+5511912345678`): é o formato que as ferramentas de disparo esperam, então guardar já normalizado evita limpar a lista na hora de exportar — e garante que o mesmo número digitado de duas formas não vire dois leads. Ao carregar um perfil existente, o valor é remascarado para leitura.
+- **Sutileza tratada**: o código do país só é removido quando sobra número completo depois dele, para não mutilar o DDD 55 (Santa Maria/RS) digitado sozinho. Há teste cobrindo esse caso.
+- **Testes**: 14 novos (total 105 → 119).
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.2.0] - 2026-09-07 (WhatsApp validado e normalizado)
+- **Adicionado**: `src/lib/whatsapp.ts` com máscara progressiva, validação de DDD real, recusa de fixo e de dígitos repetidos, e armazenamento em E.164. Aplicado no cadastro e no completar-perfil. Ver ADR 017.
+- **Testes**: 105 → 119.
 
 ### [v2.1.0] - 2026-09-07 (destino pós-login: o funil de compra deixa de perder o cliente)
 - **Corrigido**: o cadastro redirecionava 800ms depois do envio mesmo sem sessão, atropelando a mensagem de confirmação e ricocheteando a pessoa deslogada de volta para `/auth`. Agora a tela verifica se veio sessão. Ver ADR 016.
