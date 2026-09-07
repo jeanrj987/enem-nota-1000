@@ -10,15 +10,15 @@ interface AbaPlanoProps {
 export function AbaPlano({ pontosPositivos, proximosPassos }: AbaPlanoProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
-        <h3 className="text-base font-bold text-emerald-400 flex items-center gap-2">
+      <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-4">
+        <h3 className="text-base font-bold text-verde flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5" />
           Pontos Positivos & Acertos do Texto
         </h3>
-        <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
+        <ul className="space-y-3 text-xs sm:text-sm text-tinta-suave">
           {pontosPositivos?.map((ponto, idx) => (
-            <li key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+            <li key={idx} className="flex items-start gap-2.5 p-3 rounded-sm bg-folha/60 border border-regua">
+              <span className="w-5 h-5 rounded-full bg-verde-claro text-verde flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                 {idx + 1}
               </span>
               <span>{ponto}</span>
@@ -27,15 +27,15 @@ export function AbaPlano({ pontosPositivos, proximosPassos }: AbaPlanoProps) {
         </ul>
       </div>
 
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-4">
-        <h3 className="text-base font-bold text-blue-400 flex items-center gap-2">
+      <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-4">
+        <h3 className="text-base font-bold text-vermelho flex items-center gap-2">
           <Sparkles className="w-5 h-5" />
           Próximos Passos para o 960+
         </h3>
-        <ul className="space-y-3 text-xs sm:text-sm text-slate-300">
+        <ul className="space-y-3 text-xs sm:text-sm text-tinta-suave">
           {proximosPassos?.map((passo, idx) => (
-            <li key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
+            <li key={idx} className="flex items-start gap-2.5 p-3 rounded-sm bg-folha/60 border border-regua">
+              <span className="w-5 h-5 rounded-full bg-vermelho-claro text-vermelho flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">
                 {idx + 1}
               </span>
               <span>{passo}</span>

@@ -70,7 +70,7 @@ function CompletarPerfilForm() {
   if (carregando || checando) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-vermelho animate-spin" />
       </div>
     );
   }
@@ -78,92 +78,92 @@ function CompletarPerfilForm() {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
-          <GraduationCap className="w-7 h-7 text-white" />
+        <div className="w-12 h-12 rounded-sm bg-vermelho hover:bg-vermelho-escuro flex items-center justify-center mx-auto shadow-lg shadow-tinta/10">
+          <GraduationCap className="w-7 h-7 text-folha" />
         </div>
-        <h1 className="text-2xl font-extrabold text-white">Só mais um passo</h1>
-        <p className="text-xs text-slate-400">
+        <h1 className="text-2xl font-extrabold text-tinta">Só mais um passo</h1>
+        <p className="text-xs text-tinta-fraca">
           Complete seu cadastro para liberar a correção de redações.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-4"
+        className="glass-panel p-6 sm:p-8 rounded-sm border border-regua shadow-2xl space-y-4"
       >
         {erro && (
-          <div className="p-3 rounded-xl text-xs bg-red-950/50 border border-red-800/60 text-red-300">{erro}</div>
+          <div className="p-3 rounded-sm text-xs bg-vermelho-claro border border-vermelho/30 text-vermelho">{erro}</div>
         )}
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">Nome Completo</label>
+          <label className="block text-xs font-semibold text-tinta-suave">Nome Completo</label>
           <div className="relative">
-            <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <User className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               required
               value={nomeCompleto}
               onChange={(e) => setNomeCompleto(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-vermelho"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">WhatsApp</label>
+          <label className="block text-xs font-semibold text-tinta-suave">WhatsApp</label>
           <div className="relative">
-            <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Phone className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="tel"
               required
               placeholder="(11) 91234-5678"
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">Cidade e Estado</label>
+          <label className="block text-xs font-semibold text-tinta-suave">Cidade e Estado</label>
           <div className="relative">
-            <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <MapPin className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               required
               placeholder="Ex: Fortaleza - CE"
               value={cidadeEstado}
               onChange={(e) => setCidadeEstado(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">Data de Nascimento</label>
+          <label className="block text-xs font-semibold text-tinta-suave">Data de Nascimento</label>
           <div className="relative">
-            <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Calendar className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="date"
               required
               value={dataNascimento}
               onChange={(e) => setDataNascimento(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-vermelho"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">Curso dos Sonhos</label>
+          <label className="block text-xs font-semibold text-tinta-suave">Curso dos Sonhos</label>
           <div className="relative">
-            <Award className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Award className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               required
               placeholder="Ex: Medicina, Direito, Engenharia"
               value={cursoDosSonhos}
               onChange={(e) => setCursoDosSonhos(e.target.value)}
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
             />
           </div>
         </div>
@@ -171,7 +171,7 @@ function CompletarPerfilForm() {
         <button
           type="submit"
           disabled={salvando}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="w-full py-3 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
         >
           {salvando ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -189,10 +189,10 @@ function CompletarPerfilForm() {
 
 export default function CompletarPerfilPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-papel text-tinta">
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Suspense fallback={<Loader2 className="w-8 h-8 text-blue-400 animate-spin" />}>
+        <Suspense fallback={<Loader2 className="w-8 h-8 text-vermelho animate-spin" />}>
           <CompletarPerfilForm />
         </Suspense>
       </main>

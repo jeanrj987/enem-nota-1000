@@ -1,30 +1,24 @@
 import type { Metadata } from 'next';
-import { Inter, Outfit, Anton, Barlow } from 'next/font/google';
+import { Newsreader, Karla, Caveat } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-const inter = Inter({
+// Identidade "caderno & caneta vermelha": serifada para o enunciado (é assim
+// que uma prova é impressa), humanista para leitura corrida e manuscrita
+// reservada às anotações do corretor.
+const newsreader = Newsreader({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-newsreader',
 });
 
-const outfit = Outfit({
+const karla = Karla({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-karla',
 });
 
-// Identidade "placar": condensada pesada para as notas (que são o herói da
-// página de vendas) e uma grotesca esportiva para o restante da interface.
-const anton = Anton({
+const caveat = Caveat({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-placar',
-});
-
-const barlow = Barlow({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-ui',
+  variable: '--font-caveat',
 });
 
 export const metadata: Metadata = {
@@ -51,9 +45,9 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${outfit.variable} ${anton.variable} ${barlow.variable} dark antialiased`}
+      className={`${newsreader.variable} ${karla.variable} ${caveat.variable} antialiased`}
     >
-      <body className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
+      <body className="min-h-screen bg-papel text-tinta flex flex-col fonte-humanista selection:bg-vermelho selection:text-folha">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

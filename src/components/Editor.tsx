@@ -190,18 +190,18 @@ export function Editor({
       />
 
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-950/60 border border-red-800/80 text-red-300 text-sm flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-sm bg-vermelho-claro border border-vermelho/30 text-vermelho text-sm flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-vermelho shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold">Não foi possível processar:</div>
-            <p className="text-xs text-red-300/90 mt-0.5">{errorMessage}</p>
+            <p className="text-xs text-vermelho mt-0.5">{errorMessage}</p>
           </div>
         </div>
       )}
 
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="text-xs text-slate-400 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-blue-400" />
+        <div className="text-xs text-tinta-fraca flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-vermelho" />
           <span>Avaliação pelas 5 competências oficiais do INEP com sugestão de reescrita</span>
         </div>
 
@@ -209,7 +209,7 @@ export function Editor({
           type="button"
           onClick={handleEnviarCorrecao}
           disabled={isCorrigindo}
-          className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="w-full sm:w-auto px-8 py-3.5 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha font-semibold text-sm shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {isCorrigindo ? (
             <>

@@ -103,9 +103,28 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Consequência**: o cliente perdeu a capacidade de gravar ou alterar o próprio diagnóstico, o que também fecha a porta para forjar nota. `salvarRedacao` deixou de existir em `storage.ts`.
 - **Pendência**: o fixture `MOCK_REDACOES_INICIAIS` do localStorage ainda traz uma correção completa de demonstração; ela não é o texto do usuário, mas convém revisar se deve continuar aparecendo no histórico como se fosse.
 
+### ADR 014: Identidade "caderno & caneta vermelha" para o projeto inteiro, com cor semântica em tokens
+- **Status**: Aprovado e Implementado
+- **Contexto**: o produto tinha duas identidades convivendo — a `/vendas` no visual "placar" (fundo azul-marinho, verde-limão) e todo o resto do sistema no tema escuro original (slate + degradê azul→roxo→rosa, glassmorphism, orbes desfocados). O usuário havia apontado antes que o visual estava "com cara de IA", diagnóstico que o CSS confirmava. A decisão foi unificar tudo na direção **"caderno & caneta vermelha"**, que estava preservada em `design-alternativas/` aguardando avaliação.
+- **Decisão**: aplicar o caderno ao projeto inteiro, inclusive à `/vendas`. A interface passa a imitar uma folha de redação corrigida à mão — que é o próprio produto vendido. Papel `#F7F4ED`, tinta quente `#1C1917`, vermelho de corretor `#C0392B` como acento único, azul de caneta `#29487D` para o texto do aluno; serifada (Newsreader) no enunciado, humanista (Karla) na leitura corrida, manuscrita (Caveat) nas anotações do corretor.
+- **Decisão estrutural**: a cor deixou de ser escrita à mão nas telas. Os tons entram no bloco `@theme` do Tailwind 4 em `globals.css` com **nomes semânticos pelo papel que exercem**, não pelo tom (`bg-papel`, `bg-folha`, `text-tinta`, `text-tinta-suave`, `border-regua`, `bg-vermelho`, `text-azul`). O motivo é direto: a conversão exigiu tocar em 844 ocorrências espalhadas por 23 arquivos justamente porque a paleta anterior estava codificada classe a classe. Com tokens, a próxima mudança de identidade acontece em um arquivo.
+- **Alavanca de conversão**: `.glass-panel` (usada em 19 telas) e `.gradient-text` (em 4) mantiveram o nome mas trocaram de definição — de vidro fosco para folha de papel, e de degradê para tinta cheia. Redefinir duas classes converteu a maior parte das superfícies sem editar as telas.
+- **Removido**: todo degradê de CTA (virou vermelho chapado), os orbes `blur-3xl` decorativos de `/`, `/auth` e `CorrecaoView`, e as classes mortas `.glow-effect` e `.gradient-border`. Os cantos passaram de `rounded-xl/2xl/3xl` para `rounded-sm`: papel não tem borda arredondada.
+- **Marcações de erro**: deixaram de ser bloco de cor chapada (que é como um estudante usa marca-texto) e passaram a ser traço embaixo da palavra com leve fundo — que é como o corretor marca.
+- **Consequência**: `/vendas` perdeu o visual "placar", que foi preservado em `design-alternativas/vendas-placar.tsx` + `.css` pelo mesmo critério com que o caderno havia sido guardado. As fontes Anton e Barlow saíram do `layout.tsx`; Newsreader, Karla e Caveat voltaram.
+- **Risco assumido**: a conversão foi feita por script e revisada depois. Os defeitos que o script criou e que foram corrigidos à mão ficam registrados como alerta para uma próxima migração desse tipo: texto escuro sobre botão vermelho (o `text-white` virou `text-tinta` indiscriminadamente), tons órfãos deixados pela remoção de gradiente (`bg-vermelho ... -600`), e ícones aninhados dentro de blocos de acento, que o script não via porque olhava uma `className` por vez, sem relação pai/filho.
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.0.0] - 2026-09-07 (identidade única "caderno & caneta vermelha")
+- **Alterado**: o projeto inteiro passou do tema escuro para a identidade "caderno & caneta vermelha", incluindo a `/vendas`, que abandonou o visual "placar". Ver ADR 014.
+- **Adicionado**: camada de cor semântica em `@theme` (`bg-papel`, `text-tinta`, `border-regua`, `bg-vermelho`...), substituindo 844 classes de cor escritas à mão em 23 arquivos.
+- **Alterado**: fontes do `layout.tsx` — saem Anton e Barlow, entram Newsreader (serifada), Karla (humanista) e Caveat (manuscrita).
+- **Removido**: degradês de CTA, orbes `blur-3xl` decorativos, glassmorphism e as classes mortas `.glow-effect` e `.gradient-border`.
+- **Preservado**: o visual "placar" foi para `design-alternativas/vendas-placar.tsx` e `vendas-placar.css`, do mesmo modo que o caderno havia sido guardado antes.
+- **Verificação**: `tsc` limpo, build de produção gerando as 16 rotas, 93/93 testes passando e as 8 rotas respondendo 200.
 
 ### [v1.9.1] - 2026-09-06 (migração do paywall tornada idempotente)
 - **Corrigido**: `supabase/schema-paywall.sql` falhava com `ERROR 42703: column r.correcao does not exist` quando executado numa base em que a coluna `redacoes.correcao` já não existia (segunda execução, ou base criada depois da mudança). A causa é que o Postgres analisa o lote inteiro antes de executar, então a referência literal a `r.correcao` quebrava o script mesmo dentro de um `where` que nunca casaria. O bloco de migração passou para `DO $$ ... EXECUTE ... $$` guardado por uma checagem em `information_schema.columns`: o SQL só é compilado se a coluna existir. O script agora pode ser rodado quantas vezes for preciso, sem efeito colateral.

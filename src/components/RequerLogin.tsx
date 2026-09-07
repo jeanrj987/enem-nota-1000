@@ -44,7 +44,7 @@ export function RequerLogin({ children }: { children: React.ReactNode }) {
   if (!liberado) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-vermelho animate-spin" />
       </div>
     );
   }

@@ -39,19 +39,19 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-panel border-b border-slate-800/80 transition-all">
+    <header className="sticky top-0 z-50 w-full glass-panel border-b border-regua/80 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-sm bg-vermelho hover:bg-vermelho-escuro flex items-center justify-center shadow-lg shadow-tinta/10 group-hover:scale-105 transition-transform">
+              <GraduationCap className="w-6 h-6 text-folha" />
             </div>
             <div>
-              <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
+              <span className="text-xl font-bold tracking-tight text-tinta flex items-center gap-1.5">
                 Nota <span className="gradient-text">1000 AI</span>
               </span>
-              <span className="text-[10px] text-slate-400 block -mt-1 font-medium tracking-wider uppercase">
+              <span className="text-[10px] text-tinta-fraca block -mt-1 font-medium tracking-wider uppercase">
                 Banca ENEM Especialista
               </span>
             </div>
@@ -66,13 +66,13 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-blue-600/15 text-blue-400 border border-blue-500/30 shadow-sm'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-vermelho-claro text-vermelho border border-vermelho shadow-sm'
+                      : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-vermelho' : 'text-tinta-fraca'}`} />
                   {link.label}
                 </Link>
               );
@@ -83,12 +83,12 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {usuario ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 max-w-[160px] truncate" title={usuario.email ?? ''}>
+                <span className="text-xs text-tinta-fraca max-w-[160px] truncate" title={usuario.email ?? ''}>
                   {usuario.email}
                 </span>
                 <button
                   onClick={handleSair}
-                  className="flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-sm hover:bg-folha-2/60 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Sair
@@ -97,14 +97,14 @@ export function Navbar() {
             ) : (
               <Link
                 href="/auth"
-                className="text-sm font-medium text-slate-300 hover:text-white px-3 py-2 rounded-lg hover:bg-slate-800/60 transition-colors"
+                className="text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-sm hover:bg-folha-2/60 transition-colors"
               >
                 Entrar
               </Link>
             )}
             <Link
               href="/nova-redacao"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-sm font-semibold shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <PenTool className="w-4 h-4" />
               <span>Escrever Redação</span>
@@ -115,7 +115,7 @@ export function Navbar() {
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 focus:outline-none"
+              className="p-2 rounded-sm text-tinta-fraca hover:text-tinta hover:bg-folha-2/60 focus:outline-none"
               aria-label="Abrir menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -126,7 +126,7 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-950/95 backdrop-blur-xl px-4 pt-3 pb-5 space-y-2">
+        <div className="md:hidden border-t border-regua bg-papel/95 backdrop-blur-xl px-4 pt-3 pb-5 space-y-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -135,22 +135,22 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm font-medium ${
                   isActive
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-vermelho-claro text-vermelho border border-vermelho'
+                    : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                 }`}
               >
-                <Icon className="w-5 h-5 text-blue-400" />
+                <Icon className="w-5 h-5 text-vermelho" />
                 {link.label}
               </Link>
             );
           })}
-          <div className="pt-3 border-t border-slate-800/60 flex flex-col gap-2">
+          <div className="pt-3 border-t border-regua/60 flex flex-col gap-2">
             <Link
               href="/nova-redacao"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium shadow-md shadow-blue-600/30"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-vermelho text-folha text-sm font-medium shadow-md shadow-tinta/10"
             >
               <PenTool className="w-4 h-4" />
               Nova Redação
@@ -158,7 +158,7 @@ export function Navbar() {
             {usuario ? (
               <button
                 onClick={handleSair}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-slate-900 text-slate-200 border border-slate-800 text-sm font-medium cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-folha text-tinta border border-regua text-sm font-medium cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 Sair ({usuario.email})
@@ -167,7 +167,7 @@ export function Navbar() {
               <Link
                 href="/auth"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-slate-900 text-slate-200 border border-slate-800 text-sm font-medium"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-folha text-tinta border border-regua text-sm font-medium"
               >
                 Entrar
               </Link>

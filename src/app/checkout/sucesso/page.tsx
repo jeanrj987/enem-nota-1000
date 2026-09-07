@@ -53,12 +53,12 @@ function ConteudoSucesso() {
   }, [sessionId]);
 
   return (
-    <div className="glass-panel p-10 sm:p-16 rounded-3xl border border-slate-800 text-center space-y-5 max-w-lg mx-auto">
+    <div className="glass-panel p-10 sm:p-16 rounded-sm border border-regua text-center space-y-5 max-w-lg mx-auto">
       {estado === 'confirmando' && (
         <>
-          <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
-          <h1 className="text-xl font-bold text-white">Confirmando seu pagamento...</h1>
-          <p className="text-sm text-slate-400">
+          <Loader2 className="w-10 h-10 text-vermelho animate-spin mx-auto" />
+          <h1 className="text-xl font-bold text-tinta">Confirmando seu pagamento...</h1>
+          <p className="text-sm text-tinta-fraca">
             Isso costuma levar poucos segundos. Não feche esta página.
           </p>
         </>
@@ -66,14 +66,14 @@ function ConteudoSucesso() {
 
       {estado === 'ativo' && (
         <>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center mx-auto text-emerald-400">
+          <div className="w-14 h-14 rounded-sm bg-verde-claro border border-verde/30 flex items-center justify-center mx-auto text-verde">
             <CheckCircle2 className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-bold text-white">Pagamento confirmado!</h1>
-          <p className="text-sm text-slate-400">Seu acesso ao avaliador já está liberado.</p>
+          <h1 className="text-xl font-bold text-tinta">Pagamento confirmado!</h1>
+          <p className="text-sm text-tinta-fraca">Seu acesso ao avaliador já está liberado.</p>
           <Link
             href="/nova-redacao"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-sm bg-vermelho hover:bg-vermelho text-folha text-xs font-semibold shadow-md transition-all"
           >
             Corrigir minha primeira redação
           </Link>
@@ -82,11 +82,11 @@ function ConteudoSucesso() {
 
       {estado === 'demorando' && (
         <>
-          <div className="w-14 h-14 rounded-2xl bg-amber-950/60 border border-amber-800/60 flex items-center justify-center mx-auto text-amber-400">
+          <div className="w-14 h-14 rounded-sm bg-ambar-claro border border-ambar/30 flex items-center justify-center mx-auto text-ambar">
             <AlertCircle className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-bold text-white">Ainda confirmando</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-xl font-bold text-tinta">Ainda confirmando</h1>
+          <p className="text-sm text-tinta-fraca">
             O pagamento está demorando mais que o esperado para confirmar
             {sessionId ? ` (referência ${sessionId.slice(0, 20)}...)` : ''}. Se você já pagou,
             recarregue esta página em instantes.
@@ -99,10 +99,10 @@ function ConteudoSucesso() {
 
 export default function PaginaSucessoCheckout() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-papel text-tinta">
       <Navbar />
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-16">
-        <Suspense fallback={<Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto" />}>
+        <Suspense fallback={<Loader2 className="w-8 h-8 text-vermelho animate-spin mx-auto" />}>
           <ConteudoSucesso />
         </Suspense>
       </main>

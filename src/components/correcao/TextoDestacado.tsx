@@ -24,14 +24,14 @@ const HIGHLIGHT_CLASS_POR_TIPO: Record<string, string> = {
 export function TextoDestacado({ texto, erros, selectedErrorId, onSelectError }: TextoDestacadoProps) {
   if (!erros || erros.length === 0) {
     return (
-      <div className="whitespace-pre-wrap leading-relaxed text-sm text-slate-200">
+      <div className="whitespace-pre-wrap leading-relaxed text-sm text-tinta">
         {texto}
       </div>
     );
   }
 
   return (
-    <div className="whitespace-pre-wrap leading-relaxed text-sm text-slate-200 space-y-4">
+    <div className="whitespace-pre-wrap leading-relaxed text-sm text-tinta space-y-4">
       {texto.split(/\n\s*\n/).map((paragrafo, pIdx) => {
         let parts: React.ReactNode[] = [paragrafo];
 

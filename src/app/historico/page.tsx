@@ -51,29 +51,29 @@ export default function HistoricoPage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-papel text-tinta">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
         <RequerAssinatura>
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-regua/80 pb-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-blue-400 uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-semibold text-vermelho uppercase tracking-wider">
               <TrendingUp className="w-4 h-4" />
               <span>Análise de Desempenho & Métricas</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-tinta">
               Histórico & Evolução Pedagógica
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-tinta-fraca">
               Visualize seu progresso contínuo em cada uma das 5 competências do ENEM.
             </p>
           </div>
 
           <Link
             href="/nova-redacao"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all self-start md:self-auto"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all self-start md:self-auto"
           >
             <PenTool className="w-4 h-4" />
             <span>Treinar Nova Redação</span>
@@ -86,14 +86,14 @@ export default function HistoricoPage() {
         )}
 
         {/* Tabela Detalhada de Histórico */}
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+        <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-tinta flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-vermelho" />
                 Registros de Ensaios Anteriores
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-tinta-fraca">
                 Histórico detalhado com abertura de notas por competência
               </p>
             </div>
@@ -101,20 +101,20 @@ export default function HistoricoPage() {
             {/* Filtros e Busca */}
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-tinta-fraca absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Buscar por tema..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="bg-slate-900/90 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  className="bg-folha/90 border border-regua rounded-sm pl-8 pr-3 py-1.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
                 />
               </div>
 
               <select
                 value={filtroFaixa}
                 onChange={(e: any) => setFiltroFaixa(e.target.value)}
-                className="bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500"
+                className="bg-folha/90 border border-regua rounded-sm px-3 py-1.5 text-xs text-tinta-suave focus:outline-none focus:border-vermelho"
               >
                 <option value="todas">Todas as notas</option>
                 <option value="900+">Excelentes (900+)</option>
@@ -125,14 +125,14 @@ export default function HistoricoPage() {
           </div>
 
           {redacoesFiltradas.length === 0 ? (
-            <div className="text-center py-10 text-xs text-slate-400">
+            <div className="text-center py-10 text-xs text-tinta-fraca">
               Nenhuma redação corresponde aos filtros de busca aplicados.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800/80 text-slate-400 uppercase tracking-wider font-semibold">
+                  <tr className="border-b border-regua/80 text-tinta-fraca uppercase tracking-wider font-semibold">
                     <th className="py-3 px-4">Data</th>
                     <th className="py-3 px-4">Tema da Redação</th>
                     <th className="py-3 px-2 text-center" title="Competência 1: Norma Culta">C1</th>
@@ -144,15 +144,15 @@ export default function HistoricoPage() {
                     <th className="py-3 px-4 text-right">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-regua/50">
                   {redacoesFiltradas.map((red) => {
                     const c = red.correcao;
                     const getC = (num: number) => c?.competencias.find((comp) => comp.numero === num)?.nota || 0;
                     const nota = c?.nota_geral || 0;
 
                     return (
-                      <tr key={red.id} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
+                      <tr key={red.id} className="hover:bg-folha/40 transition-colors">
+                        <td className="py-3.5 px-4 text-tinta-fraca whitespace-nowrap">
                           {new Date(red.created_at).toLocaleDateString('pt-BR', {
                             day: '2-digit',
                             month: '2-digit',
@@ -160,24 +160,24 @@ export default function HistoricoPage() {
                           })}
                         </td>
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-200 line-clamp-1">
+                          <div className="font-semibold text-tinta line-clamp-1">
                             {red.titulo || 'Redação ENEM'}
                           </div>
-                          <div className="text-[11px] text-slate-400 line-clamp-1">{red.tema}</div>
+                          <div className="text-[11px] text-tinta-fraca line-clamp-1">{red.tema}</div>
                         </td>
-                        <td className="py-3.5 px-2 text-center font-medium text-slate-300">{getC(1)}</td>
-                        <td className="py-3.5 px-2 text-center font-medium text-slate-300">{getC(2)}</td>
-                        <td className="py-3.5 px-2 text-center font-medium text-slate-300">{getC(3)}</td>
-                        <td className="py-3.5 px-2 text-center font-medium text-slate-300">{getC(4)}</td>
-                        <td className="py-3.5 px-2 text-center font-medium text-slate-300">{getC(5)}</td>
+                        <td className="py-3.5 px-2 text-center font-medium text-tinta-suave">{getC(1)}</td>
+                        <td className="py-3.5 px-2 text-center font-medium text-tinta-suave">{getC(2)}</td>
+                        <td className="py-3.5 px-2 text-center font-medium text-tinta-suave">{getC(3)}</td>
+                        <td className="py-3.5 px-2 text-center font-medium text-tinta-suave">{getC(4)}</td>
+                        <td className="py-3.5 px-2 text-center font-medium text-tinta-suave">{getC(5)}</td>
                         <td className="py-3.5 px-4 text-center">
                           <span
                             className={`px-2.5 py-1 rounded-full font-bold text-xs ${
                               nota >= 900
-                                ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
+                                ? 'bg-verde-claro text-verde border border-verde/30'
                                 : nota >= 800
-                                ? 'bg-blue-950/60 text-blue-400 border border-blue-800/40'
-                                : 'bg-amber-950/60 text-amber-400 border border-amber-800/40'
+                                ? 'bg-vermelho-claro text-vermelho border border-vermelho/30'
+                                : 'bg-ambar-claro text-ambar border border-ambar/30'
                             }`}
                           >
                             {nota}
@@ -186,7 +186,7 @@ export default function HistoricoPage() {
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <Link
                             href={`/correcao/${red.id}`}
-                            className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+                            className="inline-flex items-center gap-1 text-xs text-vermelho hover:text-vermelho font-semibold transition-colors"
                           >
                             <span>Ver Detalhes</span>
                             <ChevronRight className="w-3.5 h-3.5" />
