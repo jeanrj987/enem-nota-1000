@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { temAcessoAtivo } from '@/lib/assinatura';
 import { buscarPerfil, perfilCompleto } from '@/lib/perfil';
+import { urlDeLogin } from '@/lib/redirecionamento';
 
 /**
  * Bloqueia o conteúdo interno até confirmar login + cadastro completo +
@@ -25,7 +26,7 @@ export function RequerAssinatura({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (carregando) return;
     if (!usuario) {
-      router.replace('/auth');
+      router.replace(urlDeLogin(pathname || '/dashboard'));
       return;
     }
 

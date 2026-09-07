@@ -6,6 +6,7 @@ import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { PlanoId } from '@/lib/planos';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { urlDeLogin } from '@/lib/redirecionamento';
 
 const BENEFICIOS = [
   {
@@ -88,7 +89,7 @@ export default function PaginaDeVendas() {
     setErroCheckout(null);
 
     if (!usuario) {
-      router.push('/auth?redirect=/vendas');
+      router.push(urlDeLogin('/vendas'));
       return;
     }
 
@@ -97,7 +98,7 @@ export default function PaginaDeVendas() {
       const { data: sessionData } = await supabase!.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        router.push('/auth?redirect=/vendas');
+        router.push(urlDeLogin('/vendas'));
         return;
       }
 

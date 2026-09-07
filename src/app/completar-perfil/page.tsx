@@ -7,11 +7,15 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarPerfil, salvarPerfil, perfilCompleto } from '@/lib/perfil';
+import { destinoSeguro, urlDeLogin } from '@/lib/redirecionamento';
 
 function CompletarPerfilForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const destino = searchParams.get('redirect') || '/nova-redacao';
+  // Passa por `destinoSeguro`: o parâmetro já era lido aqui, mas sem
+  // validação — aceitar uma URL externa transformaria esta tela em trampolim
+  // de phishing.
+  const destino = destinoSeguro(searchParams.get('redirect'));
   const { usuario, carregando } = useAuth();
 
   const [checando, setChecando] = useState(true);
@@ -26,7 +30,7 @@ function CompletarPerfilForm() {
   useEffect(() => {
     if (carregando) return;
     if (!usuario) {
-      router.replace('/auth');
+      router.replace(urlDeLogin(destino));
       return;
     }
 

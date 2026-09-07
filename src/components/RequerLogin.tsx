@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarPerfil, perfilCompleto } from '@/lib/perfil';
+import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
 
 /**
  * Exige login + cadastro completo, mas NÃO exige assinatura ativa — usado em
@@ -23,7 +24,9 @@ export function RequerLogin({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (carregando) return;
     if (!usuario) {
-      router.replace('/auth');
+      // Leva junto de onde a pessoa foi barrada: quem tentou abrir uma
+      // correção antiga volta para aquela correção, não para o editor.
+      router.replace(urlDeLogin(pathname || DESTINO_PADRAO));
       return;
     }
 

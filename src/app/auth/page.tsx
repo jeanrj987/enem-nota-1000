@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   GraduationCap,
   Mail,
@@ -21,9 +21,15 @@ import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { cadastrarComEmail, entrarComEmail, entrarComGoogle } from '@/lib/auth';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { destinoSeguro, guardarDestino } from '@/lib/redirecionamento';
 
-export default function AuthPage() {
+function AuthPageConteudo() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // De onde a pessoa veio. Quem chega pela navbar não traz nada e cai no
+  // padrão; quem clicou em "Assinar" na /vendas volta para lá depois de
+  // entrar, em vez de ser despejado no editor e perder a compra.
+  const destino = destinoSeguro(searchParams.get('redirect'));
   const { usuario, carregando } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -39,9 +45,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!carregando && usuario) {
-      router.replace('/nova-redacao');
+      router.replace(destino);
     }
-  }, [carregando, usuario, router]);
+  }, [carregando, usuario, router, destino]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +73,7 @@ export default function AuthPage() {
           text: 'Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.',
         });
       }
-      setTimeout(() => router.push('/nova-redacao'), 800);
+      setTimeout(() => router.push(destino), 800);
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Não foi possível concluir a operação.' });
     } finally {
@@ -79,6 +85,10 @@ export default function AuthPage() {
     setMessage(null);
     setLoadingGoogle(true);
     try {
+      // O Google leva o navegador para fora e traz de volta em /auth/callback,
+      // sem a query string. Guardar antes de sair é o que faz o destino
+      // sobreviver à viagem.
+      guardarDestino(destino);
       const { error } = await entrarComGoogle();
       if (error) throw error;
       // navegador é redirecionado para o Google — não há mais o que fazer aqui
@@ -315,5 +325,23 @@ export default function AuthPage() {
 
       <Footer />
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` obriga a um limite de Suspense: a rota é pré-renderizada
+ * estaticamente e a query string só existe no cliente. Sem isso o build falha.
+ */
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-papel">
+          <Loader2 className="w-8 h-8 text-vermelho animate-spin" />
+        </div>
+      }
+    >
+      <AuthPageConteudo />
+    </Suspense>
   );
 }

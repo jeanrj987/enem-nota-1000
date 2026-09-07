@@ -114,9 +114,26 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Consequência**: `/vendas` perdeu o visual "placar", que foi preservado em `design-alternativas/vendas-placar.tsx` + `.css` pelo mesmo critério com que o caderno havia sido guardado. As fontes Anton e Barlow saíram do `layout.tsx`; Newsreader, Karla e Caveat voltaram.
 - **Risco assumido**: a conversão foi feita por script e revisada depois. Os defeitos que o script criou e que foram corrigidos à mão ficam registrados como alerta para uma próxima migração desse tipo: texto escuro sobre botão vermelho (o `text-white` virou `text-tinta` indiscriminadamente), tons órfãos deixados pela remoção de gradiente (`bg-vermelho ... -600`), e ícones aninhados dentro de blocos de acento, que o script não via porque olhava uma `className` por vez, sem relação pai/filho.
 
+### ADR 015: Destino pós-login centralizado e validado (`?redirect=`)
+- **Status**: Aprovado e Implementado
+- **Contexto**: a `/vendas` mandava quem não estava logado para `/auth?redirect=/vendas`, mas o `/auth` ignorava o parâmetro e jogava todo mundo em `/nova-redacao`. Na prática, quem clicava em "Assinar" criava a conta e era despejado no editor — a compra evaporava no meio do funil. O `/completar-perfil` era o único que lia o parâmetro, e mesmo assim **sem validar**.
+- **Decisão**: concentrar leitura, validação e transporte do destino em `src/lib/redirecionamento.ts`, em vez de repetir a regra nas cinco telas que precisam dela. `destinoSeguro()` aceita apenas caminho interno; `urlDeLogin()` monta o link para `/auth`; `guardarDestino()`/`resgatarDestino()` cuidam da ida e volta pelo provedor OAuth.
+- **Por que a validação não é detalhe**: um `?redirect=` aceito sem checagem é um **open redirect**. O atacante monta `nossosite.com/auth?redirect=https://site-falso.com`; a vítima confere o domínio, vê a nossa tela de login legítima, entra, e é despejada num clone que pede a senha de novo. A função recusa URL absoluta, esquema perigoso (`javascript:`, `data:`) e protocolo relativo (`//host` e `/\host`, que o navegador resolve como site externo mesmo começando com barra — é o desvio clássico de uma checagem que só testa `startsWith('/')`).
+- **Por que o Google precisa de sessionStorage**: `signInWithOAuth` tira o navegador do site e o traz de volta em `/auth/callback`, um carregamento novo, sem a query string original. Copiar o parâmetro entre páginas funcionaria no login por e-mail e falharia **em silêncio** no Google. O destino é guardado antes da saída e consumido na volta — consumido, para não vazar para um login seguinte, de outro contexto. `sessionStorage` e não `localStorage` porque o destino deve morrer com a aba.
+- **Alcance**: `RequerLogin` e `RequerAssinatura` passaram a levar a rota atual, então quem é barrado ao abrir uma correção antiga volta **para aquela correção**. Os links "Entrar" da Navbar idem.
+- **Consequência**: 12 testes novos cobrindo a barreira de open redirect e a viagem pelo provedor (total 93 → 105).
+- **Limite conhecido**: no cadastro por e-mail há confirmação obrigatória, então essa pessoa não tem sessão na hora e não é redirecionada; o `?redirect=` só age no login seguinte.
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.1.0] - 2026-09-07 (destino pós-login: o funil de compra deixa de perder o cliente)
+- **Corrigido**: quem clicava em "Assinar" na `/vendas` sem estar logado criava a conta e era mandado para `/nova-redacao` em vez de voltar ao checkout. `/auth` e `/auth/callback` passam a respeitar o `?redirect=`. Ver ADR 015.
+- **Adicionado**: `src/lib/redirecionamento.ts` — validação contra open redirect (recusa URL absoluta, `javascript:`, `data:` e protocolo relativo `//host`) e transporte do destino pelo `sessionStorage` durante o login com Google, que perde a query string na ida e volta pelo provedor.
+- **Melhorado**: `RequerLogin`, `RequerAssinatura` e os links "Entrar" da Navbar levam a rota atual, então quem é barrado volta ao lugar de onde tentou entrar.
+- **Segurança**: `/completar-perfil` já lia o `?redirect=` mas não o validava; passou a validar.
+- **Testes**: 93 → 105.
 
 ### [v2.0.0] - 2026-09-07 (identidade única "caderno & caneta vermelha")
 - **Alterado**: o projeto inteiro passou do tema escuro para a identidade "caderno & caneta vermelha", incluindo a `/vendas`, que abandonou o visual "placar". Ver ADR 014.

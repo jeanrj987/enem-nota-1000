@@ -16,6 +16,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
 import { sair } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
@@ -96,7 +97,7 @@ export function Navbar() {
               </div>
             ) : (
               <Link
-                href="/auth"
+                href={urlDeLogin(pathname || DESTINO_PADRAO)}
                 className="text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-sm hover:bg-folha-2/60 transition-colors"
               >
                 Entrar
@@ -165,7 +166,7 @@ export function Navbar() {
               </button>
             ) : (
               <Link
-                href="/auth"
+                href={urlDeLogin(pathname || DESTINO_PADRAO)}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-folha text-tinta border border-regua text-sm font-medium"
               >

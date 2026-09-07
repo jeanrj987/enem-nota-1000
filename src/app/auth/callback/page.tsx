@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { resgatarDestino } from '@/lib/redirecionamento';
 
 /**
  * Destino do redirect do OAuth (Google). O cliente supabase-js já detecta o
@@ -11,10 +12,12 @@ import { supabase } from '@/lib/supabase';
  * (detectSessionInUrl, padrão do SDK) — esta página só espera a sessão
  * aparecer e redireciona, sem precisar de troca manual no servidor.
  *
- * Manda para /nova-redacao (livre para qualquer usuário logado) e não para
- * /dashboard: o dashboard exige assinatura, então quem acabou de criar conta
- * seria rebatido direto para /vendas sem nunca ver que pode escrever uma
- * redação de graça.
+ * O destino vem do sessionStorage, guardado por /auth antes de sair para o
+ * Google — a query string não sobrevive à ida e volta pelo provedor. Sem
+ * destino guardado cai em /nova-redacao (livre para qualquer usuário logado)
+ * e não em /dashboard: o dashboard exige assinatura, então quem acabou de
+ * criar conta seria rebatido direto para /vendas sem nunca ver que pode
+ * escrever uma redação de graça.
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -26,14 +29,19 @@ export default function AuthCallbackPage() {
     }
 
     let cancelado = false;
+    // Resgatado uma vez só: os dois caminhos abaixo (listener e getSession)
+    // podem disparar, e consumir o valor duas vezes deixaria o segundo sem
+    // destino.
+    const destino = resgatarDestino();
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelado) return;
-      if (session) router.replace('/nova-redacao');
+      if (session) router.replace(destino);
     });
 
     supabase.auth.getSession().then(({ data }) => {
       if (cancelado) return;
-      if (data.session) router.replace('/nova-redacao');
+      if (data.session) router.replace(destino);
     });
 
     return () => {
