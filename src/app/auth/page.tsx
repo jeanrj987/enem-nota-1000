@@ -59,21 +59,35 @@ function AuthPageConteudo() {
         const { error } = await entrarComEmail(email, senha);
         if (error) throw error;
         setMessage({ type: 'success', text: 'Login efetuado com sucesso! Redirecionando...' });
-      } else {
-        const { error } = await cadastrarComEmail(email, senha, {
-          nomeCompleto,
-          whatsapp,
-          cidadeEstado,
-          dataNascimento,
-          cursoDosSonhos,
-        });
-        if (error) throw error;
-        setMessage({
-          type: 'success',
-          text: 'Conta criada! Verifique seu e-mail para confirmar o cadastro antes de entrar.',
-        });
+        setTimeout(() => router.push(destino), 800);
+        return;
       }
-      setTimeout(() => router.push(destino), 800);
+
+      const { data, error } = await cadastrarComEmail(email, senha, {
+        nomeCompleto,
+        whatsapp,
+        cidadeEstado,
+        dataNascimento,
+        cursoDosSonhos,
+      });
+      if (error) throw error;
+
+      // O cadastro só devolve sessão quando a confirmação de e-mail está
+      // desligada no Supabase — que é a configuração pretendida: o e-mail é
+      // campo obrigatório, não etapa de verificação. Ainda assim a tela
+      // verifica em vez de redirecionar às cegas: se a confirmação for
+      // religada algum dia, a pessoa fica aqui lendo a instrução em vez de
+      // ser jogada deslogada na página seguinte e ricocheteada de volta.
+      if (data.session) {
+        setMessage({ type: 'success', text: 'Conta criada! Redirecionando...' });
+        setTimeout(() => router.push(destino), 800);
+        return;
+      }
+
+      setMessage({
+        type: 'success',
+        text: 'Conta criada! Confirme o cadastro pelo link enviado ao seu e-mail e depois entre por aqui.',
+      });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Não foi possível concluir a operação.' });
     } finally {

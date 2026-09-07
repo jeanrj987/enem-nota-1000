@@ -124,11 +124,20 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Consequência**: 12 testes novos cobrindo a barreira de open redirect e a viagem pelo provedor (total 93 → 105).
 - **Limite conhecido**: no cadastro por e-mail há confirmação obrigatória, então essa pessoa não tem sessão na hora e não é redirecionada; o `?redirect=` só age no login seguinte.
 
+### ADR 016: E-mail como campo obrigatório, não como etapa de verificação
+- **Status**: Aprovado — metade no código, metade pendente de configuração no painel
+- **Contexto**: a tela de cadastro exibia "Verifique seu e-mail para confirmar o cadastro antes de entrar" e, **800ms depois, redirecionava assim mesmo**, com ou sem sessão. Se a confirmação estivesse ligada, a pessoa nem terminava de ler a instrução: era jogada deslogada na página seguinte e ricocheteada de volta para `/auth` pelo `RequerLogin` — um vaivém sem saída. Se estivesse desligada, a mensagem mentia, mandando confirmar um e-mail que não precisava de confirmação.
+- **Decisão de produto (do usuário)**: o e-mail é **campo obrigatório do cadastro, não etapa de verificação**. A confirmação por e-mail fica desligada. O raciocínio é de conversão: o público é estudante no celular, e obrigá-lo a sair do site, abrir a caixa de entrada e caçar o e-mail (que às vezes cai no spam) derruba a compra no meio do funil. O dado de contato que sustenta a operação de vendas no X1 é o WhatsApp, também obrigatório.
+- **Decisão técnica**: a tela deixou de redirecionar às cegas. `signUp` só devolve sessão quando a confirmação está desligada, então o código agora **verifica** `data.session`: com sessão, segue para o destino; sem sessão, permanece na tela com a instrução legível. Isso vale nas duas configurações — se a confirmação for religada um dia, o fluxo degrada com elegância em vez de virar vaivém.
+- **Trade-off assumido**: sem confirmação, o e-mail pode ser inventado. É aceito conscientemente porque o canal de venda é o WhatsApp, não o e-mail.
+- **Pendência de configuração**: desligar "Confirm email" em Authentication → Sign In / Providers → Email, no painel do Supabase. Só o dono do projeto tem acesso. Enquanto estiver ligado, o cadastro continua exigindo confirmação — mas agora sem o vaivém.
+
 ---
 
 ## 📋 Changelog do Projeto
 
 ### [v2.1.0] - 2026-09-07 (destino pós-login: o funil de compra deixa de perder o cliente)
+- **Corrigido**: o cadastro redirecionava 800ms depois do envio mesmo sem sessão, atropelando a mensagem de confirmação e ricocheteando a pessoa deslogada de volta para `/auth`. Agora a tela verifica se veio sessão. Ver ADR 016.
 - **Corrigido**: quem clicava em "Assinar" na `/vendas` sem estar logado criava a conta e era mandado para `/nova-redacao` em vez de voltar ao checkout. `/auth` e `/auth/callback` passam a respeitar o `?redirect=`. Ver ADR 015.
 - **Adicionado**: `src/lib/redirecionamento.ts` — validação contra open redirect (recusa URL absoluta, `javascript:`, `data:` e protocolo relativo `//host`) e transporte do destino pelo `sessionStorage` durante o login com Google, que perde a query string na ida e volta pelo provedor.
 - **Melhorado**: `RequerLogin`, `RequerAssinatura` e os links "Entrar" da Navbar levam a rota atual, então quem é barrado volta ao lugar de onde tentou entrar.
