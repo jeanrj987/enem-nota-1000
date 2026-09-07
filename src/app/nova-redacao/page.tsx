@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   PenTool,
@@ -16,10 +16,26 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Editor } from '@/components/Editor';
 import { RequerLogin } from '@/components/RequerLogin';
+import { temAcessoAtivo } from '@/lib/assinatura';
 
 function NovaRedacaoContent() {
   const searchParams = useSearchParams();
   const temaParam = searchParams.get('tema') || '';
+
+  // `null` enquanto a consulta não voltou: o aviso não aparece nesse intervalo.
+  // Assumir "não tem plano" por padrão faria o assinante ver, por um instante,
+  // uma cobrança que ele já pagou — pior do que não ver aviso nenhum.
+  const [assinante, setAssinante] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    temAcessoAtivo().then((tem) => {
+      if (ativo) setAssinante(tem);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -35,9 +51,12 @@ function NovaRedacaoContent() {
         <p className="text-xs sm:text-sm text-tinta-fraca">
           Digite seu texto no editor abaixo ou importe seu documento (.txt, .pdf, .docx) para receber a avaliação imediata.
         </p>
-        <p className="text-[11px] text-ambar bg-ambar-claro border border-ambar/30 rounded-sm px-3 py-2 inline-block">
-          Sem um plano ativo, sua redação é corrigida normalmente, mas a nota e a análise completa aparecem borradas até a assinatura.
-        </p>
+        {assinante === false && (
+          <p className="text-[11px] text-ambar bg-ambar-claro border border-ambar/30 rounded-sm px-3 py-2 inline-block">
+            Sem um plano ativo, sua redação é corrigida normalmente, mas a nota e a
+            análise completa ficam bloqueadas até a assinatura.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

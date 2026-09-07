@@ -146,6 +146,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v2.2.1] - 2026-09-07 (aviso de paywall deixa de aparecer para quem pagou)
+- **Corrigido**: o aviso "Sem um plano ativo..." em `/nova-redacao` estava escrito fixo no JSX, sem verificação nenhuma — aparecia para todo mundo, inclusive para assinante ativo. Passou a consultar `temAcessoAtivo()`. Enquanto a consulta não retorna, o aviso fica oculto: assumir "não tem plano" por padrão faria o assinante ver, por um instante, uma cobrança que já pagou.
+- **Corrigido**: o texto dizia que a nota apareceria "borrada"; desde o ADR 013 ela não é enviada ao navegador. Passou a dizer "bloqueadas", que é o que de fato acontece.
+
 ### [v2.2.0] - 2026-09-07 (WhatsApp validado e normalizado)
 - **Adicionado**: `src/lib/whatsapp.ts` com máscara progressiva, validação de DDD real, recusa de fixo e de dígitos repetidos, e armazenamento em E.164. Aplicado no cadastro e no completar-perfil. Ver ADR 017.
 - **Testes**: 105 → 119.
