@@ -146,6 +146,9 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v2.2.2] - 2026-09-07 (remoção do desconto que não existia)
+- **Removido**: o rodapé anunciava "⚡ Planos & Oferta 60% OFF". Não existe preço cheio no Stripe do qual esses 60% sejam desconto, então era um desconto que nunca existiu — publicidade enganosa vedada pelo CDC, agravada por já haver cliente pagante. O link virou "Planos e preços". Se houver promoção real no futuro, o número volta acompanhado do preço de origem.
+
 ### [v2.2.1] - 2026-09-07 (aviso de paywall deixa de aparecer para quem pagou)
 - **Corrigido**: o aviso "Sem um plano ativo..." em `/nova-redacao` estava escrito fixo no JSX, sem verificação nenhuma — aparecia para todo mundo, inclusive para assinante ativo. Passou a consultar `temAcessoAtivo()`. Enquanto a consulta não retorna, o aviso fica oculto: assumir "não tem plano" por padrão faria o assinante ver, por um instante, uma cobrança que já pagou.
 - **Corrigido**: o texto dizia que a nota apareceria "borrada"; desde o ADR 013 ela não é enviada ao navegador. Passou a dizer "bloqueadas", que é o que de fato acontece.

@@ -57,8 +57,13 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
+                {/* Dizia "Oferta 60% OFF". Não existe preço cheio no Stripe do
+                    qual esses 60% sejam desconto, então era um desconto que
+                    nunca existiu — publicidade enganosa pelo CDC. Se um dia
+                    houver promoção real, o número volta com o preço de origem
+                    ao lado. */}
                 <Link href="/vendas" className="text-ambar font-bold hover:text-ambar transition-colors flex items-center gap-1">
-                  ⚡ Planos & Oferta 60% OFF <ArrowUpRight className="w-3 h-3 text-ambar" />
+                  Planos e preços <ArrowUpRight className="w-3 h-3 text-ambar" />
                 </Link>
               </li>
               <li>
