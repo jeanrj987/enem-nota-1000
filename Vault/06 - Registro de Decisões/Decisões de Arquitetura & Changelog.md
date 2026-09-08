@@ -145,19 +145,34 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ### ADR 018: Correção única no acesso gratuito, completada para dupla ao assinar
 - **Status**: Aprovado e Implementado
 - **Contexto**: medição de 7 de setembro mostrou ~17.000 tokens por correção (prompt de sistema de ~4.500 × 2 chamadas), chegando a ~25.000 quando a divergência aciona a arbitragem. Quem não pagou dispara exatamente o mesmo custo e vê só o número de desvios: pagava-se o produto inteiro para exibir um cadeado.
-- **Decisão**: a assinatura passou a ser consultada **antes** de corrigir. Sem plano, roda uma passagem só (); com plano, a dupla correção de sempre.
-- **O problema que isso cria, e como foi resolvido**: um assinante não pode receber menos do que pagou. A correção gratuita fica marcada com  e, quando o dono passa a ter plano ativo, a tela chama , que roda a segunda passagem sobre o mesmo texto e reconcilia — o mesmo resultado que ele teria se já fosse assinante ao enviar. A rota é idempotente e recusa quem não tem plano, então abrir a tela repetidamente não queima cota.
-- **Distinção necessária**:  já existia, mas significava "a segunda falhou". Sem o campo , o sistema tentaria completar eternamente correções que ficaram únicas por erro de cota. São casos diferentes e agora são distinguíveis.
+- **Decisão**: a assinatura passou a ser consultada **antes** de corrigir. Sem plano, roda uma passagem só (`corrigirRedacaoSimples`); com plano, a dupla correção de sempre.
+- **O problema que isso cria, e como foi resolvido**: um assinante não pode receber menos do que pagou. A correção gratuita fica marcada com `motivoCorrecaoUnica: 'acesso-gratuito'` e, quando o dono passa a ter plano ativo, a tela chama `/api/corrigir/completar`, que roda a segunda passagem sobre o mesmo texto e reconcilia — o mesmo resultado que ele teria se já fosse assinante ao enviar. A rota é idempotente e recusa quem não tem plano, então abrir a tela repetidamente não queima cota.
+- **Distinção necessária**: `correcaoUnica` já existia, mas significava "a segunda falhou". Sem o campo `motivoCorrecaoUnica`, o sistema tentaria completar eternamente correções que ficaram únicas por erro de cota. São casos diferentes e agora são distinguíveis.
 - **Degradação honesta**: se a segunda passagem falhar na hora de completar, a tela devolve a correção que já existe em vez de erro — o aluno tem um diagnóstico real e válido, apenas sem reconciliação. Enquanto a segunda roda, um aviso explica que a nota pode se ajustar, para ela não mudar sozinha sem explicação.
 - **Testes**: 123 → 129.
+
+### ADR 019: Só a Política de Privacidade — o restante do plano de LGPD foi descartado por decisão do usuário
+- **Status**: Aprovado e Implementado, em escopo reduzido.
+- **Histórico**: em 8 de setembro foi implementado um plano de LGPD com quatro frentes — consentimento de marketing desacoplado do cadastro, log de consentimento auditável, direitos do titular (`/configuracoes` com download e exclusão de dados) e retenção agendada. Na sequência, **o usuário pediu explicitamente para manter só a política de privacidade** e descartar o resto ("o restante da lgpd não precisa"). As três outras frentes foram revertidas: os checkboxes de consentimento saíram do cadastro, a tabela `consentimentos` e sua migração (`schema-lgpd.sql`) foram removidas do repositório, e `/termos`, `/configuracoes`, `/api/consentimento`, `/api/conta/dados` e `/api/conta/excluir` foram apagados.
+- **O que permanece**: a rota `/privacidade`, com identificação do controlador (`src/lib/controlador.ts`, deixado em branco de propósito — ver abaixo), a lista de subprocessadores (`SUBPROCESSADORES`: OpenAI, Gemini, Supabase, Stripe, Vercel) com transferência internacional declarada, e o texto revisado para não prometer nada que não existe mais: a seção de direitos do titular agora orienta a pedir por e-mail, em vez de apontar para um botão em `/configuracoes` que foi removido, e o parágrafo de WhatsApp não afirma mais que enviar oferta depende de um checkbox separado, porque esse checkbox não existe.
+- **Risco reintroduzido conscientemente**: o WhatsApp volta a ser coletado como campo único e obrigatório, sem consentimento de marketing desacoplado do uso do produto — a mesma situação que o ADR anterior havia identificado como o maior risco de LGPD do cadastro (Art. 8, §4). O usuário foi informado dessa consequência ao pedir a redução de escopo e decidiu assumi-la.
+- **Identificação do controlador ainda em branco de propósito**: `src/lib/controlador.ts` continua com razão social, CNPJ, endereço e dados do encarregado (DPO, Art. 41) vazios. Inventar esses dados seria pior do que não publicá-los. Enquanto vazios, `/privacidade` exibe um aviso visível de "documento em preenchimento". **Ação exigida do usuário antes de abrir para tráfego real.**
+- **Testes**: voltaram de 138 para 129 com a reversão (os 9 testes das rotas de consentimento/conta e a linha extra de `perfil.test.ts` saíram junto).
 
 ---
 
 ## 📋 Changelog do Projeto
 
+### [v2.5.0] - 2026-09-08 (só a Política de Privacidade)
+- **Adicionado**: página `/privacidade`, com identificação do controlador, tabela de subprocessadores e aviso de documento incompleto enquanto `controlador.ts` não for preenchido.
+- **Revertido, por pedido do usuário**: consentimento de marketing separado, log de consentimento, `/termos`, `/configuracoes` e as rotas de download/exclusão de dados — implementados mais cedo no mesmo dia e descartados a pedido antes do push. Ver ADR 019.
+- **Pendente do usuário**: preencher `src/lib/controlador.ts` com razão social, CNPJ e dados do encarregado antes de abrir para tráfego real.
+- **Testes**: 129 (sem variação líquida — os 9 testes de consentimento/conta entraram e saíram no mesmo dia).
+
+
 ### [v2.4.0] - 2026-09-08 (correção única no acesso gratuito)
 - **Alterado**: quem não tem plano passa a receber uma correção em vez de duas — corta pela metade o custo de LLM de quem ainda não comprou. Ver ADR 018.
-- **Adicionado**: , que completa a correção para dupla assim que a pessoa assina, e / em .
+- **Adicionado**: `/api/corrigir/completar`, que completa a correção para dupla assim que a pessoa assina, e `corrigirRedacaoSimples`/`completarParaDuplaCorrecao` em `openai.ts`.
 
 ### [v2.3.0] - 2026-09-07 (a rota de upload deixa de ser porta aberta)
 - **Segurança**: `/api/upload` passou a exigir sessão (Bearer token verificado pelo service role), como a `/api/corrigir` já fazia. A tela sempre exigiu login, mas a rota por baixo aceitava arquivo de qualquer pessoa da internet — e um PDF sem texto selecionável dispara OCR por visão, que custa por chamada.

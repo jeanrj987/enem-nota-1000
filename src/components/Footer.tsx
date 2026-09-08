@@ -109,9 +109,9 @@ export function Footer() {
         <div className="pt-8 mt-8 border-t border-regua/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-tinta-fraca">
           <p>© {new Date().getFullYear()} Nota 1000 AI. Todos os direitos reservados.</p>
           <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1">
-              Feito para estudantes rumo à aprovação
-            </span>
+            <Link href="/privacidade" className="hover:text-tinta transition-colors">
+              Privacidade
+            </Link>
           </div>
         </div>
       </div>
