@@ -146,6 +146,12 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v2.3.0] - 2026-09-07 (a rota de upload deixa de ser porta aberta)
+- **Segurança**: `/api/upload` passou a exigir sessão (Bearer token verificado pelo service role), como a `/api/corrigir` já fazia. A tela sempre exigiu login, mas a rota por baixo aceitava arquivo de qualquer pessoa da internet — e um PDF sem texto selecionável dispara OCR por visão, que custa por chamada.
+- **Alterado**: o rate limit da rota passou a contar **por usuário** em vez de por IP. O limite por endereço não segura quem troca de IP; por usuário, abusar exige criar contas, o que deixa rastro. O IP fica como reserva caso o id venha vazio.
+- **Ordem importa**: a autenticação roda antes de ler o corpo da requisição, para não processar (nem pagar por) um arquivo de quem não tem sessão. Há teste cobrindo isso: um arquivo acima do teto sem token deve responder 401, nunca 413.
+- **Testes**: 119 → 123.
+
 ### [v2.2.2] - 2026-09-07 (remoção do desconto que não existia)
 - **Removido**: o rodapé anunciava "⚡ Planos & Oferta 60% OFF". Não existe preço cheio no Stripe do qual esses 60% sejam desconto, então era um desconto que nunca existiu — publicidade enganosa vedada pelo CDC, agravada por já haver cliente pagante. O link virou "Planos e preços". Se houver promoção real no futuro, o número volta acompanhado do preço de origem.
 

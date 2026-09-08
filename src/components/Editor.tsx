@@ -86,8 +86,17 @@ export function Editor({
     formData.append('file', file);
 
     try {
+      // A rota de upload passou a exigir sessão: um PDF escaneado dispara OCR
+      // pago, e antes qualquer um podia consumir essa cota sem ter conta.
+      const { data: sessionData } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        throw new Error('Sua sessão expirou. Faça login novamente para enviar o arquivo.');
+      }
+
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 

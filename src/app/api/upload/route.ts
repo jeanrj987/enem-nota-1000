@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import { GoogleGenAI } from '@google/genai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -63,8 +64,35 @@ async function extrairTextoViaOCR(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  // Autenticação antes do rate limit e antes de ler o corpo: um PDF sem texto
+  // selecionável dispara OCR por visão, que custa por chamada. Sem esta
+  // barreira, qualquer pessoa da internet consegue gastar essa cota, e o
+  // limite por IP não segura quem troca de IP. A tela já exigia login —
+  // era a rota por baixo que estava aberta.
+  const token = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return NextResponse.json(
+      { error: 'É necessário estar logado para enviar um arquivo.' },
+      { status: 401 }
+    );
+  }
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Autenticação não está configurada.' }, { status: 503 });
+  }
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  if (userError || !userData.user) {
+    return NextResponse.json({ error: 'Sessão inválida. Faça login novamente.' }, { status: 401 });
+  }
+
+  // O limite passa a ser por usuário, não por endereço: quem quiser abusar
+  // precisa criar contas, o que deixa rastro. O IP entra só como reserva
+  // caso o identificador do usuário venha vazio.
   const ip = obterIpCliente(req);
-  const rate = checarRateLimit(`upload:${ip}`, LIMITE_UPLOADS, JANELA_UPLOADS_MS);
+  const rate = checarRateLimit(
+    `upload:${userData.user.id || ip}`,
+    LIMITE_UPLOADS,
+    JANELA_UPLOADS_MS
+  );
 
   if (!rate.permitido) {
     return NextResponse.json(
