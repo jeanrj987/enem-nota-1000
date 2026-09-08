@@ -151,6 +151,16 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Degradação honesta**: se a segunda passagem falhar na hora de completar, a tela devolve a correção que já existe em vez de erro — o aluno tem um diagnóstico real e válido, apenas sem reconciliação. Enquanto a segunda roda, um aviso explica que a nota pode se ajustar, para ela não mudar sozinha sem explicação.
 - **Testes**: 123 → 129.
 
+### ADR 020: A segunda correção de um par não escreve reescrita nem plano de ação
+- **Status**: Aprovado e Implementado.
+- **Contexto**: a reconciliação (ADR 006) sempre usa o texto pedagógico de **uma só** das duas correções — a "representativa", mais próxima da nota média. A outra reescrita, o outro feedback, os outros pontos positivos e próximos passos eram gerados e jogados fora inteiros. A reescrita é o maior bloco de saída do prompt, ~1.000 tokens — pagos à toa em toda correção de assinante.
+- **Decisão**: `corrigirRedacaoComIA` ganhou um parâmetro `modo: 'completo' | 'leve'`. Em modo leve, o prompt instrui o modelo a **ainda assim avaliar a redação por completo** — competências, notas, anulação, cada erro com trecho e explicação reais — mas devolver `""` para `versao_reescrita`/`feedback_pedagogico` e `[]` para as duas listas. `corrigirRedacaoComDuplaCorrecao` passa a rodar a primeira correção completa e a segunda leve.
+- **O risco que essa decisão cria, e como foi fechado**: a correção "representativa" é escolhida pela nota mais próxima da média — e às vezes é a segunda, a leve. Se a reconciliação simplesmente usasse o texto dela, o aluno veria uma reescrita vazia. `reconciliarCorrecoes` ganhou `comNarrativaEmprestada()`: quando a representativa não tem narrativa mas a outra correção tem, empresta dela — nunca mistura prosa de duas respostas (o que produziria texto incoerente, como já registrado no ADR 006), só usa a única fonte de narrativa disponível quando a nota "vencedora" não é dela. O mesmo vale no caminho de divergência de anulação. Há teste cobrindo exatamente o caso em que a leve venceria por proximidade de nota.
+- **Falha da correção completa tratada à parte**: só a correção completa pode fornecer narrativa. Se ela falhar mas a leve suceder, o código tenta de novo em modo completo antes de desistir; se a retentativa também falhar, a correção **falha visivelmente** em vez de expor um resultado sem reescrita nem plano de ação — dois quartos das quatro entregas do produto. Consistente com o ADR 005 (nunca fabricar, nunca entregar incompleto sem avisar).
+- **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
+- **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
+- **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
 ### ADR 019: Só a Política de Privacidade — o restante do plano de LGPD foi descartado por decisão do usuário
 - **Status**: Aprovado e Implementado, em escopo reduzido.
 - **Histórico**: em 8 de setembro foi implementado um plano de LGPD com quatro frentes — consentimento de marketing desacoplado do cadastro, log de consentimento auditável, direitos do titular (`/configuracoes` com download e exclusão de dados) e retenção agendada. Na sequência, **o usuário pediu explicitamente para manter só a política de privacidade** e descartar o resto ("o restante da lgpd não precisa"). As três outras frentes foram revertidas: os checkboxes de consentimento saíram do cadastro, a tabela `consentimentos` e sua migração (`schema-lgpd.sql`) foram removidas do repositório, e `/termos`, `/configuracoes`, `/api/consentimento`, `/api/conta/dados` e `/api/conta/excluir` foram apagados.
@@ -162,6 +172,11 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.6.0] - 2026-09-08 (segunda correção não gera reescrita; aviso removido da política)
+- **Alterado**: a segunda correção de todo par passa a rodar em modo "leve" — avalia notas e erros de verdade, mas não escreve reescrita nem plano de ação, que nunca eram exibidos mesmo (a reconciliação já usava só uma correção como fonte de texto). Corta ~1.000 tokens de saída por correção de assinante. Ver ADR 020.
+- **Removido**: o aviso "Documento em preenchimento" saiu de `/privacidade`, a pedido do usuário — a página não avisa mais visualmente sobre a identificação do controlador estar vazia.
+- **Testes**: 129 → 137.
 
 ### [v2.5.0] - 2026-09-08 (só a Política de Privacidade)
 - **Adicionado**: página `/privacidade`, com identificação do controlador, tabela de subprocessadores e aviso de documento incompleto enquanto `controlador.ts` não for preenchido.

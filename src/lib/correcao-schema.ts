@@ -100,8 +100,13 @@ export const CorrecaoIASchema = z.object({
   nota_geral: z.number().int().min(0).max(1000),
   competencias: z.array(CompetenciaSchema).length(5),
   erros: z.array(ErroSchema).optional().default([]),
-  versao_reescrita: z.string().min(1),
-  feedback_pedagogico: z.string().min(1),
+  // Sem .min(1): no modo "leve" (segunda correção de um par, cujo texto
+  // pedagógico nunca é exibido — ver reconciliacao.ts) o próprio prompt
+  // instrui o modelo a devolver "" aqui, para não gastar tokens de saída
+  // escrevendo uma reescrita que será descartada. A obrigatoriedade do
+  // conteúdo no modo "completo" é imposta em validarCorrecaoIA, não aqui.
+  versao_reescrita: z.string(),
+  feedback_pedagogico: z.string(),
   pontos_positivos: z.array(z.string()).optional().default([]),
   proximos_passos: z.array(z.string()).optional().default([]),
 });
@@ -119,7 +124,11 @@ export type ValidacaoResultado =
  * Erros cujo trecho não existe literalmente no texto do aluno são descartados (não invalidam
  * a resposta inteira) e reportados em `avisos`.
  */
-export function validarCorrecaoIA(raw: unknown, textoOriginal: string): ValidacaoResultado {
+export function validarCorrecaoIA(
+  raw: unknown,
+  textoOriginal: string,
+  modo: 'completo' | 'leve' = 'completo'
+): ValidacaoResultado {
   const parsed = CorrecaoIASchema.safeParse(raw);
   if (!parsed.success) {
     return { success: false, error: 'Formato de resposta inválido: ' + parsed.error.message };
@@ -127,6 +136,18 @@ export function validarCorrecaoIA(raw: unknown, textoOriginal: string): Validaca
 
   const data = parsed.data;
   const avisos: string[] = [];
+
+  // No modo completo, versao_reescrita e feedback_pedagogico são a entrega
+  // central do produto — não são opcionais, mesmo o schema permitindo string
+  // vazia (que só é aceitável no modo "leve", que nunca chega à tela).
+  if (modo === 'completo') {
+    if (data.versao_reescrita.trim().length === 0) {
+      return { success: false, error: 'modo completo, mas versao_reescrita veio vazia' };
+    }
+    if (data.feedback_pedagogico.trim().length === 0) {
+      return { success: false, error: 'modo completo, mas feedback_pedagogico veio vazio' };
+    }
+  }
 
   const somaCompetencias = data.competencias.reduce((acc, c) => acc + c.nota, 0);
   if (somaCompetencias !== data.nota_geral) {

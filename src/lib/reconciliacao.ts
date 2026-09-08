@@ -9,6 +9,28 @@ import { gerarId } from './ids';
  */
 export const LIMIAR_DIVERGENCIA = 100;
 
+/** Uma correção "leve" (segunda opinião só de nota, ver openai.ts) devolve
+ *  versao_reescrita vazia de propósito. */
+function temNarrativa(c: Correcao): boolean {
+  return c.versao_reescrita.trim().length > 0;
+}
+
+/** Se `base` não tem narrativa mas `alternativa` tem, empresta dela o texto
+ *  pedagógico — é o que permite que uma correção "leve" nunca vire a fonte
+ *  de uma reescrita vazia, mesmo quando é ela quem melhor representa a nota
+ *  final. Quando nenhuma das duas tem (só acontece se algo já saiu do
+ *  esperado a montante), `base` é devolvida como está. */
+function comNarrativaEmprestada(base: Correcao, alternativa: Correcao): Correcao {
+  if (temNarrativa(base) || !temNarrativa(alternativa)) return base;
+  return {
+    ...base,
+    versao_reescrita: alternativa.versao_reescrita,
+    feedback_pedagogico: alternativa.feedback_pedagogico,
+    pontos_positivos: alternativa.pontos_positivos,
+    proximos_passos: alternativa.proximos_passos,
+  };
+}
+
 /**
  * Reconcilia 2 ou 3 correções independentes da mesma redação em uma única
  * correção final: a nota de cada competência vira a MÉDIA das duas correções
@@ -57,7 +79,11 @@ export function reconciliarCorrecoes(
   // confiamos no julgamento da correção com nota_geral mais alta, que é a
   // leitura mais garantista para o aluno, e sinalizamos a divergência.
   if (a.anulada !== b.anulada) {
-    const escolhida = a.nota_geral >= b.nota_geral ? a : b;
+    const escolhidaBruta = a.nota_geral >= b.nota_geral ? a : b;
+    // A escolha aqui é sobre qual JULGAMENTO de anulação prevalece (a mais
+    // garantista); o texto pedagógico é uma questão à parte — se a escolhida
+    // for a correção "leve" (sem narrativa), pega emprestada da outra.
+    const escolhida = comNarrativaEmprestada(escolhidaBruta, escolhidaBruta === a ? b : a);
     return {
       ...escolhida,
       id: gerarId('cor'),
@@ -74,14 +100,29 @@ export function reconciliarCorrecoes(
 
   const notaGeralMedia = Math.round((a.nota_geral + b.nota_geral) / 2);
 
-  // A correção "representativa" (fonte do texto pedagógico) é a mais próxima
-  // da média final.
-  const representativa =
+  // A correção "representativa" fornece os comentários por competência e a
+  // lista de erros: a mais próxima da média final, como antes. Mas o texto
+  // pedagógico central (reescrita, feedback, pontos positivos e próximos
+  // passos) só existe em correções "completas" — uma correção "leve" (a
+  // segunda opinião gerada só para conferir a nota, ver openai.ts) devolve
+  // esses campos vazios de propósito, para não gastar tokens de saída num
+  // texto que seria descartado de qualquer forma. Por isso a narrativa é
+  // emprestada da outra correção quando a representativa não tem a sua.
+  const representativaBruta =
     Math.abs(a.nota_geral - notaGeralMedia) <= Math.abs(b.nota_geral - notaGeralMedia) ? a : b;
+  const representativa = comNarrativaEmprestada(
+    representativaBruta,
+    representativaBruta === a ? b : a
+  );
 
+  // A outra correção (para a média por competência) é definida a partir de
+  // `representativaBruta`, não de `representativa`: esta última pode ser um
+  // objeto novo (quando a narrativa foi emprestada), e comparar por
+  // identidade contra `a`/`b` quebraria silenciosamente nesse caso.
+  const outraParaMedia = representativaBruta === a ? b : a;
   const competenciasMedia: Competencia[] = representativa.competencias.map((compRepresentativa) => {
     const compOutra =
-      (representativa === a ? b : a).competencias.find((c) => c.numero === compRepresentativa.numero) ??
+      outraParaMedia.competencias.find((c) => c.numero === compRepresentativa.numero) ??
       compRepresentativa;
     return {
       ...compRepresentativa,

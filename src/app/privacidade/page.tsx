@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { AvisoDocumentoIncompleto } from '@/components/legal/AvisoDocumentoIncompleto';
 import { CONTROLADOR, SUBPROCESSADORES, VERSAO_DOCUMENTOS_LEGAIS } from '@/lib/controlador';
 
 export const metadata: Metadata = {
@@ -33,10 +32,6 @@ export default function PoliticaDePrivacidade() {
           Versão {VERSAO_DOCUMENTOS_LEGAIS}. Escrita para ser entendida por quem vai usar o
           produto, não só por advogado.
         </p>
-
-        <div className="mt-8">
-          <AvisoDocumentoIncompleto />
-        </div>
 
         <Secao titulo="Quem é responsável pelos seus dados">
           <p>

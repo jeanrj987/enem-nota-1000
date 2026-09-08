@@ -10,7 +10,8 @@ import { logCorrecao } from './observabilidade';
 export async function corrigirRedacaoComIA(
   texto: string,
   tema: string = 'Tema Livre',
-  titulo: string = 'Sem título'
+  titulo: string = 'Sem título',
+  modo: 'completo' | 'leve' = 'completo'
 ): Promise<Correcao> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -23,7 +24,11 @@ TEMA DA REDAÇÃO: "${tema}"
 TÍTULO: "${titulo}"
 
 FATO ESTRUTURAL (não inferir, usar exatamente este número): o texto abaixo tem ${paragrafos} parágrafo(s) real(is), contando quebras de linha efetivas no texto entregue pelo aluno.${paragrafos <= 1 ? ' Isso significa que o texto está em BLOCO ÚNICO (monobloco) — NÃO descreva divisão em parágrafos de desenvolvimento (D1, D2 etc.) que não existe, e lembre-se do teto de 80 pontos em C2 para monobloco.' : ''}
-
+${
+  modo === 'leve'
+    ? '\nMODO LEVE — esta é uma segunda opinião independente, usada apenas para conferir a nota contra outra correção; o texto pedagógico dela nunca chega ao aluno. Avalie a redação de verdade e por completo (competências, notas, anulação e cada erro em "erros", com "trecho" e "explicacao" reais), mas NÃO escreva "versao_reescrita" nem "feedback_pedagogico" — devolva "" para os dois. Devolva [] para "pontos_positivos" e "proximos_passos". Isso existe só para economizar tokens de saída num texto que seria descartado; não economize na correção em si.\n'
+    : ''
+}
 TEXTO DA REDAÇÃO:
 """
 ${texto}
@@ -54,7 +59,7 @@ ${texto}
 
         if (textOutput) {
           const raw = JSON.parse(textOutput);
-          const validacao = validarCorrecaoIA(raw, texto);
+          const validacao = validarCorrecaoIA(raw, texto, modo);
 
           if (validacao.success) {
             if (validacao.avisos.length > 0) {
@@ -109,7 +114,7 @@ ${texto}
 
         if (content) {
           const raw = JSON.parse(content);
-          const validacao = validarCorrecaoIA(raw, texto);
+          const validacao = validarCorrecaoIA(raw, texto, modo);
 
           if (validacao.success) {
             if (validacao.avisos.length > 0) {
@@ -191,7 +196,11 @@ export async function completarParaDuplaCorrecao(
   titulo: string
 ): Promise<Correcao> {
   const inicio = Date.now();
-  const segunda = await corrigirRedacaoComIA(texto, tema, titulo);
+  // 'leve': a correção gratuita já existente é sempre a âncora com narrativa
+  // completa (foi gerada em modo completo por corrigirRedacaoSimples), então
+  // nem a segunda nem uma eventual terceira precisam reescrever/replanejar —
+  // reconciliarCorrecoes puxa o texto pedagógico de correcaoExistente.
+  const segunda = await corrigirRedacaoComIA(texto, tema, titulo, 'leve');
   const divergencia = Math.abs(correcaoExistente.nota_geral - segunda.nota_geral);
 
   if (divergencia <= LIMIAR_DIVERGENCIA) {
@@ -209,7 +218,7 @@ export async function completarParaDuplaCorrecao(
   }
 
   try {
-    const terceira = await corrigirRedacaoComIA(texto, tema, titulo);
+    const terceira = await corrigirRedacaoComIA(texto, tema, titulo, 'leve');
     const final = reconciliarCorrecoes([correcaoExistente, segunda, terceira]);
     logCorrecao({
       evento: 'correcao_concluida',
@@ -232,18 +241,40 @@ export async function corrigirRedacaoComDuplaCorrecao(
   titulo: string = 'Sem título'
 ): Promise<Correcao> {
   const inicio = Date.now();
+  // A primeira correção roda em modo "completo" (com reescrita e plano de
+  // ação); a segunda em modo "leve" — ela ainda avalia notas, competências,
+  // anulação e cada erro de verdade, mas não escreve o texto pedagógico, que
+  // nunca teria chegado à tela mesmo assim: a reconciliação sempre usa a
+  // narrativa de uma correção só (ver reconciliacao.ts). Gerar duas reescritas
+  // completas para descartar uma inteira era ~1000 tokens de saída pagos à
+  // toa em toda correção de assinante.
   const [resultado1, resultado2] = await Promise.allSettled([
-    corrigirRedacaoComIA(texto, tema, titulo),
-    corrigirRedacaoComIA(texto, tema, titulo),
+    corrigirRedacaoComIA(texto, tema, titulo, 'completo'),
+    corrigirRedacaoComIA(texto, tema, titulo, 'leve'),
   ]);
 
-  const sucesso1 = resultado1.status === 'fulfilled' ? resultado1.value : null;
+  let sucesso1 = resultado1.status === 'fulfilled' ? resultado1.value : null;
   const sucesso2 = resultado2.status === 'fulfilled' ? resultado2.value : null;
 
-  if (resultado1.status === 'rejected' && resultado2.status === 'rejected') {
-    // Ambas falharam: propaga o erro da primeira, mantendo a mensagem honesta do R1.
-    logCorrecao({ evento: 'correcao_falhou', duracao_total_ms: Date.now() - inicio, motivo: resultado1.reason?.message?.slice(0, 200) || 'erro desconhecido' });
-    throw resultado1.reason;
+  // A correção "completa" é a única fonte possível de reescrita e plano de
+  // ação. Se ela falhar mas a "leve" tiver sucesso, vale a pena tentar de
+  // novo em modo completo antes de desistir — sem isso, o aluno receberia
+  // uma correção real mas sem duas das quatro entregas do produto.
+  if (!sucesso1 && sucesso2) {
+    try {
+      sucesso1 = await corrigirRedacaoComIA(texto, tema, titulo, 'completo');
+    } catch {
+      // Segue sem a retentativa; tratado abaixo como "só a leve teve sucesso".
+    }
+  }
+
+  if (!sucesso1 && !sucesso2) {
+    // Ambas falharam (a retentativa da completa também, se chegou a rodar):
+    // propaga o erro original da primeira tentativa, mantendo a mensagem
+    // honesta de por que a correção não aconteceu.
+    const motivoOriginal = resultado1.status === 'rejected' ? resultado1.reason : undefined;
+    logCorrecao({ evento: 'correcao_falhou', duracao_total_ms: Date.now() - inicio, motivo: motivoOriginal?.message?.slice(0, 200) || 'erro desconhecido' });
+    throw motivoOriginal ?? new Error('Não foi possível corrigir a redação no momento.');
   }
 
   const logFinal = (correcao: Correcao, correcoesUsadas: number, divergencia?: number) => {
@@ -260,7 +291,16 @@ export async function corrigirRedacaoComDuplaCorrecao(
   };
 
   if (sucesso1 && !sucesso2) return logFinal(reconciliarCorrecoes([sucesso1]), 1);
-  if (!sucesso1 && sucesso2) return logFinal(reconciliarCorrecoes([sucesso2]), 1);
+  if (!sucesso1 && sucesso2) {
+    // A retentativa em modo completo também falhou: a única correção
+    // disponível não tem reescrita nem plano de ação. Melhor falhar de forma
+    // visível do que entregar uma correção sem duas partes centrais do
+    // produto — o aluno tenta de novo em vez de receber algo incompleto sem
+    // saber disso.
+    throw new Error(
+      'Corrigimos as notas, mas não conseguimos gerar a versão reescrita e o plano de ação. Tente novamente.'
+    );
+  }
 
   const [c1, c2] = [sucesso1!, sucesso2!];
   const divergencia = Math.abs(c1.nota_geral - c2.nota_geral);
@@ -269,9 +309,12 @@ export async function corrigirRedacaoComDuplaCorrecao(
     return logFinal(reconciliarCorrecoes([c1, c2]), 2, divergencia);
   }
 
-  // Divergência alta: aciona uma terceira correção de arbitragem.
+  // Divergência alta: aciona uma terceira correção de arbitragem, em modo
+  // completo — o par mais próximo entre as três pode excluir c1, e só c1 tem
+  // narrativa garantida; manter a terceira completa evita ficar sem fonte de
+  // reescrita nesse cenário raro.
   try {
-    const c3 = await corrigirRedacaoComIA(texto, tema, titulo);
+    const c3 = await corrigirRedacaoComIA(texto, tema, titulo, 'completo');
     return logFinal(reconciliarCorrecoes([c1, c2, c3]), 3, divergencia);
   } catch {
     // Terceira correção falhou (ex: cota esgotada) — reconcilia com as duas

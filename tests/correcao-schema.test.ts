@@ -44,6 +44,41 @@ function correcaoBase(notas: [number, number, number, number, number]) {
   };
 }
 
+describe('validarCorrecaoIA — modo leve (segunda opinião só de nota)', () => {
+  it('modo completo (padrão) recusa versao_reescrita vazia', () => {
+    const data = { ...correcaoBase([120, 120, 120, 120, 120]), versao_reescrita: '' };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('modo completo recusa feedback_pedagogico vazio', () => {
+    const data = { ...correcaoBase([120, 120, 120, 120, 120]), feedback_pedagogico: '' };
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(false);
+  });
+
+  it('modo leve aceita versao_reescrita e feedback_pedagogico vazios', () => {
+    const data = {
+      ...correcaoBase([120, 120, 120, 120, 120]),
+      versao_reescrita: '',
+      feedback_pedagogico: '',
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos, 'leve');
+    expect(r.success).toBe(true);
+  });
+
+  it('modo leve não deixa de checar a matemática das notas — economizar texto não é economizar rigor', () => {
+    const data = {
+      ...correcaoBase([120, 120, 120, 120, 120]),
+      versao_reescrita: '',
+      feedback_pedagogico: '',
+      nota_geral: 999,
+    };
+    const r = validarCorrecaoIA(data, textoComParagrafos, 'leve');
+    expect(r.success).toBe(false);
+  });
+});
+
 describe('contarParagrafos', () => {
   it('conta 1 parágrafo em texto monobloco', () => {
     expect(contarParagrafos(textoMonobloco)).toBe(1);
