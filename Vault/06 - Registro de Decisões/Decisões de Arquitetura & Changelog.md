@@ -161,6 +161,12 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 023: Remoção de `SalesStickyBar.tsx` (código morto)
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 003 previa uma barra flutuante de urgência em `/vendas`, e o v1.4.0 já havia removido dela o cronômetro falso e a contagem fixa de "vagas restantes" por serem publicidade enganosa (CDC) — mas o componente em si nunca chegou a ser importado por nenhuma página. Continuava no repositório sem ser renderizado em lugar nenhum.
+- **Decisão**: apagar `src/components/SalesStickyBar.tsx`. Nenhuma outra alteração — sem referências a remover em outros arquivos além da própria documentação do componente.
+- **Testes**: 149 (sem variação — o componente não tinha teste próprio nem era exercitado por outro).
+
 ### ADR 022: Lógica dos gates de acesso extraída para funções puras testáveis
 - **Status**: Aprovado e Implementado.
 - **Contexto**: `RequerLogin` e `RequerAssinatura` decidem quem passa e quem é redirecionado (sem login → `/auth`, perfil incompleto → `/completar-perfil`, sem assinatura → `/vendas`), mas essa lógica vivia inteira dentro de `useEffect`s, misturada com chamadas assíncronas ao Supabase — sem jsdom/Testing Library no projeto, não havia como testar automaticamente sem simular renderização de componente.
@@ -188,6 +194,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.9.0] - 2026-09-08 (remoção de código morto: SalesStickyBar)
+- **Removido**: `src/components/SalesStickyBar.tsx` — não era importado por nenhuma página. Ver ADR 023.
+- **Testes**: 149 (sem variação).
 
 ### [v2.8.0] - 2026-09-08 (gates de acesso com testes; proteção de rota no servidor investigada)
 - **Adicionado**: `src/lib/gates.ts` com a lógica de decisão de `RequerLogin`/`RequerAssinatura` extraída para funções puras, cobertas por 9 testes novos. Ver ADR 022.

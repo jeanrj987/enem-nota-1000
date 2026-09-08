@@ -79,9 +79,6 @@ A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada 
   - Gráfico de Linha (Evolução cronológica da nota de 0 a 1000).
   - Gráfico de Radar (Distribuição dos pontos entre as competências C1, C2, C3, C4 e C5).
 
-### 6. `SalesStickyBar.tsx`
-- Barra flutuante de rodapé que aparece após scroll na página `/vendas`, contendo cronômetro regressivo, indicação do Lote Promocional e botão de rolagem suave para compra.
-
 ---
 
 ## 🔗 Links Relacionados
