@@ -161,6 +161,14 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 022: Lógica dos gates de acesso extraída para funções puras testáveis
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `RequerLogin` e `RequerAssinatura` decidem quem passa e quem é redirecionado (sem login → `/auth`, perfil incompleto → `/completar-perfil`, sem assinatura → `/vendas`), mas essa lógica vivia inteira dentro de `useEffect`s, misturada com chamadas assíncronas ao Supabase — sem jsdom/Testing Library no projeto, não havia como testar automaticamente sem simular renderização de componente.
+- **Decisão**: a decisão em si (dado usuário logado?, perfil?, assinatura ativa?, pathname atual → o que fazer) virou duas funções puras em `src/lib/gates.ts` — `decidirGateLogin` e `decidirGateAssinatura` — que os componentes apenas chamam depois de resolver os dados assíncronos. Mesmo padrão já usado no projeto (lógica em lib, componente só chama; ver `reconciliacao.ts`, `whatsapp.ts`, `redirecionamento.ts`).
+- **Comportamento inalterado**: a refatoração não muda nenhuma regra existente — mesmas prioridades (perfil incompleto é checado antes de assinatura), mesmos destinos, mesma proteção de open-redirect (reaproveita `destinoSeguro`/`urlDeLogin` de `redirecionamento.ts`).
+- **Testes**: `tests/gates.test.ts`, 9 casos novos — cobre as quatro combinações de estado de cada gate, a ordem de prioridade entre as checagens, e a rejeição de um pathname malicioso (`https://site-falso.com`) usado como origem do redirect.
+- **O que fica de fora, de propósito**: isso testa a *regra*, não que o componente React realmente chama `router.replace()` no momento certo — isso exigiria Testing Library/jsdom, que o projeto não usa. Aceito como suficiente porque o ponto de falha histórico dessas regras (esquecer uma checagem, inverter uma prioridade, aceitar um redirect externo) está inteiramente na lógica pura, não na integração com React.
+
 ### ADR 021: Teto absoluto de correções gratuitas por conta
 - **Status**: Aprovado e Implementado.
 - **Contexto**: o rate limit de `/api/corrigir` (`checarRateLimit`, 5 requisições/10min por IP) é uma janela deslizante, não um teto: nada impedia uma conta de corrigir indefinidamente ao longo do tempo sem nunca assinar, gerando custo de LLM sem fim para o produto.
@@ -180,6 +188,11 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.8.0] - 2026-09-08 (gates de acesso com testes; proteção de rota no servidor investigada)
+- **Adicionado**: `src/lib/gates.ts` com a lógica de decisão de `RequerLogin`/`RequerAssinatura` extraída para funções puras, cobertas por 9 testes novos. Ver ADR 022.
+- **Investigado, não implementado por decisão do usuário**: proteção de rota real via `middleware.ts` exigiria migrar a sessão de `localStorage` para cookie (`@supabase/ssr`), mudança de arquitetura que toca login, callback do Google e `AuthContext`. O usuário optou por não fazer agora, para não arriscar quebrar o login por pressa.
+- **Testes**: 140 → 149.
 
 ### [v2.7.0] - 2026-09-08 (teto de correções gratuitas por conta)
 - **Adicionado**: `/api/corrigir` agora barra com `403` quem já usou 3 correções gratuitas no total e não tem assinatura ativa, orientando a assinar. Fecha a brecha do rate limit por IP (janela deslizante, não teto absoluto). Ver ADR 021.

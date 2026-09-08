@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { buscarPerfil, perfilCompleto } from '@/lib/perfil';
-import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
+import { buscarPerfil } from '@/lib/perfil';
+import { decidirGateLogin } from '@/lib/gates';
 
 /**
  * Exige login + cadastro completo, mas NÃO exige assinatura ativa — usado em
@@ -26,17 +26,19 @@ export function RequerLogin({ children }: { children: React.ReactNode }) {
     if (!usuario) {
       // Leva junto de onde a pessoa foi barrada: quem tentou abrir uma
       // correção antiga volta para aquela correção, não para o editor.
-      router.replace(urlDeLogin(pathname || DESTINO_PADRAO));
+      const decisao = decidirGateLogin(false, null, pathname || '');
+      if (decisao.tipo === 'redirecionar') router.replace(decisao.url);
       return;
     }
 
     let ativo = true;
     buscarPerfil(usuario.id).then((perfil) => {
       if (!ativo) return;
-      if (perfilCompleto(perfil)) {
+      const decisao = decidirGateLogin(true, perfil, pathname || '');
+      if (decisao.tipo === 'liberado') {
         setLiberado(true);
       } else {
-        router.replace(`/completar-perfil?redirect=${encodeURIComponent(pathname || '/nova-redacao')}`);
+        router.replace(decisao.url);
       }
     });
     return () => {

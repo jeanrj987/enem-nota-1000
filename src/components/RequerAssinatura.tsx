@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { temAcessoAtivo } from '@/lib/assinatura';
 import { buscarPerfil, perfilCompleto } from '@/lib/perfil';
-import { urlDeLogin } from '@/lib/redirecionamento';
+import { decidirGateAssinatura } from '@/lib/gates';
 
 /**
  * Bloqueia o conteúdo interno até confirmar login + cadastro completo +
@@ -26,7 +26,8 @@ export function RequerAssinatura({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (carregando) return;
     if (!usuario) {
-      router.replace(urlDeLogin(pathname || '/dashboard'));
+      const decisao = decidirGateAssinatura(false, null, false, pathname || '');
+      if (decisao.tipo === 'redirecionar') router.replace(decisao.url);
       return;
     }
 
@@ -34,15 +35,17 @@ export function RequerAssinatura({ children }: { children: React.ReactNode }) {
     buscarPerfil(usuario.id).then((perfil) => {
       if (!ativo) return;
       if (!perfilCompleto(perfil)) {
-        router.replace(`/completar-perfil?redirect=${encodeURIComponent(pathname || '/dashboard')}`);
+        const decisao = decidirGateAssinatura(true, perfil, false, pathname || '');
+        if (decisao.tipo === 'redirecionar') router.replace(decisao.url);
         return;
       }
       temAcessoAtivo().then((tem) => {
         if (!ativo) return;
-        if (tem) {
+        const decisaoFinal = decidirGateAssinatura(true, perfil, tem, pathname || '');
+        if (decisaoFinal.tipo === 'liberado') {
           setLiberado(true);
         } else {
-          router.replace('/vendas');
+          router.replace(decisaoFinal.url);
         }
       });
     });
