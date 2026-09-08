@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corrigirRedacaoComDuplaCorrecao, corrigirRedacaoSimples } from '@/lib/openai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { assinaturaAtivaDoUsuario } from '@/lib/assinatura-servidor';
+import {
+  assinaturaAtivaDoUsuario,
+  contarCorrecoesDoUsuario,
+  LIMITE_CORRECOES_GRATUITAS,
+} from '@/lib/assinatura-servidor';
 import { salvarCorrecao } from '@/lib/salvar-correcao';
 import { gerarId } from '@/lib/ids';
 
@@ -72,6 +76,21 @@ export async function POST(req: NextRequest) {
     // A correção única fica marcada e é completada para dupla no momento em
     // que a pessoa assina — ninguém recebe menos do que pagou.
     const assinante = await assinaturaAtivaDoUsuario(userData.user.id);
+
+    // Teto de correções gratuitas: o rate limit acima é só uma janela
+    // deslizante, não impede corrigir indefinidamente ao longo do tempo.
+    // Sem esse teto, o freemium não tem limite real de custo por conta.
+    if (!assinante) {
+      const totalCorrecoes = await contarCorrecoesDoUsuario(userData.user.id);
+      if (totalCorrecoes >= LIMITE_CORRECOES_GRATUITAS) {
+        return NextResponse.json(
+          {
+            error: `Você já usou suas ${LIMITE_CORRECOES_GRATUITAS} correções gratuitas. Assine um plano para continuar corrigindo redações.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     const correcao = assinante
       ? await corrigirRedacaoComDuplaCorrecao(texto, temaFinal, tituloFinal)

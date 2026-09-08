@@ -161,6 +161,14 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 021: Teto absoluto de correções gratuitas por conta
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o rate limit de `/api/corrigir` (`checarRateLimit`, 5 requisições/10min por IP) é uma janela deslizante, não um teto: nada impedia uma conta de corrigir indefinidamente ao longo do tempo sem nunca assinar, gerando custo de LLM sem fim para o produto.
+- **Decisão**: `contarCorrecoesDoUsuario()` (`src/lib/assinatura-servidor.ts`) conta o total histórico de `redacoes` da conta (independente de quando foram feitas ou se a assinatura já expirou); `LIMITE_CORRECOES_GRATUITAS = 3`. A rota `/api/corrigir` só faz essa contagem quando a conta **não** tem assinatura ativa — quem paga nunca é afetado, mesmo com centenas de redações no histórico. Ao atingir o teto, a API responde `403` com uma mensagem que já orienta a assinar, exibida diretamente pelo `Editor` (que repassa `data.error` ao usuário sem tradução adicional).
+- **Por que contar o histórico todo, e não só "enquanto free"**: se o teto resetasse ao assinar e cancelar, dar de baixa na assinatura viraria um jeito de recarregar 3 correções gratuitas de novo. Contar todas as `redacoes` da conta, independente do status de assinatura na hora em que foram feitas, fecha essa brecha.
+- **Falha aberta do lado errado de propósito**: se a consulta ao banco falhar ou o Supabase não estiver configurado, `contarCorrecoesDoUsuario` devolve o próprio limite (não zero) — trata como "teto já atingido" em vez de "ainda não corrigiu nada", para não deixar a conta corrigir de graça pra sempre se o banco cair.
+- **Testes**: 137 → 140 (3 novos em `correcao-gratuita.test.ts`: bloqueio exato no teto, liberação abaixo do teto, e assinante nunca sendo barrado).
+
 ### ADR 019: Só a Política de Privacidade — o restante do plano de LGPD foi descartado por decisão do usuário
 - **Status**: Aprovado e Implementado, em escopo reduzido.
 - **Histórico**: em 8 de setembro foi implementado um plano de LGPD com quatro frentes — consentimento de marketing desacoplado do cadastro, log de consentimento auditável, direitos do titular (`/configuracoes` com download e exclusão de dados) e retenção agendada. Na sequência, **o usuário pediu explicitamente para manter só a política de privacidade** e descartar o resto ("o restante da lgpd não precisa"). As três outras frentes foram revertidas: os checkboxes de consentimento saíram do cadastro, a tabela `consentimentos` e sua migração (`schema-lgpd.sql`) foram removidas do repositório, e `/termos`, `/configuracoes`, `/api/consentimento`, `/api/conta/dados` e `/api/conta/excluir` foram apagados.
@@ -172,6 +180,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.7.0] - 2026-09-08 (teto de correções gratuitas por conta)
+- **Adicionado**: `/api/corrigir` agora barra com `403` quem já usou 3 correções gratuitas no total e não tem assinatura ativa, orientando a assinar. Fecha a brecha do rate limit por IP (janela deslizante, não teto absoluto). Ver ADR 021.
+- **Testes**: 137 → 140.
 
 ### [v2.6.0] - 2026-09-08 (segunda correção não gera reescrita; aviso removido da política)
 - **Alterado**: a segunda correção de todo par passa a rodar em modo "leve" — avalia notas e erros de verdade, mas não escreve reescrita nem plano de ação, que nunca eram exibidos mesmo (a reconciliação já usava só uma correção como fonte de texto). Corta ~1.000 tokens de saída por correção de assinante. Ver ADR 020.

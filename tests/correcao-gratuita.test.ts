@@ -5,6 +5,7 @@ const estado = {
   assinante: false,
   chamadas: [] as string[],
   correcaoGravada: null as Correcao | null,
+  totalCorrecoes: 0,
 };
 
 function correcaoFalsa(nota: number, unica: boolean, motivo?: 'falha' | 'acesso-gratuito'): Correcao {
@@ -48,6 +49,8 @@ vi.mock('@/lib/supabase-admin', () => ({
 
 vi.mock('@/lib/assinatura-servidor', () => ({
   assinaturaAtivaDoUsuario: async () => estado.assinante,
+  contarCorrecoesDoUsuario: async () => estado.totalCorrecoes,
+  LIMITE_CORRECOES_GRATUITAS: 3,
 }));
 
 vi.mock('@/lib/openai', () => ({
@@ -91,6 +94,7 @@ const TEXTO = 'Uma redação de teste com tamanho suficiente para passar na vali
 beforeEach(() => {
   estado.chamadas = [];
   estado.correcaoGravada = null;
+  estado.totalCorrecoes = 0;
 });
 
 describe('/api/corrigir — quantas correções rodam depende de quem paga', () => {
@@ -120,6 +124,31 @@ describe('/api/corrigir — quantas correções rodam depende de quem paga', () 
     const res = await POST(requisicao(TEXTO));
     const body = await res.json();
     expect(body.correcao?.nota_geral).toBe(800);
+  });
+
+  it('sem assinatura, ao atingir o teto de correções gratuitas, bloqueia com 403 e não chama a IA', async () => {
+    estado.assinante = false;
+    estado.totalCorrecoes = 3; // == LIMITE_CORRECOES_GRATUITAS
+    const res = await POST(requisicao(TEXTO));
+    const body = await res.json();
+    expect(res.status).toBe(403);
+    expect(body.error).toMatch(/correções gratuitas/i);
+    expect(estado.chamadas).toEqual([]);
+  });
+
+  it('sem assinatura, abaixo do teto, corrige normalmente', async () => {
+    estado.assinante = false;
+    estado.totalCorrecoes = 2; // < LIMITE_CORRECOES_GRATUITAS
+    await POST(requisicao(TEXTO));
+    expect(estado.chamadas).toEqual(['simples']);
+  });
+
+  it('assinante nunca é barrado pelo teto, mesmo com muitas redações no histórico', async () => {
+    estado.assinante = true;
+    estado.totalCorrecoes = 999;
+    const res = await POST(requisicao(TEXTO));
+    expect(res.status).toBe(200);
+    expect(estado.chamadas).toEqual(['dupla']);
   });
 
   // A correção do acesso gratuito precisa ficar marcada, senão não há como
