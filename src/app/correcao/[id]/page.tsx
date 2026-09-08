@@ -15,6 +15,7 @@ import { RequerLogin } from '@/components/RequerLogin';
 import { CorrecaoView } from '@/components/CorrecaoView';
 import { CorrecaoBloqueada } from '@/components/CorrecaoBloqueada';
 import { buscarRedacaoPorId } from '@/lib/storage';
+import { supabase } from '@/lib/supabase';
 import { Redacao } from '@/types';
 
 export default function PaginaResultadoCorrecao() {
@@ -24,17 +25,53 @@ export default function PaginaResultadoCorrecao() {
 
   const [redacao, setRedacao] = useState<Redacao | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completando, setCompletando] = useState(false);
 
   // Não é preciso consultar a assinatura aqui: a correção só vem do banco
   // quando há plano ativo (RLS de `correcoes`). Se veio `chamariz` em vez
   // de `correcao`, é porque o acesso está bloqueado — na origem, não na tela.
   useEffect(() => {
-    if (id) {
-      buscarRedacaoPorId(id).then((encontrada) => {
-        if (encontrada) setRedacao(encontrada);
-        setLoading(false);
-      });
-    }
+    if (!id) return;
+    let ativo = true;
+
+    buscarRedacaoPorId(id).then(async (encontrada) => {
+      if (!ativo) return;
+      if (encontrada) setRedacao(encontrada);
+      setLoading(false);
+
+      // Redação corrigida no acesso gratuito roda uma passagem só. Se a
+      // correção chegou até aqui, a RLS já confirmou que há plano ativo —
+      // então esta pessoa pagou pela dupla correção e ainda não a recebeu.
+      // A rota é idempotente: se já estiver completa, não gasta chamada.
+      const r = encontrada?.correcao?.reconciliacao;
+      if (!r?.correcaoUnica || r.motivoCorrecaoUnica !== 'acesso-gratuito') return;
+
+      setCompletando(true);
+      try {
+        const { data: sessao } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+        const token = sessao.session?.access_token;
+        if (!token) return;
+
+        const res = await fetch('/api/corrigir/completar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ redacaoId: id }),
+        });
+        const data = await res.json();
+        if (ativo && res.ok && data.completada && data.correcao) {
+          setRedacao((atual) => (atual ? { ...atual, correcao: data.correcao } : atual));
+        }
+      } catch {
+        // Falhar aqui não tira nada do aluno: ele continua vendo uma correção
+        // real e válida, apenas sem a segunda passagem.
+      } finally {
+        if (ativo) setCompletando(false);
+      }
+    });
+
+    return () => {
+      ativo = false;
+    };
   }, [id]);
 
   return (
@@ -80,7 +117,18 @@ export default function PaginaResultadoCorrecao() {
             </div>
           </div>
         ) : (
-          <CorrecaoView redacao={redacao} correcao={redacao.correcao} />
+          <>
+            {completando && (
+              <div className="glass-panel rounded-sm border border-regua p-4 flex items-center gap-3">
+                <Loader2 className="w-4 h-4 text-vermelho animate-spin shrink-0" />
+                <p className="text-xs text-tinta-suave">
+                  Rodando a segunda correção independente e reconciliando as notas, como faz a
+                  banca do ENEM. A nota abaixo pode se ajustar em instantes.
+                </p>
+              </div>
+            )}
+            <CorrecaoView redacao={redacao} correcao={redacao.correcao} />
+          </>
         )}
         </RequerLogin>
       </main>

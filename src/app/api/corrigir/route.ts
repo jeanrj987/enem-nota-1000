@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { corrigirRedacaoComDuplaCorrecao } from '@/lib/openai';
+import { corrigirRedacaoComDuplaCorrecao, corrigirRedacaoSimples } from '@/lib/openai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { assinaturaAtivaDoUsuario } from '@/lib/assinatura-servidor';
@@ -66,7 +66,16 @@ export async function POST(req: NextRequest) {
     const temaFinal = tema || 'Tema Livre';
     const tituloFinal = (titulo || '').trim() || `Redação sobre ${temaFinal.slice(0, 30)}`;
 
-    const correcao = await corrigirRedacaoComDuplaCorrecao(texto, temaFinal, tituloFinal);
+    // A assinatura é consultada ANTES de corrigir, não depois: quem não pagou
+    // vê apenas o número de desvios, então rodar duas correções e uma
+    // arbitragem para exibir um cadeado é pagar o produto inteiro por nada.
+    // A correção única fica marcada e é completada para dupla no momento em
+    // que a pessoa assina — ninguém recebe menos do que pagou.
+    const assinante = await assinaturaAtivaDoUsuario(userData.user.id);
+
+    const correcao = assinante
+      ? await corrigirRedacaoComDuplaCorrecao(texto, temaFinal, tituloFinal)
+      : await corrigirRedacaoSimples(texto, temaFinal, tituloFinal);
 
     // A persistência acontece aqui, e não no cliente: é o que permite guardar
     // a correção completa mesmo para quem não pagou (ela fica esperando a
@@ -93,8 +102,6 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
-
-    const assinante = await assinaturaAtivaDoUsuario(userData.user.id);
 
     return NextResponse.json({
       success: true,

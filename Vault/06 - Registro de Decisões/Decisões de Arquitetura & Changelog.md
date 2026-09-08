@@ -142,9 +142,22 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Sutileza tratada**: o código do país só é removido quando sobra número completo depois dele, para não mutilar o DDD 55 (Santa Maria/RS) digitado sozinho. Há teste cobrindo esse caso.
 - **Testes**: 14 novos (total 105 → 119).
 
+### ADR 018: Correção única no acesso gratuito, completada para dupla ao assinar
+- **Status**: Aprovado e Implementado
+- **Contexto**: medição de 7 de setembro mostrou ~17.000 tokens por correção (prompt de sistema de ~4.500 × 2 chamadas), chegando a ~25.000 quando a divergência aciona a arbitragem. Quem não pagou dispara exatamente o mesmo custo e vê só o número de desvios: pagava-se o produto inteiro para exibir um cadeado.
+- **Decisão**: a assinatura passou a ser consultada **antes** de corrigir. Sem plano, roda uma passagem só (); com plano, a dupla correção de sempre.
+- **O problema que isso cria, e como foi resolvido**: um assinante não pode receber menos do que pagou. A correção gratuita fica marcada com  e, quando o dono passa a ter plano ativo, a tela chama , que roda a segunda passagem sobre o mesmo texto e reconcilia — o mesmo resultado que ele teria se já fosse assinante ao enviar. A rota é idempotente e recusa quem não tem plano, então abrir a tela repetidamente não queima cota.
+- **Distinção necessária**:  já existia, mas significava "a segunda falhou". Sem o campo , o sistema tentaria completar eternamente correções que ficaram únicas por erro de cota. São casos diferentes e agora são distinguíveis.
+- **Degradação honesta**: se a segunda passagem falhar na hora de completar, a tela devolve a correção que já existe em vez de erro — o aluno tem um diagnóstico real e válido, apenas sem reconciliação. Enquanto a segunda roda, um aviso explica que a nota pode se ajustar, para ela não mudar sozinha sem explicação.
+- **Testes**: 123 → 129.
+
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.4.0] - 2026-09-08 (correção única no acesso gratuito)
+- **Alterado**: quem não tem plano passa a receber uma correção em vez de duas — corta pela metade o custo de LLM de quem ainda não comprou. Ver ADR 018.
+- **Adicionado**: , que completa a correção para dupla assim que a pessoa assina, e / em .
 
 ### [v2.3.0] - 2026-09-07 (a rota de upload deixa de ser porta aberta)
 - **Segurança**: `/api/upload` passou a exigir sessão (Bearer token verificado pelo service role), como a `/api/corrigir` já fazia. A tela sempre exigiu login, mas a rota por baixo aceitava arquivo de qualquer pessoa da internet — e um PDF sem texto selecionável dispara OCR por visão, que custa por chamada.

@@ -18,7 +18,10 @@ export const LIMIAR_DIVERGENCIA = 100;
  * ficou mais próxima da média final — não é possível "misturar" prosa de duas
  * respostas diferentes sem produzir texto incoerente.
  */
-export function reconciliarCorrecoes(correcoes: Correcao[]): Correcao {
+export function reconciliarCorrecoes(
+  correcoes: Correcao[],
+  motivoCorrecaoUnica: 'falha' | 'acesso-gratuito' = 'falha'
+): Correcao {
   if (correcoes.length === 1) {
     return {
       ...correcoes[0],
@@ -27,6 +30,7 @@ export function reconciliarCorrecoes(correcoes: Correcao[]): Correcao {
         divergencia: 0,
         terceiraCorrecaoAcionada: false,
         correcaoUnica: true,
+        motivoCorrecaoUnica,
       },
     };
   }

@@ -153,6 +153,79 @@ ${texto}
  * suceder, a correção que teve sucesso é usada sozinha — nunca fabricamos uma
  * segunda opinião falsa só para completar o par.
  */
+/**
+ * Uma única correção, usada no acesso gratuito. Quem ainda não assinou vê
+ * apenas quantos desvios foram encontrados, então pagar por duas correções e
+ * uma arbitragem para exibir um cadeado é desperdício puro. A correção fica
+ * gravada e é completada para dupla assim que a pessoa assina
+ * (`/api/corrigir/completar`), de modo que ninguém recebe menos do que pagou.
+ */
+export async function corrigirRedacaoSimples(
+  texto: string,
+  tema: string = 'Tema Livre',
+  titulo: string = 'Sem título'
+): Promise<Correcao> {
+  const inicio = Date.now();
+  const correcao = await corrigirRedacaoComIA(texto, tema, titulo);
+  const reconciliada = reconciliarCorrecoes([correcao], 'acesso-gratuito');
+  logCorrecao({
+    evento: 'correcao_concluida',
+    nota_geral: reconciliada.nota_geral,
+    anulada: reconciliada.anulada,
+    duracao_total_ms: Date.now() - inicio,
+    correcoes_usadas: 1,
+    reconciliada: false,
+  });
+  return reconciliada;
+}
+
+/**
+ * Completa uma correção que nasceu única (acesso gratuito) rodando a segunda
+ * passagem e reconciliando com a que já existe — o mesmo resultado que a
+ * pessoa teria obtido se já fosse assinante ao enviar o texto.
+ */
+export async function completarParaDuplaCorrecao(
+  correcaoExistente: Correcao,
+  texto: string,
+  tema: string,
+  titulo: string
+): Promise<Correcao> {
+  const inicio = Date.now();
+  const segunda = await corrigirRedacaoComIA(texto, tema, titulo);
+  const divergencia = Math.abs(correcaoExistente.nota_geral - segunda.nota_geral);
+
+  if (divergencia <= LIMIAR_DIVERGENCIA) {
+    const final = reconciliarCorrecoes([correcaoExistente, segunda]);
+    logCorrecao({
+      evento: 'correcao_concluida',
+      nota_geral: final.nota_geral,
+      anulada: final.anulada,
+      duracao_total_ms: Date.now() - inicio,
+      correcoes_usadas: 2,
+      divergencia,
+      reconciliada: true,
+    });
+    return final;
+  }
+
+  try {
+    const terceira = await corrigirRedacaoComIA(texto, tema, titulo);
+    const final = reconciliarCorrecoes([correcaoExistente, segunda, terceira]);
+    logCorrecao({
+      evento: 'correcao_concluida',
+      nota_geral: final.nota_geral,
+      anulada: final.anulada,
+      duracao_total_ms: Date.now() - inicio,
+      correcoes_usadas: 3,
+      divergencia,
+      reconciliada: true,
+    });
+    return final;
+  } catch {
+    return reconciliarCorrecoes([correcaoExistente, segunda]);
+  }
+}
+
 export async function corrigirRedacaoComDuplaCorrecao(
   texto: string,
   tema: string = 'Tema Livre',

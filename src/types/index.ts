@@ -69,7 +69,12 @@ export interface ReconciliacaoInfo {
   notasIndividuais: number[]; // nota_geral de cada correção independente realizada
   divergencia: number; // diferença entre as duas notas usadas na média final
   terceiraCorrecaoAcionada: boolean; // true se a divergência exigiu uma 3ª correção de arbitragem
-  correcaoUnica: boolean; // true se só 1 correção pôde ser usada (a outra falhou)
+  correcaoUnica: boolean; // true se só 1 correção foi usada
+  // Por que só houve uma. 'falha' = a segunda correção deu erro (cota, timeout).
+  // 'acesso-gratuito' = o usuário não tinha plano, então rodamos uma só de
+  // propósito, para não pagar correção dupla por quem ainda não comprou; essa
+  // é completada assim que ele assina.
+  motivoCorrecaoUnica?: 'falha' | 'acesso-gratuito';
   divergenciaDeAnulacao?: boolean; // true se as correções discordaram sobre anulação total
 }
 
