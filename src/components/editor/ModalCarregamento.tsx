@@ -17,7 +17,7 @@ export function ModalCarregamento({ loadingTips, loadingStep }: ModalCarregament
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-xl font-bold text-tinta">Corrigindo com Inteligência Artificial</h3>
+          <h3 className="text-xl font-bold text-tinta">Corrigindo sua redação</h3>
           <p className="text-sm text-tinta-suave animate-fade-in font-medium min-h-[48px] flex items-center justify-center">
             {loadingTips[loadingStep]}
           </p>
@@ -29,10 +29,6 @@ export function ModalCarregamento({ loadingTips, loadingStep }: ModalCarregament
             style={{ width: `${((loadingStep + 1) / loadingTips.length) * 100}%` }}
           />
         </div>
-
-        <p className="text-xs text-tinta-fraca">
-          Tempo médio de análise: ~5 a 15 segundos
-        </p>
       </div>
     </div>
   );
