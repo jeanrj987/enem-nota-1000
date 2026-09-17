@@ -17,7 +17,7 @@ if (!secretKey) {
 const stripe = new Stripe(secretKey);
 
 // Modelo de planos atualizado em 14 de setembro (ver src/lib/planos.ts). O
-// projeto está migrando o gateway de pagamento para a Kirvano — este script
+// projeto está migrando o gateway de pagamento para a Kiwify — este script
 // fica como registro de como os preços foram criados no Stripe em modo de
 // teste, não como o processo ativo de configuração.
 const PLANOS = [

@@ -161,6 +161,13 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 027: Gateway de pagamento definido como Kiwify (não Kirvano)
+- **Status**: Aprovado.
+- **Histórico da decisão no mesmo dia**: o projeto saiu do Stripe e cogitou a Kirvano (ver ADR 026, que já registra "migrando para a Kirvano"); depois o usuário considerou rodar nas duas — Kirvano e Kiwify — ao mesmo tempo; por fim decidiu usar **só a Kiwify**. Nenhuma integração de código chegou a ser escrita para a Kirvano — só o texto de comentários/documentação, que foi atualizado para não deixar rastro de uma decisão já revertida.
+- **Decisão final**: gateway único, Kiwify. O modelo de planos (R$97 mensal recorrente + R$147 pagamento único/40 dias, ver ADR 026) continua valendo — só o provedor mudou de nome nos comentários de `planos.ts` e `stripe-setup.ts`.
+- **Ainda pendente**: toda a integração de fato (criar os 2 produtos na Kiwify, obter checkout links/IDs e webhook, reescrever `/api/checkout` e a rota de webhook) — nada disso foi implementado ainda, só a decisão de qual plataforma usar.
+- **Testes**: 149 (sem variação — mudança de comentário/documentação, sem código executável alterado).
+
 ### ADR 026: `/vendas` e `planos.ts` reduzidos a dois planos
 - **Status**: Aprovado e Implementado.
 - **Contexto**: seguindo a decisão de migrar o gateway para a Kirvano (ADR pendente de migração no checklist), o modelo de planos mudou de 3 opções (mensal R$29,90, semestral R$89,00, anual R$147,00) para 2: **R$97 mensal recorrente** e **R$147 pagamento único, 40 dias de acesso**.
@@ -215,6 +222,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.12.1] - 2026-09-17 (gateway definido: Kiwify, não Kirvano)
+- **Corrigido**: comentários em `planos.ts` e `stripe-setup.ts` que citavam "Kirvano" foram atualizados para "Kiwify" — decisão final do usuário no mesmo dia, depois de cogitar rodar nas duas plataformas. Nenhuma integração de gateway foi implementada ainda. Ver ADR 027.
+- **Testes**: 149 (sem variação).
 
 ### [v2.12.0] - 2026-09-17 (dois planos: R$97 mensal + R$147/40 dias)
 - **Alterado**: `/vendas` e `src/lib/planos.ts` foram de 3 planos para 2 — R$97,00 assinatura mensal recorrente e R$147,00 pagamento único com 40 dias de acesso. Ver ADR 026.
