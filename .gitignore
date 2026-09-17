@@ -44,3 +44,8 @@ next-env.d.ts
 # fonte para o conjunto de calibração em src/lib/calibracao/fixtures.ts —
 # não deve ir para o repositório
 /Redacao
+
+# obsidian: estado de UI por máquina (abas abertas, tamanho dos painéis) —
+# muda a cada vez que o vault é aberto, não é documentação
+**/.obsidian/workspace.json
+**/.obsidian/workspace-mobile.json
