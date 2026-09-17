@@ -4,9 +4,9 @@ import { Footer } from '@/components/Footer';
 import { CONTROLADOR, SUBPROCESSADORES, VERSAO_DOCUMENTOS_LEGAIS } from '@/lib/controlador';
 
 export const metadata: Metadata = {
-  title: 'Política de Privacidade | Nota 1000 AI',
+  title: 'Política de Privacidade | Nota 1000',
   description:
-    'Quais dados pessoais o Nota 1000 AI coleta, para que os usa, com quem compartilha, por quanto tempo guarda e como exercer seus direitos como titular.',
+    'Quais dados pessoais o Nota 1000 coleta, para que os usa, com quem compartilha, por quanto tempo guarda e como exercer seus direitos como titular.',
 };
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
@@ -37,7 +37,7 @@ export default function PoliticaDePrivacidade() {
           <p>
             {CONTROLADOR.razaoSocial
               ? `${CONTROLADOR.razaoSocial}, inscrita no CNPJ ${CONTROLADOR.cnpj}, com sede em ${CONTROLADOR.endereco}.`
-              : 'A empresa responsável pelo Nota 1000 AI (identificação completa a ser publicada).'}
+              : 'A empresa responsável pelo Nota 1000 (identificação completa a ser publicada).'}
           </p>
           <p>
             Encarregado pelo tratamento de dados pessoais (DPO), conforme o Art. 41 da LGPD:{' '}
@@ -146,8 +146,8 @@ export default function PoliticaDePrivacidade() {
 
         <Secao titulo="Uma coisa que você precisa saber sobre a nota">
           <p>
-            A nota que este produto dá é uma <strong className="text-tinta">estimativa gerada por
-            inteligência artificial</strong>. Ela não é a nota oficial do INEP, não vem de um
+            A nota que este produto dá é uma <strong className="text-tinta">estimativa gerada
+            automaticamente por um sistema de correção</strong>. Ela não é a nota oficial do INEP, não vem de um
             corretor credenciado e não tem qualquer valor perante o ENEM. Serve para estudo e
             preparação.
           </p>

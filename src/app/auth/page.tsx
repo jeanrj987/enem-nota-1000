@@ -131,7 +131,7 @@ function AuthPageConteudo() {
 
         <div className="w-full max-w-md relative space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-sm bg-vermelho hover:bg-vermelho-escuro flex items-center justify-center mx-auto shadow-lg shadow-tinta/10">
+            <div className="w-12 h-12 rounded-xl bg-azul hover:brightness-110 flex items-center justify-center mx-auto shadow-lg shadow-tinta/10">
               <GraduationCap className="w-7 h-7 text-folha" />
             </div>
             <h1 className="text-2xl font-extrabold text-tinta">
@@ -140,25 +140,25 @@ function AuthPageConteudo() {
             <p className="text-xs text-tinta-fraca">
               {isLogin
                 ? 'Acesse seu histórico de redações e métricas de evolução'
-                : 'Comece a treinar suas redações com a banca de IA do ENEM'}
+                : 'Comece a treinar suas redações com a banca especialista do ENEM'}
             </p>
           </div>
 
-          <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua shadow-2xl space-y-6">
+          <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua shadow-2xl space-y-6">
             {!isSupabaseConfigured && (
-              <div className="p-3 rounded-sm text-xs flex items-center gap-2 bg-ambar-claro border border-ambar/30 text-ambar">
+              <div className="p-3 rounded-xl text-xs flex items-center gap-2 bg-ambar-claro border border-ambar/30 text-ambar">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>Login temporariamente indisponível (autenticação não configurada).</span>
               </div>
             )}
 
             {/* Tabs */}
-            <div className="flex p-1 bg-folha/80 rounded-sm border border-regua">
+            <div className="flex p-1 bg-folha/80 rounded-xl border border-regua">
               <button
                 type="button"
                 onClick={() => setIsLogin(true)}
-                className={`flex-1 py-2 text-xs font-semibold rounded-sm transition-all ${
-                  isLogin ? 'bg-vermelho text-folha shadow-sm' : 'text-tinta-fraca hover:text-tinta'
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  isLogin ? 'bg-azul text-folha shadow-sm' : 'text-tinta-fraca hover:text-tinta'
                 }`}
               >
                 Entrar
@@ -166,8 +166,8 @@ function AuthPageConteudo() {
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
-                className={`flex-1 py-2 text-xs font-semibold rounded-sm transition-all ${
-                  !isLogin ? 'bg-vermelho text-folha shadow-sm' : 'text-tinta-fraca hover:text-tinta'
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all ${
+                  !isLogin ? 'bg-azul text-folha shadow-sm' : 'text-tinta-fraca hover:text-tinta'
                 }`}
               >
                 Criar Conta
@@ -176,7 +176,7 @@ function AuthPageConteudo() {
 
             {message && (
               <div
-                className={`p-3 rounded-sm text-xs flex items-center gap-2 ${
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
                   message.type === 'success'
                     ? 'bg-verde-claro border border-verde/30 text-verde'
                     : 'bg-vermelho-claro border border-vermelho/30 text-vermelho'
@@ -195,7 +195,7 @@ function AuthPageConteudo() {
               type="button"
               onClick={handleGoogle}
               disabled={loadingGoogle || !isSupabaseConfigured}
-              className="w-full py-2.5 rounded-sm bg-white hover:bg-folha text-tinta text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-white hover:brightness-95 text-[#1c1917] text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {loadingGoogle ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -232,7 +232,7 @@ function AuthPageConteudo() {
                         placeholder="Ex: Ana Clara Santos"
                         value={nomeCompleto}
                         onChange={(e) => setNomeCompleto(e.target.value)}
-                        className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                        className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                       />
                     </div>
                   </div>
@@ -250,13 +250,13 @@ function AuthPageConteudo() {
                         onChange={(e) => setWhatsapp(formatarWhatsapp(e.target.value))}
                         onBlur={() => setErroWhatsapp(validarWhatsapp(whatsapp))}
                         aria-invalid={erroWhatsapp ? true : undefined}
-                        className={`w-full bg-folha/90 border rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho ${
-                          erroWhatsapp ? 'border-vermelho' : 'border-regua/80'
+                        className={`w-full bg-folha/90 border rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul ${
+                          erroWhatsapp ? 'border-azul' : 'border-regua/80'
                         }`}
                       />
                     </div>
                     {erroWhatsapp && (
-                      <p className="text-[11px] text-vermelho">{erroWhatsapp}</p>
+                      <p className="text-[11px] text-azul">{erroWhatsapp}</p>
                     )}
                   </div>
 
@@ -270,7 +270,7 @@ function AuthPageConteudo() {
                         placeholder="Ex: Fortaleza - CE"
                         value={cidadeEstado}
                         onChange={(e) => setCidadeEstado(e.target.value)}
-                        className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                        className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                       />
                     </div>
                   </div>
@@ -284,7 +284,7 @@ function AuthPageConteudo() {
                         required
                         value={dataNascimento}
                         onChange={(e) => setDataNascimento(e.target.value)}
-                        className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                        className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                       />
                     </div>
                   </div>
@@ -299,7 +299,7 @@ function AuthPageConteudo() {
                         placeholder="Ex: Medicina, Direito, Engenharia"
                         value={cursoDosSonhos}
                         onChange={(e) => setCursoDosSonhos(e.target.value)}
-                        className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                        className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                       />
                     </div>
                   </div>
@@ -316,7 +316,7 @@ function AuthPageConteudo() {
                     placeholder="estudante@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                    className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                   />
                 </div>
               </div>
@@ -332,7 +332,7 @@ function AuthPageConteudo() {
                     placeholder="••••••••"
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
-                    className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                    className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                   />
                 </div>
               </div>
@@ -340,7 +340,7 @@ function AuthPageConteudo() {
               <button
                 type="submit"
                 disabled={loading || !isSupabaseConfigured}
-                className="w-full py-3 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                className="w-full py-3 rounded-xl bg-azul hover:brightness-110 text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -370,7 +370,7 @@ export default function AuthPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-papel">
-          <Loader2 className="w-8 h-8 text-vermelho animate-spin" />
+          <Loader2 className="w-8 h-8 text-azul animate-spin" />
         </div>
       }
     >

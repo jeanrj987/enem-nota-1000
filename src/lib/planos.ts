@@ -1,34 +1,34 @@
 /**
- * IDs de preço do Stripe (modo de teste), gerados por scripts/stripe-setup.ts.
- * Ao migrar para produção (modo live), rodar o script de novo com a chave
- * live e atualizar os IDs aqui.
+ * Modelo de planos definido em 14 de setembro: só duas opções, substituindo
+ * as três antigas (mensal/semestral/anual). Migrado do Stripe para a Kiwify
+ * em 17 de setembro — `checkoutUrl` é o link de checkout fixo criado no
+ * painel da Kiwify (não é mais uma sessão dinâmica criada pela nossa API,
+ * como era no Stripe).
  */
-export type PlanoId = 'mensal' | 'anual' | 'semestral';
+export type PlanoId = 'mensal' | 'unico';
 
 export interface Plano {
   id: PlanoId;
   nome: string;
-  stripePriceId: string;
+  checkoutUrl: string;
   diasDeAcesso: number;
+  /** Assinatura que renova sozinha (mensal) vs. pagamento único com prazo fixo. */
+  recorrente: boolean;
 }
 
 export const PLANOS: Record<PlanoId, Plano> = {
   mensal: {
     id: 'mensal',
     nome: 'Plano Mensal',
-    stripePriceId: 'price_1UCLVPHHPGtJuCmcg85Y9iau',
+    checkoutUrl: 'https://pay.kiwify.com.br/C2b4RMM',
     diasDeAcesso: 30,
+    recorrente: true,
   },
-  anual: {
-    id: 'anual',
-    nome: 'Plano Anual (até o ENEM)',
-    stripePriceId: 'price_1UCLVPHHPGtJuCmcRF19oFcQ',
-    diasDeAcesso: 365,
-  },
-  semestral: {
-    id: 'semestral',
-    nome: 'Plano Semestral',
-    stripePriceId: 'price_1UCLVQHHPGtJuCmcuA0AnoNP',
-    diasDeAcesso: 180,
+  unico: {
+    id: 'unico',
+    nome: 'Acesso 30 dias',
+    checkoutUrl: 'https://pay.kiwify.com.br/BE4tQoq',
+    diasDeAcesso: 30,
+    recorrente: false,
   },
 };

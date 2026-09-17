@@ -296,6 +296,22 @@ export function validarCorrecaoIA(
         };
       }
     }
+
+    // Checagem inversa (apenas aviso, não rejeita): se a nota de C1 foi
+    // reduzida (< 200) mas nenhum erro em erros[] sobreviveu à validação de
+    // trecho real (grounded) para essa competência, a dedução não tem nenhuma
+    // evidência concreta apontada no texto do aluno. Isso não é
+    // necessariamente um bug — a matriz do ENEM permite deduções holísticas
+    // sem um erro pontual itemizado — mas fica registrado para revisão, em
+    // vez de rejeitar e forçar um retry que pode não resolver nada.
+    if (c1 && c1.nota < 200) {
+      const errosC1 = errosValidos.filter((e) => e.competencia_relacionada === 1);
+      if (errosC1.length === 0) {
+        avisos.push(
+          `Competência I recebeu nota ${c1.nota} (abaixo de 200) sem nenhum erro com trecho real do texto do aluno vinculado a essa competência — dedução sem evidência concreta apontada`
+        );
+      }
+    }
   }
 
   return {

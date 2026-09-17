@@ -2,13 +2,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { PLANOS, PlanoId } from '@/lib/planos';
 
 /**
- * Ativa uma assinatura no Supabase a partir dos dados de uma Checkout
- * Session já confirmada como paga. Compartilhado entre o webhook do Stripe
- * (fonte de verdade em produção) e a verificação síncrona no redirect de
- * sucesso (necessária em dev, já que o Stripe não alcança localhost, e
- * também como reforço em produção contra webhooks atrasados/perdidos —
- * prática recomendada pelo próprio Stripe). Idempotente: chamar de novo
- * para a mesma session_id só sobrescreve com os mesmos dados.
+ * Ativa uma assinatura no Supabase a partir de um pagamento já confirmado
+ * como pago pelo gateway (hoje: webhook da Kiwify, evento "compra
+ * aprovada"). `sessionId` é qualquer identificador único da transação (o
+ * `order_id` da Kiwify) — usado como chave primária, então chamar de novo
+ * para o mesmo id só sobrescreve com os mesmos dados (idempotente, protege
+ * contra reentrega do mesmo webhook).
  */
 export async function ativarAssinatura(params: {
   sessionId: string;
@@ -41,5 +40,36 @@ export async function ativarAssinatura(params: {
   console.log(
     JSON.stringify({ evento: 'assinatura_ativada', user_id: params.userId, plano_id: params.planoId, expira_em: expiraEm })
   );
+  return { sucesso: true };
+}
+
+/**
+ * Revoga o acesso na hora — usada pelo webhook da Kiwify nos eventos de
+ * reembolso, chargeback, assinatura cancelada e cobrança de renovação
+ * atrasada. Marca todas as assinaturas ATIVAS do usuário com o motivo
+ * (vira o novo `status`, então `assinaturaAtivaDoUsuario` para de
+ * considerá-las ativas) e zera `expira_em` para agora, para não deixar
+ * acesso pago esperando a data antiga expirar sozinha.
+ */
+export async function revogarAssinatura(
+  userId: string,
+  motivo: 'cancelada' | 'reembolsada' | 'chargeback' | 'atrasada'
+): Promise<{ sucesso: boolean; erro?: string }> {
+  if (!supabaseAdmin) {
+    return { sucesso: false, erro: 'Persistência não configurada.' };
+  }
+
+  const { error } = await supabaseAdmin
+    .from('assinaturas')
+    .update({ status: motivo, expira_em: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('status', 'ativa');
+
+  if (error) {
+    console.error('Erro ao revogar assinatura no Supabase:', error);
+    return { sucesso: false, erro: 'Falha ao revogar assinatura.' };
+  }
+
+  console.log(JSON.stringify({ evento: 'assinatura_revogada', user_id: userId, motivo }));
   return { sucesso: true };
 }

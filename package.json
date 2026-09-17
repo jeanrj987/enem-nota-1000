@@ -11,7 +11,6 @@
     "test:watch": "vitest",
     "calibrar": "tsx scripts/calibrar.ts",
     "auditoria:vies": "tsx scripts/auditoria-vies.ts",
-    "stripe:setup": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/stripe-setup.ts",
     "seed:correcao-teste": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/seed-correcao-teste.ts",
     "verificar:paywall": "node --env-file=.env.local ./node_modules/tsx/dist/cli.mjs scripts/verificar-paywall.ts"
   },
@@ -29,7 +28,6 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
-    "stripe": "^22.6.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.5.4"
   },

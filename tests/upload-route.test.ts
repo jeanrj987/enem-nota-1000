@@ -41,9 +41,8 @@ function arquivoTxt(texto: string) {
 }
 
 describe('POST /api/upload — autenticação', () => {
-  // Um PDF sem texto selecionável dispara OCR por visão, que custa por
-  // chamada. Antes desta barreira, qualquer pessoa da internet podia
-  // consumir essa cota sem sequer ter conta.
+  // Antes desta barreira, qualquer pessoa da internet podia martelar o
+  // parser de arquivo sem sequer ter conta.
   it('recusa quem não manda token', async () => {
     const req = requestComArquivo(arquivoTxt('texto qualquer suficientemente longo'), null);
     const res = await POST(req);

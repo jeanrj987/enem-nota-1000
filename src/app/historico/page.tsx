@@ -59,7 +59,7 @@ export default function HistoricoPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-regua/80 pb-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-vermelho uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-xs font-semibold text-azul uppercase tracking-wider">
               <TrendingUp className="w-4 h-4" />
               <span>Análise de Desempenho & Métricas</span>
             </div>
@@ -73,7 +73,7 @@ export default function HistoricoPage() {
 
           <Link
             href="/nova-redacao"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all self-start md:self-auto"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-azul hover:brightness-110 text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all self-start md:self-auto"
           >
             <PenTool className="w-4 h-4" />
             <span>Treinar Nova Redação</span>
@@ -86,11 +86,11 @@ export default function HistoricoPage() {
         )}
 
         {/* Tabela Detalhada de Histórico */}
-        <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-6">
+        <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-tinta flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-vermelho" />
+                <BookOpen className="w-5 h-5 text-azul" />
                 Registros de Ensaios Anteriores
               </h2>
               <p className="text-xs text-tinta-fraca">
@@ -107,14 +107,14 @@ export default function HistoricoPage() {
                   placeholder="Buscar por tema..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="bg-folha/90 border border-regua rounded-sm pl-8 pr-3 py-1.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+                  className="bg-folha/90 border border-regua rounded-xl pl-8 pr-3 py-1.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
                 />
               </div>
 
               <select
                 value={filtroFaixa}
                 onChange={(e: any) => setFiltroFaixa(e.target.value)}
-                className="bg-folha/90 border border-regua rounded-sm px-3 py-1.5 text-xs text-tinta-suave focus:outline-none focus:border-vermelho"
+                className="bg-folha/90 border border-regua rounded-xl px-3 py-1.5 text-xs text-tinta-suave focus:outline-none focus:border-azul"
               >
                 <option value="todas">Todas as notas</option>
                 <option value="900+">Excelentes (900+)</option>
@@ -186,7 +186,7 @@ export default function HistoricoPage() {
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <Link
                             href={`/correcao/${red.id}`}
-                            className="inline-flex items-center gap-1 text-xs text-vermelho hover:text-vermelho font-semibold transition-colors"
+                            className="inline-flex items-center gap-1 text-xs text-azul hover:text-azul font-semibold transition-colors"
                           >
                             <span>Ver Detalhes</span>
                             <ChevronRight className="w-3.5 h-3.5" />

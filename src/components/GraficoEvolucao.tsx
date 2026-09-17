@@ -71,9 +71,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
 
   if (historico.length === 0) {
     return (
-      <div className="glass-panel p-8 rounded-sm border border-regua text-center space-y-4">
-        <div className="w-12 h-12 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center mx-auto">
-          <TrendingUp className="w-6 h-6 text-vermelho" />
+      <div className="glass-panel p-8 rounded-xl border border-regua text-center space-y-4">
+        <div className="w-12 h-12 rounded-xl bg-azul-claro border border-azul flex items-center justify-center mx-auto">
+          <TrendingUp className="w-6 h-6 text-azul" />
         </div>
         <h3 className="text-base font-bold text-tinta">Nenhuma redação avaliada ainda</h3>
         <p className="text-xs text-tinta-fraca max-w-sm mx-auto">
@@ -87,18 +87,18 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
     <div className="space-y-8">
       {/* Cards de Métricas Principais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+        <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
           <div className="flex items-center justify-between text-xs text-tinta-fraca">
             <span>Média Geral</span>
-            <Target className="w-4 h-4 text-vermelho" />
+            <Target className="w-4 h-4 text-azul" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-tinta">
             {estatisticas.media_geral} <span className="text-xs text-tinta-fraca font-normal">/1000</span>
           </div>
-          <div className="text-[11px] text-vermelho font-medium">Todas as redações</div>
+          <div className="text-[11px] text-azul font-medium">Todas as redações</div>
         </div>
 
-        <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+        <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
           <div className="flex items-center justify-between text-xs text-tinta-fraca">
             <span>Maior Nota</span>
             <Award className="w-4 h-4 text-verde" />
@@ -109,10 +109,10 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
           <div className="text-[11px] text-verde font-medium">Recorde pessoal</div>
         </div>
 
-        <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+        <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
           <div className="flex items-center justify-between text-xs text-tinta-fraca">
             <span>Redações Escritas</span>
-            <Layers className="w-4 h-4 text-vermelho" />
+            <Layers className="w-4 h-4 text-azul" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-tinta">
             {estatisticas.total_redacoes}
@@ -120,26 +120,26 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
           <div className="text-[11px] text-tinta-fraca">Ensaios avaliados</div>
         </div>
 
-        <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+        <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
           <div className="flex items-center justify-between text-xs text-tinta-fraca">
             <span>Ponto Forte</span>
-            <Zap className="w-4 h-4 text-vermelho" />
+            <Zap className="w-4 h-4 text-azul" />
           </div>
           <div className="text-sm font-bold text-tinta truncate">
             {estatisticas.competencia_forte.nome.slice(0, 16)}...
           </div>
-          <div className="text-[11px] text-vermelho font-medium">
+          <div className="text-[11px] text-azul font-medium">
             Média: {estatisticas.competencia_forte.media} pts
           </div>
         </div>
       </div>
 
       {/* Gráfico de Linha de Evolução */}
-      <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-6">
+      <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-tinta flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-vermelho" />
+              <TrendingUp className="w-5 h-5 text-azul" />
               Evolução Temporal da Pontuação
             </h3>
             <p className="text-xs text-tinta-fraca">
@@ -151,9 +151,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <button
               onClick={() => toggleLine('nota_geral')}
-              className={`px-3 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.nota_geral
-                  ? 'bg-vermelho text-folha shadow-sm'
+                  ? 'bg-azul text-folha shadow-sm'
                   : 'bg-folha text-tinta-fraca border border-regua'
               }`}
             >
@@ -161,9 +161,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
             </button>
             <button
               onClick={() => toggleLine('c1')}
-              className={`px-2.5 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.c1
-                  ? 'bg-vermelho text-folha'
+                  ? 'bg-azul text-folha'
                   : 'bg-folha text-tinta-fraca border border-regua'
               }`}
             >
@@ -171,7 +171,7 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
             </button>
             <button
               onClick={() => toggleLine('c2')}
-              className={`px-2.5 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.c2
                   ? 'bg-ambar text-tinta'
                   : 'bg-folha text-tinta-fraca border border-regua'
@@ -181,7 +181,7 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
             </button>
             <button
               onClick={() => toggleLine('c3')}
-              className={`px-2.5 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.c3
                   ? 'bg-verde text-tinta'
                   : 'bg-folha text-tinta-fraca border border-regua'
@@ -191,9 +191,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
             </button>
             <button
               onClick={() => toggleLine('c4')}
-              className={`px-2.5 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.c4
-                  ? 'bg-vermelho text-folha'
+                  ? 'bg-azul text-folha'
                   : 'bg-folha text-tinta-fraca border border-regua'
               }`}
             >
@@ -201,9 +201,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
             </button>
             <button
               onClick={() => toggleLine('c5')}
-              className={`px-2.5 py-1.5 rounded-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl font-medium transition-all ${
                 activeCompetencias.c5
-                  ? 'bg-vermelho text-folha'
+                  ? 'bg-azul text-folha'
                   : 'bg-folha text-tinta-fraca border border-regua'
               }`}
             >
@@ -260,9 +260,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
 
       {/* Gráfico Radar de Competências */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-4">
+        <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua space-y-4">
           <h3 className="text-base font-bold text-tinta flex items-center gap-2">
-            <Target className="w-5 h-5 text-vermelho" />
+            <Target className="w-5 h-5 text-azul" />
             Radar de Domínio das 5 Competências
           </h3>
           <p className="text-xs text-tinta-fraca">
@@ -288,9 +288,9 @@ export function GraficoEvolucao({ historico, estatisticas }: GraficoEvolucaoProp
         </div>
 
         {/* Barras de Média por Competência */}
-        <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua space-y-4">
+        <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua space-y-4">
           <h3 className="text-base font-bold text-tinta flex items-center gap-2">
-            <Award className="w-5 h-5 text-vermelho" />
+            <Award className="w-5 h-5 text-azul" />
             Pontuação Média por Eixo
           </h3>
           <p className="text-xs text-tinta-fraca">

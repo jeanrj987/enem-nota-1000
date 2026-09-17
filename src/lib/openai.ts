@@ -136,12 +136,12 @@ ${texto}
 
   if (!geminiApiKey && !openaiApiKey) {
     throw new Error(
-      'Nenhum provedor de IA está configurado (GEMINI_API_KEY / OPENAI_API_KEY ausentes).'
+      'Nenhum provedor de correção está configurado (GEMINI_API_KEY / OPENAI_API_KEY ausentes).'
     );
   }
 
   throw new Error(
-    'Não foi possível corrigir a redação no momento. Todos os provedores de IA falharam ou estão indisponíveis.'
+    'Não foi possível corrigir a redação no momento. Todos os provedores falharam ou estão indisponíveis.'
   );
 }
 

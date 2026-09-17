@@ -22,19 +22,18 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: 'Nota 1000 AI | Correção de Redações do ENEM com Inteligência Artificial',
+  title: 'Nota 1000 | Correção de Redações do ENEM',
   description:
     'Plataforma de alta precisão calibrada na Matriz Oficial do ENEM (INEP). Receba correção detalhada pelas 5 competências, erros destacados no texto e versão reescrita nota 1000 em segundos.',
   keywords: [
     'redação enem',
     'corretor de redação',
-    'inteligencia artificial enem',
     'nota 1000 enem',
     'competencias enem',
     'inep',
     'estudos enem',
   ],
-  authors: [{ name: 'Nota 1000 AI' }],
+  authors: [{ name: 'Nota 1000' }],
 };
 
 export default function RootLayout({
@@ -47,7 +46,7 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${newsreader.variable} ${karla.variable} ${caveat.variable} antialiased`}
     >
-      <body className="min-h-screen bg-papel text-tinta flex flex-col fonte-humanista selection:bg-vermelho selection:text-folha">
+      <body className="min-h-screen bg-papel text-tinta flex flex-col fonte-humanista selection:bg-azul selection:text-folha">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

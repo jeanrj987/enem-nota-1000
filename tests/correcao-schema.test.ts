@@ -306,6 +306,27 @@ describe('validarCorrecaoIA — consistência das habilidades de C1', () => {
     const r = validarCorrecaoIA(data, textoComParagrafos);
     expect(r.success).toBe(true);
   });
+
+  it('gera aviso (mas não rejeita) quando C1 recebe nota abaixo de 200 sem nenhum erro grounded vinculado', () => {
+    const data = correcaoBase([160, 120, 120, 120, 120]);
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.avisos.some((a) => a.includes('Competência I recebeu nota 160'))).toBe(true);
+    }
+  });
+
+  it('não gera esse aviso quando C1 recebe nota abaixo de 200 com um erro grounded vinculado', () => {
+    const data = correcaoBase([160, 120, 120, 120, 120]);
+    (data as any).erros = [
+      { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'regencia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
+    ];
+    const r = validarCorrecaoIA(data, textoComParagrafos);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.avisos.some((a) => a.includes('dedução sem evidência concreta'))).toBe(false);
+    }
+  });
 });
 
 describe('validarCorrecaoIA — consistência das habilidades de C3', () => {

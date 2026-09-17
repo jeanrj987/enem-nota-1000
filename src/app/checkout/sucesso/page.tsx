@@ -20,17 +20,10 @@ function ConteudoSucesso() {
     let tentativas = 0;
     let cancelado = false;
 
-    // Verifica direto na Stripe (session_id do redirect) em vez de esperar
-    // passivamente o webhook — necessário em dev (Stripe não alcança
-    // localhost) e reforça produção contra webhook atrasado/perdido.
-    if (sessionId) {
-      fetch('/api/checkout/verificar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      }).catch(() => {});
-    }
-
+    // A Kiwify redireciona para cá depois do pagamento, mas quem confirma o
+    // acesso é o webhook (/api/kiwify/webhook) — aqui só ficamos consultando
+    // se o acesso já apareceu, sem verificação síncrona própria (diferente
+    // do fluxo antigo do Stripe, que consultava a Checkout Session direto).
     const checar = async () => {
       const ativo = await temAcessoAtivo();
       if (cancelado) return;
@@ -53,10 +46,10 @@ function ConteudoSucesso() {
   }, [sessionId]);
 
   return (
-    <div className="glass-panel p-10 sm:p-16 rounded-sm border border-regua text-center space-y-5 max-w-lg mx-auto">
+    <div className="glass-panel p-10 sm:p-16 rounded-xl border border-regua text-center space-y-5 max-w-lg mx-auto">
       {estado === 'confirmando' && (
         <>
-          <Loader2 className="w-10 h-10 text-vermelho animate-spin mx-auto" />
+          <Loader2 className="w-10 h-10 text-azul animate-spin mx-auto" />
           <h1 className="text-xl font-bold text-tinta">Confirmando seu pagamento...</h1>
           <p className="text-sm text-tinta-fraca">
             Isso costuma levar poucos segundos. Não feche esta página.
@@ -66,14 +59,14 @@ function ConteudoSucesso() {
 
       {estado === 'ativo' && (
         <>
-          <div className="w-14 h-14 rounded-sm bg-verde-claro border border-verde/30 flex items-center justify-center mx-auto text-verde">
+          <div className="w-14 h-14 rounded-xl bg-verde-claro border border-verde/30 flex items-center justify-center mx-auto text-verde">
             <CheckCircle2 className="w-7 h-7" />
           </div>
           <h1 className="text-xl font-bold text-tinta">Pagamento confirmado!</h1>
           <p className="text-sm text-tinta-fraca">Seu acesso ao avaliador já está liberado.</p>
           <Link
             href="/nova-redacao"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-sm bg-vermelho hover:bg-vermelho text-folha text-xs font-semibold shadow-md transition-all"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-azul hover:bg-azul text-folha text-xs font-semibold shadow-md transition-all"
           >
             Corrigir minha primeira redação
           </Link>
@@ -82,7 +75,7 @@ function ConteudoSucesso() {
 
       {estado === 'demorando' && (
         <>
-          <div className="w-14 h-14 rounded-sm bg-ambar-claro border border-ambar/30 flex items-center justify-center mx-auto text-ambar">
+          <div className="w-14 h-14 rounded-xl bg-ambar-claro border border-ambar/30 flex items-center justify-center mx-auto text-ambar">
             <AlertCircle className="w-7 h-7" />
           </div>
           <h1 className="text-xl font-bold text-tinta">Ainda confirmando</h1>
@@ -102,7 +95,7 @@ export default function PaginaSucessoCheckout() {
     <div className="min-h-screen flex flex-col bg-papel text-tinta">
       <Navbar />
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-16">
-        <Suspense fallback={<Loader2 className="w-8 h-8 text-vermelho animate-spin mx-auto" />}>
+        <Suspense fallback={<Loader2 className="w-8 h-8 text-azul animate-spin mx-auto" />}>
           <ConteudoSucesso />
         </Suspense>
       </main>

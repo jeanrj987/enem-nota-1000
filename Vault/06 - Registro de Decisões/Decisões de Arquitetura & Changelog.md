@@ -161,6 +161,45 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 029: Aviso (não bloqueio) quando C1 recebe nota reduzida sem erro grounded correspondente
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o usuário reportou uma correção onde a Competência I recebeu 160/200 com o comentário "foram identificados deslizes pontuais de regência e colocação pronominal", mas — diferente das outras competências, que sempre citam o trecho exato — esse comentário não apontava nenhum erro específico ao lado. Investigação confirmou que existia sim um erro real vinculado (trecho "se manifestando a partir do apagamento", um caso de próclise antes de gerúndio, gramaticalmente defensável como desvio da norma culta estrita), então este caso específico não era um bug. Mas a investigação expôs uma lacuna real na validação: `validarCorrecaoIA` já rejeitava a contradição inversa (C1 = 200 com 2+ erros grounded contraditórios, ver checagem original do ADR de schema), mas não existia nenhuma checagem para o caso de uma nota **reduzida** vir sem nenhum erro `grounded` (trecho real encontrado no texto do aluno) vinculado a essa competência.
+- **Decisão**: adicionada em `src/lib/correcao-schema.ts` uma checagem que, quando C1 recebe nota abaixo de 200 e nenhum erro em `erros[]` sobrevive à validação de trecho real para essa competência, adiciona um item a `avisos` (não rejeita a correção). Optado por aviso e não rejeição/retry porque a matriz do ENEM permite deduções holísticas de C1 sem um erro pontual sempre itemizado (ex.: registro de habilidades via `habilidades_c1`, impressão geral de fluência) — uma tentativa inicial de tornar isso uma rejeição dura quebrou 13 dos testes existentes, confirmando que o comportamento "nota reduzida sem erro itemizado" é às vezes legítimo no domínio, não um bug em si. O aviso fica registrado (mesmo canal de `avisos` já usado para trechos alucinados descartados) para permitir auditoria/monitoramento futuro sem impedir a entrega da correção ao aluno.
+- **Testes**: 155 → 157 (2 novos em `correcao-schema.test.ts`: gera aviso quando falta erro grounded, não gera quando existe).
+
+### ADR 028: Integração com a Kiwify implementada — checkout por link fixo + webhook
+- **Status**: Aprovado, Implementado e **Verificado com pagamento real** em 17 de setembro.
+- **Contexto**: com a Kiwify como gateway definido (ADR 027), os 2 produtos foram criados no painel dela pelo usuário — Plano Mensal (R$97, assinatura recorrente, `https://pay.kiwify.com.br/C2b4RMM`) e Acesso 40 dias (R$147, pagamento único, `https://pay.kiwify.com.br/BE4tQoq`) — e um webhook cadastrado com 5 eventos: compra aprovada, assinatura cancelada, assinatura atrasada, reembolso, chargeback.
+- **Mudança de arquitetura em relação ao Stripe**: no Stripe, `/api/checkout` criava uma Checkout Session dinâmica por requisição, carimbando o `user_id` do comprador nela — o webhook sempre sabia exatamente qual conta liberar. Na Kiwify, os links de checkout são **fixos** (criados uma vez no painel, não por API a cada compra), então não existe onde carimbar o `user_id`. Duas consequências:
+  - **Checkout virou navegação direta**: `/vendas` não chama mais nenhuma rota de API para iniciar o pagamento — o clique no botão monta a URL do link fixo do plano (`PLANOS[planoId].checkoutUrl`) com o e-mail da conta logada como query param (`?email=...`, se a Kiwify aceitar prefill por e-mail) e redireciona direto. `/api/checkout` e `/api/checkout/verificar` (Stripe) foram apagados.
+  - **Vínculo compra↔conta por e-mail**: o webhook recebe o e-mail de quem comprou, não o `user_id`. Nova coluna `email` em `public.perfis` (migração `schema-perfis-email.sql`, com backfill e trigger `handle_new_user` atualizado) permite `buscarUserIdPorEmail()` (`src/lib/perfil.ts`) resolver a conta certa. **Risco aceito conscientemente com o usuário**: se o aluno pagar com um e-mail diferente do cadastro, a compra não é vinculada automaticamente — fica registrada no painel da Kiwify para ativação manual, sem tela de suporte dedicada (decisão explícita para não construir complexidade para um caso raro agora).
+- **`/api/kiwify/webhook`** (novo): valida a assinatura HMAC-SHA1 do payload (query param `signature`, chave = `KIWIFY_WEBHOOK_TOKEN`) com `crypto.timingSafeEqual`; em "compra aprovada" chama `ativarAssinatura` (reaproveitada do Stripe, já era genérica o suficiente); nos demais eventos chama a nova `revogarAssinatura()` (`src/lib/ativar-assinatura.ts`), que marca as assinaturas ativas do usuário com o motivo (`cancelada`/`reembolsada`/`chargeback`/`atrasada`) e zera `expira_em` na hora — nunca deixa acesso pago esperando expirar sozinho depois de reembolso/chargeback.
+- **Verificação contra payload e pagamento reais**: a primeira tentativa de teste falhou porque o `KIWIFY_WEBHOOK_TOKEN` configurado (`hyek5bc66ku`) era só o valor de exemplo mostrado na tela de criação do webhook, não o token real gerado pela Kiwify (`v9o1q4z2w0v`, visível — mas não editável — nas telas de "Editar webhook" e "Testar Webhook"). Corrigido o valor na Vercel e no `.env.local`. Depois disso: (1) o "Testar Webhook" da Kiwify (evento "Compra aprovada", dados fictícios) confirmou a assinatura HMAC válida e bateu exatamente com o formato assumido em `extrairEmail`/`identificarPlano`/`normalizarStatus` — `order_status`, `Product.product_name`, `Customer.email` e `Commissions.charge_amount` vieram exatamente como o código esperava; (2) uma **compra real de valor mínimo** confirmou o fluxo de ponta a ponta — webhook recebido, conta resolvida pelo e-mail, assinatura ativada, acesso liberado na conta do usuário. **Só os eventos de cancelamento/atraso de assinatura (que não têm como ser simulados pelo "Testar Webhook" da Kiwify) continuam sem confirmação contra um payload real** — o mapeamento de `ehCancelamento`/`ehAtraso` em `normalizarStatus` é a única parte ainda não verificada.
+- **Limpeza**: removidos `/api/checkout`, `/api/checkout/verificar`, `/api/stripe/webhook`, `scripts/stripe-setup.ts`, a dependência `stripe` do `package.json`, e os testes correspondentes (6 testes). `/checkout/sucesso` perdeu a verificação síncrona (exclusiva do Stripe) e agora só espera o webhook.
+- **Testes**: 149 → 153 (10 novos em `kiwify-webhook-route.test.ts`, cobrindo assinatura inválida/ausente, identificação de plano por nome e por valor, e-mail sem conta correspondente, e os 4 motivos de revogação; 6 testes do Stripe removidos junto com as rotas).
+
+### ADR 027: Gateway de pagamento definido como Kiwify (não Kirvano)
+- **Status**: Aprovado.
+- **Histórico da decisão no mesmo dia**: o projeto saiu do Stripe e cogitou a Kirvano (ver ADR 026, que já registra "migrando para a Kirvano"); depois o usuário considerou rodar nas duas — Kirvano e Kiwify — ao mesmo tempo; por fim decidiu usar **só a Kiwify**. Nenhuma integração de código chegou a ser escrita para a Kirvano — só o texto de comentários/documentação, que foi atualizado para não deixar rastro de uma decisão já revertida.
+- **Decisão final**: gateway único, Kiwify. O modelo de planos (R$97 mensal recorrente + R$147 pagamento único/40 dias, ver ADR 026) continua valendo — só o provedor mudou de nome nos comentários de `planos.ts` e `stripe-setup.ts`.
+- **Ainda pendente**: toda a integração de fato (criar os 2 produtos na Kiwify, obter checkout links/IDs e webhook, reescrever `/api/checkout` e a rota de webhook) — nada disso foi implementado ainda, só a decisão de qual plataforma usar.
+- **Testes**: 149 (sem variação — mudança de comentário/documentação, sem código executável alterado).
+
+### ADR 026: `/vendas` e `planos.ts` reduzidos a dois planos
+- **Status**: Aprovado e Implementado.
+- **Contexto**: seguindo a decisão de migrar o gateway para a Kirvano (ADR pendente de migração no checklist), o modelo de planos mudou de 3 opções (mensal R$29,90, semestral R$89,00, anual R$147,00) para 2: **R$97 mensal recorrente** e **R$147 pagamento único, 40 dias de acesso**.
+- **Decisão**: `PlanoId` em `src/lib/planos.ts` passou de `'mensal' | 'anual' | 'semestral'` para `'mensal' | 'unico'`, com um novo campo `recorrente: boolean` no tipo `Plano` (documentando a diferença de comportamento, mesmo antes de o checkout saber tratar renovação de verdade). `/vendas` foi de 3 cards para 2, com o mensal marcado como "o mais escolhido" (era o anual antes). `scripts/stripe-setup.ts` atualizado para coerência, embora esteja em vias de ficar obsoleto com a migração de gateway.
+- **Corrigido de passagem**: a resposta do FAQ "posso enviar em arquivo?" ainda dizia que "fotos de redação manuscrita em PDF também são lidas" — falso desde o ADR 025 (OCR removido no mesmo dia). Corrigido para reforçar a exigência de texto real e legível.
+- **O que NÃO mudou ainda**: o botão de cada plano continua chamando `/api/checkout` (Stripe), que trata todo plano como pagamento único (`mode: 'payment'`) — a renovação automática do plano mensal só existirá de fato depois da migração para a Kirvano, que ainda está pendente no checklist junto com cancelamento e reembolso.
+- **Testes**: 149 (sem variação — `checkout-route.test.ts` já testava com `planoId: 'mensal'`, que continua existindo).
+
+### ADR 025: Remoção do OCR de fotos/scans — só texto real é aceito
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `/api/upload` tinha um caminho de último recurso para PDFs sem texto selecionável: renderizava as páginas como imagem e pedia transcrição literal ao Gemini via visão (`extrairTextoViaOCR`). Na prática isso tentava "ler" fotos ou digitalizações de redação manuscrita — dependente da caligrafia do aluno, sujeito a erro de transcrição silencioso, e gastando uma chamada de LLM cara (visão) por tentativa.
+- **Decisão**: removida inteiramente a função `extrairTextoViaOCR` e o import de `@google/genai` de `route.ts` (o pacote continua no projeto — ainda é o provedor principal de correção em `openai.ts`, só não é mais usado para OCR). Um PDF sem texto selecionável agora falha direto com 422, orientando a colar o texto ou enviar `.txt`/`.docx` já digitado. Adicionado um aviso permanente na tela de upload (`AreaProducaoTextual.tsx`), visível antes mesmo de tentar enviar, pedindo texto real (não foto) e letra legível para garantir a melhor precisão da nota — a pedido do usuário.
+- **Por que isso é uma melhoria, não só uma remoção**: transcrição de letra manuscrita por visão é a etapa mais sujeita a erro do pipeline inteiro — um `[ilegível]` ou uma palavra mal transcrita vira erro de português que não existe no texto original do aluno, distorcendo a nota. Recusar de forma clara e pedir o texto direto é mais honesto do que tentar adivinhar.
+- **Testes**: 149 (sem variação — não havia teste cobrindo o caminho de OCR).
+
 ### ADR 024: Modal de carregamento não promete tempo nem menciona "IA"
 - **Status**: Aprovado e Implementado.
 - **Contexto**: `ModalCarregamento.tsx` exibia o título "Corrigindo com Inteligência Artificial" e a estimativa fixa "Tempo médio de análise: ~5 a 15 segundos" — o usuário identificou que essa estimativa não é real. A correção de assinante roda 2-3 chamadas de LLM em sequência (dupla correção + eventual arbitragem, ver ADR 006), o que facilmente ultrapassa 15 segundos; publicar um tempo que a maioria das correções não cumpre é a mesma categoria de problema já corrigida antes no projeto (cronômetro falso do `SalesStickyBar`, "60% OFF" inexistente no Footer).
@@ -200,6 +239,39 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.1.1] - 2026-09-17 (plano único corrigido para 30 dias)
+- **Corrigido**: o plano de pagamento único (`PlanoId: 'unico'`) prometia 40 dias de acesso, mas isso não é possível de configurar na Kiwify — ajustado para **30 dias** em `src/lib/planos.ts` (`diasDeAcesso`, `nome`), no texto de `/vendas`, e no reconhecimento de nome de produto do webhook (`identificarPlano` em `src/app/api/kiwify/webhook/route.ts`). Produto correspondente renomeado no painel da Kiwify pelo usuário para manter consistência.
+- **Testes**: 155 (sem variação de quantidade — só o texto esperado em `kiwify-webhook-route.test.ts` foi atualizado de "40 dias" para "30 dias").
+
+### [v3.1.0] - 2026-09-17 (aviso de C1 sem erro grounded)
+- **Adicionado**: `validarCorrecaoIA` agora registra um aviso (`avisos[]`, sem rejeitar) quando a Competência I recebe nota abaixo de 200 e nenhum erro em `erros[]` com trecho real do texto do aluno está vinculado a ela — protege contra deduções de nota sem evidência apontável, mantendo a rejeição dura só para a contradição inversa (nota 200 com 2+ erros grounded). Ver ADR 029.
+- **Testes**: 155 → 157.
+
+### [v3.0.1] - 2026-09-17 (Kiwify verificada com pagamento real)
+- **Corrigido**: `KIWIFY_WEBHOOK_TOKEN` estava com o valor de exemplo da tela de criação do webhook, não o token real da Kiwify — corrigido na Vercel e no `.env.local`.
+- **Confirmado**: webhook, ativação de assinatura e liberação de acesso testados de ponta a ponta com uma compra real. Ver ADR 028 (atualizado).
+- **Testes**: 153 (sem variação — a correção foi de configuração, não de código).
+
+### [v3.0.0] - 2026-09-17 (Stripe removido, Kiwify integrada)
+- **Adicionado**: `/api/kiwify/webhook`, checkout por link fixo em `/vendas`, vínculo compra↔conta por e-mail (`perfis.email`). Ver ADR 028.
+- **Removido**: toda a integração com o Stripe (`/api/checkout`, `/api/checkout/verificar`, `/api/stripe/webhook`, `scripts/stripe-setup.ts`, dependência `stripe`).
+- **⚠️ Pendente de verificação**: o formato do payload do webhook da Kiwify ainda não foi confirmado contra um envio real — ver aviso no ADR 028 antes de considerar o fluxo de pagamento confiável em produção.
+- **Testes**: 149 → 153.
+
+### [v2.12.1] - 2026-09-17 (gateway definido: Kiwify, não Kirvano)
+- **Corrigido**: comentários em `planos.ts` e `stripe-setup.ts` que citavam "Kirvano" foram atualizados para "Kiwify" — decisão final do usuário no mesmo dia, depois de cogitar rodar nas duas plataformas. Nenhuma integração de gateway foi implementada ainda. Ver ADR 027.
+- **Testes**: 149 (sem variação).
+
+### [v2.12.0] - 2026-09-17 (dois planos: R$97 mensal + R$147/40 dias)
+- **Alterado**: `/vendas` e `src/lib/planos.ts` foram de 3 planos para 2 — R$97,00 assinatura mensal recorrente e R$147,00 pagamento único com 40 dias de acesso. Ver ADR 026.
+- **Corrigido**: FAQ de `/vendas` não promete mais leitura de foto de redação manuscrita (ficou desatualizado depois do ADR 025).
+- **Testes**: 149 (sem variação).
+
+### [v2.11.0] - 2026-09-17 (fim do OCR de fotos; aviso de texto legível)
+- **Removido**: `/api/upload` não tenta mais transcrever foto/scan de redação manuscrita via visão do Gemini — um PDF sem texto selecionável falha com uma mensagem clara pedindo para colar o texto ou enviar `.txt`/`.docx`. Ver ADR 025.
+- **Adicionado**: aviso permanente na tela de upload orientando a enviar texto real, com letra legível, para a melhor precisão da nota.
+- **Testes**: 149 (sem variação).
 
 ### [v2.10.0] - 2026-09-14 (modal de carregamento sem tempo estimado nem menção a IA)
 - **Removido**: `ModalCarregamento.tsx` não anuncia mais "~5 a 15 segundos" (não era real, a dupla correção facilmente passa disso) nem "Inteligência Artificial" no título — agora só "Corrigindo sua redação". Ver ADR 024.

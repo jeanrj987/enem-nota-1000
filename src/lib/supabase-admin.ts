@@ -5,8 +5,9 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 /**
  * Cliente Supabase com service role — ignora RLS. Uso exclusivo em código
- * de servidor de confiança (webhook do Stripe), nunca em código que roda
- * no navegador. Não importar isto de nenhum componente client-side.
+ * de servidor de confiança (webhook da Kiwify, rotas de API), nunca em
+ * código que roda no navegador. Não importar isto de nenhum componente
+ * client-side.
  */
 export const supabaseAdmin =
   supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;

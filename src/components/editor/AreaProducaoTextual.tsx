@@ -48,7 +48,7 @@ export function AreaProducaoTextual({
   linhasAproximadas,
 }: AreaProducaoTextualProps) {
   return (
-    <div className="glass-panel p-6 rounded-sm border border-regua space-y-4">
+    <div className="glass-panel p-6 rounded-xl border border-regua space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-regua/80 pb-3">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-vermelho" />
@@ -67,7 +67,7 @@ export function AreaProducaoTextual({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-folha-2/90 hover:bg-pauta text-tinta text-xs font-medium transition-all border border-regua/60 shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-folha-2/90 hover:bg-pauta text-tinta text-xs font-medium transition-all border border-regua/60 shadow-sm"
           >
             {isUploading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-vermelho" />
@@ -80,7 +80,7 @@ export function AreaProducaoTextual({
       </div>
 
       {uploadedFileName && (
-        <div className="flex items-center justify-between px-3 py-2 rounded-sm bg-vermelho-claro border border-vermelho/30 text-xs text-vermelho">
+        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-vermelho-claro border border-vermelho/30 text-xs text-vermelho">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-vermelho" />
             <span>Arquivo importado com sucesso: <strong>{uploadedFileName}</strong></span>
@@ -92,9 +92,20 @@ export function AreaProducaoTextual({
       )}
 
       {uploadError && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-sm bg-vermelho-claro border border-vermelho/30 text-xs text-vermelho">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-vermelho-claro border border-vermelho/30 text-xs text-vermelho">
           <AlertCircle className="w-4 h-4 text-vermelho" />
           <span>{uploadError}</span>
+        </div>
+      )}
+
+      {!uploadedFileName && !uploadError && (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-ambar-claro border border-ambar/30 text-[11px] text-tinta-suave">
+          <AlertCircle className="w-3.5 h-3.5 text-ambar shrink-0 mt-0.5" />
+          <span>
+            Envie um arquivo com <strong>texto real</strong> (não uma foto ou digitalização da folha
+            escrita à mão). Letra legível e texto digitado garantem a melhor precisão da nota e a
+            análise mais completa possível.
+          </span>
         </div>
       )}
 
@@ -114,7 +125,7 @@ export function AreaProducaoTextual({
         ))}
       </div>
 
-      <div className="relative rounded-sm border border-regua/80 bg-papel/80 focus-within:border-vermelho focus-within:ring-1 focus-within:ring-vermelho transition-all">
+      <div className="relative rounded-xl border border-regua/80 bg-papel/80 focus-within:border-vermelho focus-within:ring-1 focus-within:ring-vermelho transition-all">
         <textarea
           value={texto}
           onChange={(e) => onMudarTexto(e.target.value)}
