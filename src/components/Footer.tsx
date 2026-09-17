@@ -10,15 +10,15 @@ export function Footer() {
           {/* Coluna 1: Sobre */}
           <div className="space-y-4 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-sm bg-vermelho flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-azul flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-folha" />
               </div>
               <span className="text-lg font-bold text-tinta">
-                Nota <span className="gradient-text">1000 AI</span>
+                Nota <span className="gradient-text">1000</span>
               </span>
             </div>
             <p className="text-sm text-tinta-fraca leading-relaxed">
-              Plataforma de inteligência artificial de alta precisão calibrada na Matriz Oficial de Correção do ENEM para alavancar sua nota.
+              Plataforma de alta precisão calibrada na Matriz Oficial de Correção do ENEM para alavancar sua nota.
             </p>
             <div className="flex items-center gap-2 text-xs text-tinta-fraca">
               <Shield className="w-4 h-4 text-verde" />
@@ -32,20 +32,20 @@ export function Footer() {
               Competências ENEM
             </h3>
             <ul className="space-y-2 text-xs text-tinta-fraca">
-              <li className="hover:text-vermelho transition-colors">
-                <span className="text-vermelho font-medium">C1:</span> Norma Culta & Gramática
+              <li className="hover:text-azul transition-colors">
+                <span className="text-azul font-medium">C1:</span> Norma Culta & Gramática
               </li>
-              <li className="hover:text-vermelho transition-colors">
-                <span className="text-vermelho font-medium">C2:</span> Tema & Repertório Sociocultural
+              <li className="hover:text-azul transition-colors">
+                <span className="text-azul font-medium">C2:</span> Tema & Repertório Sociocultural
               </li>
-              <li className="hover:text-vermelho transition-colors">
-                <span className="text-vermelho font-medium">C3:</span> Projeto de Texto & Argumentação
+              <li className="hover:text-azul transition-colors">
+                <span className="text-azul font-medium">C3:</span> Projeto de Texto & Argumentação
               </li>
-              <li className="hover:text-vermelho transition-colors">
-                <span className="text-vermelho font-medium">C4:</span> Coesão & Conectivos
+              <li className="hover:text-azul transition-colors">
+                <span className="text-azul font-medium">C4:</span> Coesão & Conectivos
               </li>
-              <li className="hover:text-vermelho transition-colors">
-                <span className="text-vermelho font-medium">C5:</span> Proposta de Intervenção (5 Elementos)
+              <li className="hover:text-azul transition-colors">
+                <span className="text-azul font-medium">C5:</span> Proposta de Intervenção (5 Elementos)
               </li>
             </ul>
           </div>
@@ -94,10 +94,10 @@ export function Footer() {
             <h3 className="text-sm font-semibold text-tinta uppercase tracking-wider">
               Alta Performance
             </h3>
-            <div className="p-3.5 rounded-sm bg-folha/80 border border-regua space-y-2">
-              <div className="flex items-center gap-2 text-vermelho text-xs font-semibold">
+            <div className="p-3.5 rounded-xl bg-folha/80 border border-regua space-y-2">
+              <div className="flex items-center gap-2 text-azul text-xs font-semibold">
                 <Sparkles className="w-4 h-4" />
-                <span>IA OpenAI gpt-4o-mini</span>
+                <span>Motor OpenAI gpt-4o-mini</span>
               </div>
               <p className="text-xs text-tinta-fraca">
                 Correção profunda em menos de 10 segundos com análise linha a linha e reescrita recomendada.
@@ -107,7 +107,7 @@ export function Footer() {
         </div>
 
         <div className="pt-8 mt-8 border-t border-regua/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-tinta-fraca">
-          <p>© {new Date().getFullYear()} Nota 1000 AI. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Nota 1000. Todos os direitos reservados.</p>
           <div className="flex items-center gap-4">
             <Link href="/privacidade" className="hover:text-tinta transition-colors">
               Privacidade

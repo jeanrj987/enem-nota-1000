@@ -1,37 +1,35 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Identidade "caderno & caneta vermelha" — aplicada ao projeto inteiro.
+   Identidade "V2 dark" — aplicada ao projeto inteiro.
 
-   A interface imita uma folha de redação corrigida à mão, que é o próprio
-   produto que vendemos. Papel em vez de tela preta, tinta quente em vez de
-   branco puro, vermelho de corretor como único acento e azul de caneta para
-   o que o aluno escreveu. Sem gradiente, sem glassmorphism, sem orbe
-   desfocado: nada aqui deve parecer um dashboard genérico.
+   Baseada na landing page nota-1000-ai-v2.html: fundo escuro profundo, azul
+   como acento principal, cartões com leve elevação e bordas sutis. Substitui
+   o tema anterior "caderno & caneta vermelha".
 
    Os nomes abaixo entram no @theme para virarem utilitários do Tailwind
-   (bg-papel, text-tinta, border-regua...). Isso é deliberado: cor semântica
-   nomeada pelo papel que exerce, não pelo tom, para que uma futura mudança
-   de identidade aconteça neste arquivo e não em 400 lugares.
+   (bg-papel, text-tinta, border-regua...). Os nomes semânticos foram mantidos
+   para não exigir reescrever todo o app: só os valores mudaram de claro para
+   escuro, seguindo a paleta da V2.
    --------------------------------------------------------------------------- */
 @theme {
-  --color-papel: #f7f4ed;        /* fundo da página */
-  --color-folha: #fffdf8;        /* superfície elevada: cartões, painéis */
-  --color-folha-2: #f2ede2;      /* superfície recuada: campos, faixas */
-  --color-tinta: #1c1917;        /* texto principal */
-  --color-tinta-suave: #57534e;  /* texto secundário */
-  --color-tinta-fraca: #8a827a;  /* legendas, metadados */
-  --color-pauta: #e6ddcd;        /* linha da pauta do caderno */
-  --color-regua: #ded6c6;        /* bordas */
-  --color-vermelho: #c0392b;     /* corretor: acento único, CTA, erro */
-  --color-vermelho-escuro: #96271d;
-  --color-vermelho-claro: #f6e4e1;
-  --color-azul: #29487d;         /* caneta do aluno */
-  --color-azul-claro: #e4e9f2;
-  --color-verde: #2f6b4f;        /* acerto, confirmação */
-  --color-verde-claro: #e3efe8;
-  --color-ambar: #96631a;        /* atenção */
-  --color-ambar-claro: #f7eeda;
+  --color-papel: #070b14;        /* fundo da página */
+  --color-folha: #101827;        /* superfície elevada: cartões, painéis */
+  --color-folha-2: #131e30;      /* superfície recuada: campos, faixas */
+  --color-tinta: #f8fafc;        /* texto principal */
+  --color-tinta-suave: #b8c4d6;  /* texto secundário */
+  --color-tinta-fraca: #94a3b8;  /* legendas, metadados */
+  --color-pauta: #16233a;        /* linha da pauta / divisores sutis */
+  --color-regua: #223047;        /* bordas */
+  --color-vermelho: #ff647c;     /* erro / alerta: acento vermelho */
+  --color-vermelho-escuro: #d9455e;
+  --color-vermelho-claro: #3a1620;
+  --color-azul: #4f8cff;         /* acento principal, CTA */
+  --color-azul-claro: #16233a;
+  --color-verde: #31d49a;        /* acerto, confirmação */
+  --color-verde-claro: #103023;
+  --color-ambar: #f5c451;        /* atenção */
+  --color-ambar-claro: #362a10;
 
   --font-serifada: var(--font-newsreader), Georgia, "Times New Roman", serif;
   --font-humanista: var(--font-karla), -apple-system, "Segoe UI", sans-serif;
@@ -40,7 +38,7 @@
 
 @layer base {
   :root {
-    --radius: 0.25rem; /* cantos quase retos: papel não tem borda arredondada */
+    --radius: 0.875rem; /* cantos arredondados, seguindo os cards da V2 */
   }
 
   body {
@@ -53,10 +51,9 @@
     overflow-x: hidden;
   }
 
-  /* A hierarquia tipográfica é o que sustenta a identidade: serifada para
-     título (o enunciado), humanista para leitura corrida (o texto do aluno). */
   h1, h2, h3 {
-    font-family: var(--font-serifada);
+    font-family: var(--font-humanista);
+    letter-spacing: -0.03em;
   }
 }
 
@@ -92,29 +89,32 @@
 }
 
 /* ---------------------------------------------------------------------------
-   `glass-panel` e `glass-card` mantêm o nome porque são usadas em 19 telas,
-   mas deixaram de ser vidro: agora são folha de papel sobre a mesa. Trocar a
-   definição aqui converte todas as superfícies do app de uma vez, em vez de
-   caçar a classe arquivo por arquivo.
+   `glass-panel` e `glass-card` — superfícies elevadas no estilo dos `.card`
+   e `.price` da V2: fundo levemente mais claro que o body, borda sutil,
+   cantos arredondados.
    --------------------------------------------------------------------------- */
 .glass-panel {
   background: var(--color-folha);
   border: 1px solid var(--color-regua);
-  box-shadow: 0 1px 0 rgba(28, 25, 23, 0.04), 0 1px 3px rgba(28, 25, 23, 0.05);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
 }
 
 .glass-card {
   background: var(--color-folha-2);
   border: 1px solid var(--color-regua);
+  border-radius: var(--radius);
 }
 
-/* Era um degradê azul→roxo→rosa. Virou tinta cheia: o destaque do texto
-   nesta identidade vem do peso e da serifa, não de cor derretida. */
+/* Destaque em gradiente azul-claro, como o título da hero na V2. */
 .gradient-text {
-  color: var(--color-tinta);
+  background: linear-gradient(90deg, #fff, #8eb7ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-/* Margem de caderno: filete vermelho vertical à esquerda da folha. */
+/* Margem de destaque à esquerda, agora em azul (acento principal da V2). */
 .margem-caderno {
   position: relative;
 }
@@ -125,11 +125,10 @@
   bottom: 0;
   left: 0;
   width: 1px;
-  background: rgba(192, 57, 43, 0.35);
+  background: rgba(79, 140, 255, 0.4);
 }
 
-/* Bloco pautado — line-height precisa casar com o passo da pauta (32px),
-   senão o texto desalinha das linhas e parece defeito em vez de papel. */
+/* Bloco pautado — mantém o ritmo de leitura, agora com linhas sutis sobre o dark. */
 .bloco-pautado {
   background-image: repeating-linear-gradient(
     to bottom,
@@ -149,7 +148,7 @@
   color: var(--color-tinta-fraca);
 }
 
-/* Carimbo de garantia — objeto real do universo escolar/burocrático. */
+/* Selo de garantia. */
 .carimbo {
   border: 2px solid var(--color-vermelho);
   color: var(--color-vermelho);
@@ -157,9 +156,8 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Marcações de erro sobre o texto do aluno. São a caneta do corretor: sempre
-   traço embaixo da palavra, nunca um bloco de cor chapada por trás, que é
-   como um marca-texto de estudante marca — e aqui quem marca é o corretor.
+   Marcações de erro sobre o texto do aluno, recalibradas para o fundo escuro:
+   traço sob a palavra + fundo translúcido na cor da categoria.
    --------------------------------------------------------------------------- */
 .highlight-gramatica,
 .highlight-coesao,
@@ -174,40 +172,40 @@
 
 .highlight-gramatica {
   border-bottom-color: var(--color-vermelho);
-  background-color: rgba(192, 57, 43, 0.09);
+  background-color: rgba(255, 100, 124, 0.14);
 }
 .highlight-gramatica:hover {
-  background-color: rgba(192, 57, 43, 0.2);
+  background-color: rgba(255, 100, 124, 0.28);
 }
 
 .highlight-coesao {
   border-bottom-color: var(--color-ambar);
-  background-color: rgba(150, 99, 26, 0.1);
+  background-color: rgba(245, 196, 81, 0.14);
 }
 .highlight-coesao:hover {
-  background-color: rgba(150, 99, 26, 0.22);
+  background-color: rgba(245, 196, 81, 0.28);
 }
 
 .highlight-vocabulario {
   border-bottom-color: var(--color-azul);
-  background-color: rgba(41, 72, 125, 0.09);
+  background-color: rgba(79, 140, 255, 0.14);
 }
 .highlight-vocabulario:hover {
-  background-color: rgba(41, 72, 125, 0.2);
+  background-color: rgba(79, 140, 255, 0.28);
 }
 
 .highlight-concordancia {
   border-bottom-color: var(--color-verde);
-  background-color: rgba(47, 107, 79, 0.1);
+  background-color: rgba(49, 212, 154, 0.14);
 }
 .highlight-concordancia:hover {
-  background-color: rgba(47, 107, 79, 0.22);
+  background-color: rgba(49, 212, 154, 0.28);
 }
 
 .highlight-outro {
   border-bottom-color: var(--color-tinta-fraca);
-  background-color: rgba(138, 130, 122, 0.12);
+  background-color: rgba(148, 163, 184, 0.16);
 }
 .highlight-outro:hover {
-  background-color: rgba(138, 130, 122, 0.25);
+  background-color: rgba(148, 163, 184, 0.3);
 }

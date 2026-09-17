@@ -45,12 +45,12 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-sm bg-vermelho hover:bg-vermelho-escuro flex items-center justify-center shadow-lg shadow-tinta/10 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-azul hover:brightness-110 flex items-center justify-center shadow-lg shadow-tinta/10 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-6 h-6 text-folha" />
             </div>
             <div>
               <span className="text-xl font-bold tracking-tight text-tinta flex items-center gap-1.5">
-                Nota <span className="gradient-text">1000 AI</span>
+                Nota <span className="gradient-text">1000</span>
               </span>
               <span className="text-[10px] text-tinta-fraca block -mt-1 font-medium tracking-wider uppercase">
                 Banca ENEM Especialista
@@ -67,13 +67,13 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-sm text-sm font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-vermelho-claro text-vermelho border border-vermelho shadow-sm'
+                      ? 'bg-azul-claro text-azul border border-azul shadow-sm'
                       : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-vermelho' : 'text-tinta-fraca'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-azul' : 'text-tinta-fraca'}`} />
                   {link.label}
                 </Link>
               );
@@ -89,7 +89,7 @@ export function Navbar() {
                 </span>
                 <button
                   onClick={handleSair}
-                  className="flex items-center gap-1.5 text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-sm hover:bg-folha-2/60 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-xl hover:bg-folha-2/60 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Sair
@@ -98,14 +98,14 @@ export function Navbar() {
             ) : (
               <Link
                 href={urlDeLogin(pathname || DESTINO_PADRAO)}
-                className="text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-sm hover:bg-folha-2/60 transition-colors"
+                className="text-sm font-medium text-tinta-suave hover:text-tinta px-3 py-2 rounded-xl hover:bg-folha-2/60 transition-colors"
               >
                 Entrar
               </Link>
             )}
             <Link
               href="/nova-redacao"
-              className="flex items-center gap-2 px-4 py-2 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-sm font-semibold shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-azul hover:brightness-110 text-folha text-sm font-semibold shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <PenTool className="w-4 h-4" />
               <span>Escrever Redação</span>
@@ -116,7 +116,7 @@ export function Navbar() {
           <div className="flex md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-sm text-tinta-fraca hover:text-tinta hover:bg-folha-2/60 focus:outline-none"
+              className="p-2 rounded-xl text-tinta-fraca hover:text-tinta hover:bg-folha-2/60 focus:outline-none"
               aria-label="Abrir menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -136,13 +136,13 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-sm text-sm font-medium ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium ${
                   isActive
-                    ? 'bg-vermelho-claro text-vermelho border border-vermelho'
+                    ? 'bg-azul-claro text-azul border border-azul'
                     : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                 }`}
               >
-                <Icon className="w-5 h-5 text-vermelho" />
+                <Icon className="w-5 h-5 text-azul" />
                 {link.label}
               </Link>
             );
@@ -151,7 +151,7 @@ export function Navbar() {
             <Link
               href="/nova-redacao"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-vermelho text-folha text-sm font-medium shadow-md shadow-tinta/10"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-azul text-folha text-sm font-medium shadow-md shadow-tinta/10"
             >
               <PenTool className="w-4 h-4" />
               Nova Redação
@@ -159,7 +159,7 @@ export function Navbar() {
             {usuario ? (
               <button
                 onClick={handleSair}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-folha text-tinta border border-regua text-sm font-medium cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-folha text-tinta border border-regua text-sm font-medium cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 Sair ({usuario.email})
@@ -168,7 +168,7 @@ export function Navbar() {
               <Link
                 href={urlDeLogin(pathname || DESTINO_PADRAO)}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-sm bg-folha text-tinta border border-regua text-sm font-medium"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-folha text-tinta border border-regua text-sm font-medium"
               >
                 Entrar
               </Link>

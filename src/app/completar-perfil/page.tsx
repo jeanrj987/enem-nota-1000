@@ -85,7 +85,7 @@ function CompletarPerfilForm() {
   if (carregando || checando) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-vermelho animate-spin" />
+        <Loader2 className="w-8 h-8 text-azul animate-spin" />
       </div>
     );
   }
@@ -93,7 +93,7 @@ function CompletarPerfilForm() {
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-sm bg-vermelho hover:bg-vermelho-escuro flex items-center justify-center mx-auto shadow-lg shadow-tinta/10">
+        <div className="w-12 h-12 rounded-xl bg-azul hover:brightness-110 flex items-center justify-center mx-auto shadow-lg shadow-tinta/10">
           <GraduationCap className="w-7 h-7 text-folha" />
         </div>
         <h1 className="text-2xl font-extrabold text-tinta">Só mais um passo</h1>
@@ -104,10 +104,10 @@ function CompletarPerfilForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="glass-panel p-6 sm:p-8 rounded-sm border border-regua shadow-2xl space-y-4"
+        className="glass-panel p-6 sm:p-8 rounded-xl border border-regua shadow-2xl space-y-4"
       >
         {erro && (
-          <div className="p-3 rounded-sm text-xs bg-vermelho-claro border border-vermelho/30 text-vermelho">{erro}</div>
+          <div className="p-3 rounded-xl text-xs bg-vermelho-claro border border-vermelho/30 text-vermelho">{erro}</div>
         )}
 
         <div className="space-y-1.5">
@@ -119,7 +119,7 @@ function CompletarPerfilForm() {
               required
               value={nomeCompleto}
               onChange={(e) => setNomeCompleto(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-vermelho"
+              className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-azul"
             />
           </div>
         </div>
@@ -137,7 +137,7 @@ function CompletarPerfilForm() {
               onChange={(e) => setWhatsapp(formatarWhatsapp(e.target.value))}
               onBlur={() => setErroWhatsapp(validarWhatsapp(whatsapp))}
               aria-invalid={erroWhatsapp ? true : undefined}
-              className={`w-full bg-folha/90 border rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho ${
+              className={`w-full bg-folha/90 border rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul ${
                 erroWhatsapp ? 'border-vermelho' : 'border-regua/80'
               }`}
             />
@@ -155,7 +155,7 @@ function CompletarPerfilForm() {
               placeholder="Ex: Fortaleza - CE"
               value={cidadeEstado}
               onChange={(e) => setCidadeEstado(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+              className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
             />
           </div>
         </div>
@@ -169,7 +169,7 @@ function CompletarPerfilForm() {
               required
               value={dataNascimento}
               onChange={(e) => setDataNascimento(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-vermelho"
+              className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-azul"
             />
           </div>
         </div>
@@ -184,7 +184,7 @@ function CompletarPerfilForm() {
               placeholder="Ex: Medicina, Direito, Engenharia"
               value={cursoDosSonhos}
               onChange={(e) => setCursoDosSonhos(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-sm pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-vermelho"
+              className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
             />
           </div>
         </div>
@@ -192,7 +192,7 @@ function CompletarPerfilForm() {
         <button
           type="submit"
           disabled={salvando}
-          className="w-full py-3 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          className="w-full py-3 rounded-xl bg-azul hover:brightness-110 text-folha text-xs font-bold shadow-lg shadow-tinta/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
         >
           {salvando ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -213,7 +213,7 @@ export default function CompletarPerfilPage() {
     <div className="min-h-screen flex flex-col bg-papel text-tinta">
       <Navbar />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Suspense fallback={<Loader2 className="w-8 h-8 text-vermelho animate-spin" />}>
+        <Suspense fallback={<Loader2 className="w-8 h-8 text-azul animate-spin" />}>
           <CompletarPerfilForm />
         </Suspense>
       </main>

@@ -53,14 +53,14 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/historico"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-sm bg-folha hover:bg-folha-2 text-tinta text-xs font-semibold border border-regua transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-folha hover:bg-folha-2 text-tinta text-xs font-semibold border border-regua transition-colors"
             >
-              <TrendingUp className="w-4 h-4 text-vermelho" />
+              <TrendingUp className="w-4 h-4 text-azul" />
               <span>Ver Gráficos</span>
             </Link>
             <Link
               href="/nova-redacao"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-bold shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-azul hover:brightness-110 text-folha text-xs font-bold shadow-lg shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <PenTool className="w-4 h-4" />
               <span>Escrever Nova Redação</span>
@@ -71,21 +71,21 @@ export default function DashboardPage() {
         {/* Métricas e Estatísticas */}
         {estatisticas && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+            <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
               <div className="flex items-center justify-between text-xs text-tinta-fraca">
                 <span>Média das Redações</span>
-                <Target className="w-4 h-4 text-vermelho" />
+                <Target className="w-4 h-4 text-azul" />
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold text-tinta">
                 {estatisticas.media_geral}{' '}
                 <span className="text-xs text-tinta-fraca font-normal">/ 1000</span>
               </div>
-              <div className="text-[11px] text-vermelho font-medium">
+              <div className="text-[11px] text-azul font-medium">
                 Desempenho consolidado
               </div>
             </div>
 
-            <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+            <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
               <div className="flex items-center justify-between text-xs text-tinta-fraca">
                 <span>Recorde Pessoal</span>
                 <Award className="w-4 h-4 text-verde" />
@@ -98,10 +98,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+            <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
               <div className="flex items-center justify-between text-xs text-tinta-fraca">
                 <span>Total de Ensaios</span>
-                <BookOpen className="w-4 h-4 text-vermelho" />
+                <BookOpen className="w-4 h-4 text-azul" />
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold text-tinta">
                 {estatisticas.total_redacoes}
@@ -109,15 +109,15 @@ export default function DashboardPage() {
               <div className="text-[11px] text-tinta-fraca">Redações avaliadas</div>
             </div>
 
-            <div className="glass-panel p-5 rounded-sm border border-regua space-y-1">
+            <div className="glass-panel p-5 rounded-xl border border-regua space-y-1">
               <div className="flex items-center justify-between text-xs text-tinta-fraca">
                 <span>Competência Forte</span>
-                <Sparkles className="w-4 h-4 text-vermelho" />
+                <Sparkles className="w-4 h-4 text-azul" />
               </div>
               <div className="text-sm font-bold text-tinta truncate">
                 {estatisticas.competencia_forte.nome}
               </div>
-              <div className="text-[11px] text-vermelho font-medium">
+              <div className="text-[11px] text-azul font-medium">
                 Média: {estatisticas.competencia_forte.media} pts
               </div>
             </div>
@@ -125,9 +125,9 @@ export default function DashboardPage() {
         )}
 
         {/* Banner de Ação Rápida */}
-        <div className="glass-panel p-6 sm:p-8 rounded-sm border border-vermelho bg-vermelho hover:bg-vermelho-escuro to-folha flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="glass-panel p-6 sm:p-8 rounded-xl border border-azul bg-azul hover:brightness-110 to-folha flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-vermelho-claro text-vermelho text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-azul-claro text-azul text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
               Treino Diário Recomendado
             </div>
@@ -135,13 +135,13 @@ export default function DashboardPage() {
               Pratique agora com temas inéditos para 2025
             </h2>
             <p className="text-xs sm:text-sm text-tinta-suave max-w-xl leading-relaxed">
-              Escreva no editor ou submeta seu rascunho em PDF/DOCX. Nossa IA devolve a nota e a versão reescrita instantaneamente.
+              Escreva no editor ou submeta seu rascunho em PDF/DOCX. Nosso sistema devolve a nota e a versão reescrita instantaneamente.
             </p>
           </div>
 
           <Link
             href="/nova-redacao"
-            className="shrink-0 px-6 py-3.5 rounded-sm bg-vermelho hover:bg-vermelho text-folha text-xs sm:text-sm font-bold shadow-lg shadow-tinta/10 hover:scale-[1.02] transition-all flex items-center gap-2"
+            className="shrink-0 px-6 py-3.5 rounded-xl bg-azul hover:bg-azul text-folha text-xs sm:text-sm font-bold shadow-lg shadow-tinta/10 hover:scale-[1.02] transition-all flex items-center gap-2"
           >
             <PenTool className="w-4 h-4" />
             <span>Iniciar Redação</span>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-tinta flex items-center gap-2">
-              <Layers className="w-5 h-5 text-vermelho" />
+              <Layers className="w-5 h-5 text-azul" />
               Minhas Redações Enviadas
             </h2>
             <span className="text-xs text-tinta-fraca">
@@ -161,8 +161,8 @@ export default function DashboardPage() {
           </div>
 
           {redacoes.length === 0 ? (
-            <div className="glass-panel p-12 rounded-sm border border-regua text-center space-y-4">
-              <div className="w-12 h-12 rounded-sm bg-folha border border-regua flex items-center justify-center mx-auto text-tinta-fraca">
+            <div className="glass-panel p-12 rounded-xl border border-regua text-center space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-folha border border-regua flex items-center justify-center mx-auto text-tinta-fraca">
                 <BookOpen className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-tinta">Nenhuma redação encontrada</h3>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/nova-redacao"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm bg-vermelho text-folha text-xs font-semibold shadow-md"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-azul text-folha text-xs font-semibold shadow-md"
               >
                 <PenTool className="w-4 h-4" />
                 <span>Escrever Minha Primeira Redação</span>
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={red.id}
-                    className="glass-panel p-6 rounded-sm border border-regua hover:border-regua transition-all space-y-4 flex flex-col justify-between group"
+                    className="glass-panel p-6 rounded-xl border border-regua hover:border-regua transition-all space-y-4 flex flex-col justify-between group"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
@@ -196,12 +196,12 @@ export default function DashboardPage() {
                             year: 'numeric',
                           })}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-vermelho-claro text-vermelho border border-vermelho/30">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-azul-claro text-azul border border-azul/30">
                           {nota} / 1000
                         </span>
                       </div>
 
-                      <h3 className="text-sm font-bold text-tinta line-clamp-2 group-hover:text-vermelho transition-colors">
+                      <h3 className="text-sm font-bold text-tinta line-clamp-2 group-hover:text-azul transition-colors">
                         {red.titulo || 'Redação ENEM'}
                       </h3>
 
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                     <div className="pt-3 border-t border-regua/80 flex items-center justify-between gap-2">
                       <Link
                         href={`/correcao/${red.id}`}
-                        className="flex-1 py-2 rounded-sm bg-folha hover:bg-folha-2 text-tinta text-xs font-semibold border border-regua transition-colors text-center flex items-center justify-center gap-1.5"
+                        className="flex-1 py-2 rounded-xl bg-folha hover:bg-folha-2 text-tinta text-xs font-semibold border border-regua transition-colors text-center flex items-center justify-center gap-1.5"
                       >
                         <span>Ver Correção</span>
                         <ChevronRight className="w-3.5 h-3.5 text-tinta-fraca" />
@@ -227,7 +227,7 @@ export default function DashboardPage() {
 
                       <Link
                         href={`/nova-redacao?tema=${encodeURIComponent(red.tema)}`}
-                        className="p-2 rounded-sm bg-folha hover:bg-folha-2 text-tinta-fraca hover:text-vermelho border border-regua transition-colors"
+                        className="p-2 rounded-xl bg-folha hover:bg-folha-2 text-tinta-fraca hover:text-azul border border-regua transition-colors"
                         title="Reescrever este tema"
                       >
                         <PenTool className="w-4 h-4" />

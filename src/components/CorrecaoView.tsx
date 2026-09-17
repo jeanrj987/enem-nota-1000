@@ -74,8 +74,8 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
   return (
     <div className="space-y-8">
       {correcao.anulada && (
-        <div className="p-5 sm:p-6 rounded-sm border-2 border-vermelho bg-vermelho-claro flex items-start gap-4">
-          <div className="w-10 h-10 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center shrink-0">
+        <div className="p-5 sm:p-6 rounded-xl border-2 border-vermelho bg-vermelho-claro flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-vermelho-claro border border-vermelho flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5 text-vermelho" />
           </div>
           <div className="space-y-1">
@@ -94,8 +94,8 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
       )}
 
       {correcao.reconciliacao && !correcao.reconciliacao.correcaoUnica && (
-        <div className="p-4 rounded-sm border border-regua bg-folha/60 flex items-start gap-3">
-          <Info className="w-4 h-4 text-vermelho shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl border border-regua bg-folha/60 flex items-start gap-3">
+          <Info className="w-4 h-4 text-azul shrink-0 mt-0.5" />
           <p className="text-xs text-tinta-fraca leading-relaxed">
             Esta nota é o resultado de <strong className="text-tinta-suave">duas correções independentes</strong>,
             reconciliadas (mesmo protocolo usado pela banca do ENEM: dois corretores, com um terceiro em caso de
@@ -108,7 +108,7 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
       )}
 
       {/* Top Banner de Resumo da Nota */}
-      <div className="glass-panel p-6 sm:p-8 rounded-sm border border-regua relative overflow-hidden">
+      <div className="glass-panel p-6 sm:p-8 rounded-xl border border-regua relative overflow-hidden">
 
         <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -131,13 +131,13 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
               {redacao.titulo || 'Redação ENEM'}
             </h1>
             <p className="text-sm text-tinta-suave flex items-center gap-2">
-              <Layers className="w-4 h-4 text-vermelho shrink-0" />
+              <Layers className="w-4 h-4 text-azul shrink-0" />
               <span>Tema: <strong>{redacao.tema}</strong></span>
             </p>
           </div>
 
           {/* Placar de Pontuação */}
-          <div className="flex items-center gap-4 bg-folha/90 p-4 sm:p-5 rounded-sm border border-regua shadow-xl">
+          <div className="flex items-center gap-4 bg-folha/90 p-4 sm:p-5 rounded-xl border border-regua shadow-xl">
             <div className="text-center sm:text-right">
               <div className="text-xs text-tinta-fraca uppercase tracking-wider font-semibold">
                 Nota Geral ENEM
@@ -147,8 +147,8 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
               </div>
               <div className="text-[11px] text-tinta-fraca">de 1000 pontos possíveis</div>
             </div>
-            <div className="w-12 h-12 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center">
-              <Award className="w-7 h-7 text-vermelho" />
+            <div className="w-12 h-12 rounded-xl bg-azul-claro border border-azul flex items-center justify-center">
+              <Award className="w-7 h-7 text-azul" />
             </div>
           </div>
         </div>
@@ -158,9 +158,9 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('analise')}
-              className={`px-4 py-2 rounded-sm text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'analise'
-                  ? 'bg-vermelho text-folha shadow-md shadow-tinta/10'
+                  ? 'bg-azul text-folha shadow-md shadow-tinta/10'
                   : 'bg-folha text-tinta-fraca hover:text-tinta border border-regua'
               }`}
             >
@@ -168,9 +168,9 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
             </button>
             <button
               onClick={() => setActiveTab('reescrita')}
-              className={`px-4 py-2 rounded-sm text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'reescrita'
-                  ? 'bg-vermelho text-folha shadow-md shadow-tinta/10'
+                  ? 'bg-azul text-folha shadow-md shadow-tinta/10'
                   : 'bg-folha text-tinta-fraca hover:text-tinta border border-regua'
               }`}
             >
@@ -178,9 +178,9 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
             </button>
             <button
               onClick={() => setActiveTab('plano')}
-              className={`px-4 py-2 rounded-sm text-xs font-semibold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 activeTab === 'plano'
-                  ? 'bg-vermelho text-folha shadow-md shadow-tinta/10'
+                  ? 'bg-azul text-folha shadow-md shadow-tinta/10'
                   : 'bg-folha text-tinta-fraca hover:text-tinta border border-regua'
               }`}
             >
@@ -192,14 +192,14 @@ export function CorrecaoView({ redacao, correcao }: CorrecaoViewProps) {
             <button
               onClick={handleExportPDF}
               disabled={isExportingPDF}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-sm bg-folha-2 hover:bg-pauta text-tinta text-xs font-semibold border border-regua transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-folha-2 hover:bg-pauta text-tinta text-xs font-semibold border border-regua transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Download className="w-3.5 h-3.5 text-vermelho" />
+              <Download className="w-3.5 h-3.5 text-azul" />
               <span>{isExportingPDF ? 'Gerando...' : 'Exportar PDF'}</span>
             </button>
             <Link
               href="/nova-redacao"
-              className="flex items-center gap-1.5 px-4 py-2 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha text-xs font-semibold hover:brightness-110 shadow-md shadow-tinta/10 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-azul hover:brightness-110 text-folha text-xs font-semibold hover:brightness-110 shadow-md shadow-tinta/10 transition-all"
             >
               <PenTool className="w-3.5 h-3.5" />
               <span>Nova Redação</span>

@@ -19,7 +19,7 @@ export function AbaAnalise({ correcao, textoOriginal, selectedErrorId, onSelectE
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Coluna Esquerda: Texto com Erros Destacados (7 cols) */}
       <div className="lg:col-span-7 space-y-6">
-        <div className="glass-panel p-6 rounded-sm border border-regua space-y-4">
+        <div className="glass-panel p-6 rounded-xl border border-regua space-y-4">
           <div className="flex items-center justify-between border-b border-regua/80 pb-3">
             <div className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-vermelho" />
@@ -47,7 +47,7 @@ export function AbaAnalise({ correcao, textoOriginal, selectedErrorId, onSelectE
           </div>
 
           {/* Conteúdo com realces */}
-          <div className="p-4 rounded-sm bg-papel/70 border border-regua max-h-[600px] overflow-y-auto font-sans">
+          <div className="p-4 rounded-xl bg-papel/70 border border-regua max-h-[600px] overflow-y-auto font-sans">
             <TextoDestacado
               texto={textoOriginal}
               erros={correcao.erros}
@@ -58,7 +58,7 @@ export function AbaAnalise({ correcao, textoOriginal, selectedErrorId, onSelectE
 
           {/* Detalhe do Erro Selecionado */}
           {selectedError && (
-            <div className="p-4 rounded-sm bg-vermelho-claro border border-vermelho/30 space-y-2 animate-fade-in">
+            <div className="p-4 rounded-xl bg-vermelho-claro border border-vermelho/30 space-y-2 animate-fade-in">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-vermelho uppercase tracking-wider">
                   Oportunidade de Ajuste ({selectedError.tipo})
@@ -84,7 +84,7 @@ export function AbaAnalise({ correcao, textoOriginal, selectedErrorId, onSelectE
         </div>
 
         {/* Feedback Pedagógico Rápido */}
-        <div className="glass-panel p-6 rounded-sm border border-regua space-y-3">
+        <div className="glass-panel p-6 rounded-xl border border-regua space-y-3">
           <div className="flex items-center gap-2 text-sm font-bold text-tinta">
             <Sparkles className="w-4 h-4 text-vermelho" />
             <span>Parecer Geral da Banca Especialista</span>

@@ -43,7 +43,7 @@ export function dadosDoControladorCompletos(): boolean {
 export const SUBPROCESSADORES = [
   {
     nome: 'OpenAI',
-    finalidade: 'Correção da redação por inteligência artificial',
+    finalidade: 'Correção automática da redação',
     dados: 'Texto da redação e tema',
     pais: 'Estados Unidos',
   },

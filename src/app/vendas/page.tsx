@@ -8,51 +8,26 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { urlDeLogin } from '@/lib/redirecionamento';
 
-const BENEFICIOS = [
-  {
-    titulo: 'Correção em menos de 10 segundos',
-    texto:
-      'Envie sua redação e receba o diagnóstico completo na hora. Isso permite corrigir o texto e produzir uma nova versão no mesmo dia, enquanto o tema ainda está fresco.',
-  },
-  {
-    titulo: 'Critérios oficiais do INEP, de C1 a C5',
-    texto:
-      'Nota de 0 a 200 pontos em cada uma das cinco competências, com a justificativa de cada faixa — você vê exatamente onde ganha e onde perde ponto.',
-  },
-  {
-    titulo: 'Marcação de erros linha por linha',
-    texto:
-      'Cada desvio de concordância, pontuação, regência ou conectivo é destacado no seu texto com a regra que o explica e a reescrita sugerida no lugar.',
-  },
-  {
-    titulo: 'Auditoria completa da Competência 5',
-    texto:
-      'Checagem dos cinco elementos da proposta de intervenção — agente, ação, meio, efeito e detalhamento — que é onde a maioria dos candidatos perde os 200 pontos.',
-  },
-  {
-    titulo: 'Versão reescrita no padrão nota 1000',
-    texto:
-      'O sistema reconstrói os seus próprios argumentos em um modelo de nota máxima, mostrando na prática como articular repertório e coesão no tema que você escolheu.',
-  },
+const COMPETENCIAS = [
+  { sigla: 'C1', titulo: 'Domínio da escrita', texto: 'Identifique desvios de gramática, pontuação, concordância, regência e outros aspectos da escrita formal.' },
+  { sigla: 'C2', titulo: 'Tema e repertório', texto: 'Veja se o texto responde ao tema e se o repertório contribui para a argumentação.' },
+  { sigla: 'C3', titulo: 'Organização', texto: 'Entenda se suas ideias estão selecionadas, organizadas e relacionadas de forma consistente.' },
+  { sigla: 'C4', titulo: 'Coesão', texto: 'Identifique pontos de atenção na ligação entre ideias, frases e parágrafos.' },
+  { sigla: 'C5', titulo: 'Intervenção', texto: 'Analise sua proposta de intervenção e os elementos que podem ser aprimorados.' },
 ];
 
 const PASSOS = [
-  {
-    titulo: 'Crie sua conta',
-    texto: 'Cadastro com e-mail e senha ou direto pela sua conta Google.',
-  },
-  {
-    titulo: 'Escreva ou envie sua redação',
-    texto: 'Digite no editor ou importe um arquivo em PDF, Word ou texto simples.',
-  },
-  {
-    titulo: 'Receba a correção',
-    texto: 'Nota, competências e erros marcados aparecem em menos de dez segundos.',
-  },
-  {
-    titulo: 'Assine para ver tudo',
-    texto: 'O relatório completo, a reescrita e o plano de ação são liberados com o plano.',
-  },
+  { titulo: 'Envie sua redação', texto: 'Digite no editor ou importe um arquivo em PDF, Word ou texto simples.' },
+  { titulo: 'O sistema analisa', texto: 'A correção avalia os critérios oficiais do INEP para as cinco competências.' },
+  { titulo: 'Entenda sua nota', texto: 'Veja a pontuação estimada e a distribuição por competência.' },
+  { titulo: 'Saiba como melhorar', texto: 'Receba pontos de atenção e uma versão reescrita para orientar seu próximo texto.' },
+];
+
+const BENEFICIOS = [
+  { icon: '🎯', titulo: 'Saiba onde focar', texto: 'Pare de estudar tudo ao mesmo tempo e identifique pontos prioritários.' },
+  { icon: '⚡', titulo: 'Tenha feedback rápido', texto: 'Transforme mais práticas em ciclos de correção e aprendizado.' },
+  { icon: '📈', titulo: 'Acompanhe sua evolução', texto: 'Compare suas correções e visualize seu progresso.' },
+  { icon: '🧠', titulo: 'Aprenda com seus erros', texto: 'Use cada redação como informação para melhorar a próxima.' },
 ];
 
 const FAQ = [
@@ -82,7 +57,7 @@ export default function PaginaDeVendas() {
   const [erroCheckout, setErroCheckout] = useState<string | null>(null);
 
   const scrollToPricing = () => {
-    document.getElementById('oferta')?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const iniciarCheckout = async (planoId: PlanoId) => {
@@ -112,263 +87,232 @@ export default function PaginaDeVendas() {
         throw new Error(data.error || 'Não foi possível iniciar o pagamento.');
       }
       window.location.href = data.url;
-    } catch (err: any) {
-      setErroCheckout(err.message || 'Erro ao iniciar o pagamento.');
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : 'Erro ao iniciar o pagamento.';
+      setErroCheckout(mensagem);
       setPlanoCarregando(null);
     }
   };
 
   return (
     <div className="fonte-humanista min-h-screen bg-papel text-tinta">
-      {/* Cabeçalho */}
-      <header className="sticky top-0 z-40 border-b border-regua bg-papel/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <div className="flex items-baseline gap-2">
-            <span className="fonte-serifada text-lg font-semibold tracking-tight">Nota 1000</span>
-            <span className="text-[11px] uppercase tracking-[0.18em] text-tinta-fraca">
-              Avaliador de redação
-            </span>
+      {/* Nav */}
+      <header className="sticky top-0 z-40 border-b border-regua bg-papel/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <span className="text-lg font-black tracking-tight">
+            NOTA <span className="text-azul">1000</span>
+          </span>
+          <div className="hidden md:flex items-center gap-7 text-sm text-tinta-suave">
+            <a href="#como" className="hover:text-tinta transition-colors">Como funciona</a>
+            <a href="#competencias" className="hover:text-tinta transition-colors">Competências</a>
+            <a href="#planos" className="hover:text-tinta transition-colors">Planos</a>
+            <a href="#faq" className="hover:text-tinta transition-colors">Dúvidas</a>
           </div>
           <button
             onClick={scrollToPricing}
-            className="cursor-pointer border-b border-vermelho pb-0.5 text-sm font-semibold text-vermelho transition-colors hover:text-vermelho-escuro"
+            className="cursor-pointer rounded-xl bg-tinta px-4 py-2.5 text-sm font-bold text-papel hover:brightness-110 transition"
           >
-            Ver planos
+            Corrigir minha redação
           </button>
         </div>
       </header>
 
       <main>
-        {/* Hero — a própria manchete é uma correção */}
-        <section className="border-b border-regua">
-          <div className="mx-auto max-w-5xl px-5 py-16 sm:py-24">
-            <p className="mb-6 text-[11px] uppercase tracking-[0.2em] text-tinta-fraca">
-              Matriz oficial do INEP · Competências 1 a 5
-            </p>
+        {/* Hero */}
+        <section className="relative overflow-hidden py-20 sm:py-28">
+          <div className="pointer-events-none absolute -right-40 -top-32 h-[500px] w-[600px] rounded-full bg-azul/15 blur-[100px]" />
+          <div className="relative mx-auto max-w-6xl px-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-regua bg-folha px-3.5 py-1.5 text-[11px] font-extrabold tracking-widest text-azul">
+              📝 CORRETOR DE REDAÇÃO ONLINE
+            </span>
 
-            <h1 className="fonte-serifada max-w-3xl text-[2.1rem] font-semibold leading-[1.12] tracking-tight text-balance sm:text-[3.25rem]">
-              Sua redação corrigida{' '}
-              <span className="relative whitespace-nowrap">
-                <span className="risco-corretor">em duas semanas</span>
-              </span>{' '}
-              <span className="fonte-manuscrita text-vermelho">hoje mesmo</span>, com a nota de cada
-              competência e os erros marcados no texto.
+            <h1 className="mt-5 max-w-3xl text-[2.4rem] font-black leading-[1.05] tracking-tight sm:text-6xl">
+              Descubra exatamente por que sua redação{' '}
+              <span className="gradient-text">não está chegando aos 900+</span>
             </h1>
 
-            <p className="mt-7 max-w-2xl text-[15px] leading-[1.75] text-tinta-suave">
-              Escreva, envie e receba em segundos o mesmo tipo de diagnóstico que um corretor
-              experiente faria à mão: nota de 0 a 200 em C1, C2, C3, C4 e C5, cada desvio apontado no
-              lugar onde acontece e uma versão reescrita do seu próprio argumento no padrão nota
-              1000.
+            <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-tinta-suave">
+              Corrija sua redação com uma análise detalhada baseada nos critérios de avaliação do
+              ENEM, veja onde está perdendo pontos e receba orientações práticas para melhorar seu
+              próximo texto.
             </p>
 
-            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+            <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
               <button
                 onClick={scrollToPricing}
-                className="cursor-pointer bg-vermelho px-7 py-3.5 text-sm font-bold text-folha transition-colors hover:bg-vermelho-escuro"
+                className="cursor-pointer rounded-xl bg-azul px-7 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
               >
-                Ver planos de acesso
+                CORRIGIR MINHA REDAÇÃO →
               </button>
               <span className="text-[13px] text-tinta-fraca">
-                Garantia de 7 dias · Liberação imediata
+                Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado.
               </span>
             </div>
-          </div>
-        </section>
 
-        {/* Problema */}
-        <section className="border-b border-regua bg-folha">
-          <div className="mx-auto max-w-5xl px-5 py-16">
-            <div className="grid gap-10 md:grid-cols-[1fr_1.4fr]">
-              <h2 className="fonte-serifada text-2xl font-semibold leading-snug tracking-tight text-balance sm:text-3xl">
-                O gargalo silencioso na preparação da redação
-              </h2>
-
-              <div className="margem-caderno space-y-5 pl-6 text-[15px] leading-[1.75] text-tinta-suave">
-                <p>
-                  Praticar com frequência é o único caminho para uma nota competitiva. O modelo
-                  tradicional de correção, porém, cria uma barreira que trava exatamente isso.
-                </p>
-                <p>
-                  Na maioria dos cursinhos, o estudante entrega o texto e espera de dez a vinte dias.
-                  Quando a folha volta, a linha de raciocínio daquele tema já foi esquecida, e os
-                  comentários costumam ser vagos:{' '}
-                  <span className="fonte-manuscrita text-vermelho">
-                    &ldquo;melhore a coesão&rdquo;
-                  </span>
-                  ,{' '}
-                  <span className="fonte-manuscrita text-vermelho">
-                    &ldquo;repertório insuficiente&rdquo;
-                  </span>{' '}
-                  — sem indicar como reescrever.
-                </p>
-                <p>
-                  Sem retorno imediato sobre cada uma das cinco competências, o candidato repete os
-                  mesmos desvios de norma culta e as mesmas falhas na proposta de intervenção durante
-                  meses, sem perceber.
-                </p>
-              </div>
+            <div className="mt-7 flex flex-wrap gap-4 text-[13px] text-tinta-suave">
+              <span>✓ 5 competências</span>
+              <span>✓ Correção detalhada</span>
+              <span>✓ Resultado rápido</span>
             </div>
           </div>
         </section>
 
-        {/* Exemplo real de correção — a prova de valor */}
-        <section className="border-b border-regua">
-          <div className="mx-auto max-w-5xl px-5 py-16">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.2em] text-tinta-fraca">
-              Exemplo de diagnóstico
+        <div className="border-y border-regua py-5">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-6 px-6 text-[13px] text-tinta-fraca">
+            <span>Baseado nos critérios públicos de avaliação do ENEM</span>
+            {['C1', 'C2', 'C3', 'C4', 'C5'].map((c) => (
+              <strong key={c} className="text-tinta-suave">{c}</strong>
+            ))}
+          </div>
+        </div>
+
+        {/* O problema */}
+        <section className="py-24">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">O problema</span>
+            <h2 className="mx-auto mt-3 max-w-3xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+              Você escreve redações, mas ainda não sabe exatamente onde está errando?
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-[15px] text-tinta-suave">
+              Uma nota sozinha não mostra o caminho. Você precisa entender o motivo da pontuação e o
+              que fazer a partir dela.
             </p>
-            <h2 className="fonte-serifada mb-9 max-w-2xl text-2xl font-semibold leading-snug tracking-tight text-balance sm:text-3xl">
-              É assim que o seu texto volta corrigido
-            </h2>
 
-            <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-              {/* Folha do aluno com marcações */}
-              <div className="border border-regua bg-folha p-6 sm:p-8 shadow-[0_1px_0_rgba(28,25,23,0.06)]">
-                <div className="bloco-pautado text-[15px] text-azul">
-                  Nesse contexto, é evidente que{' '}
-                  <span className="risco-corretor">os estudantes tem acesso</span>{' '}
-                  <span className="fonte-manuscrita text-vermelho">têm</span> desigual à
-                  informação de qualidade, o que aprofunda a distância entre as escolas públicas e
-                  particulares do país.
+            <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ['❓', 'Recebe uma nota, mas não entende o motivo', 'Você sabe o número, mas não sabe exatamente o que precisa mudar.'],
+                ['🔁', 'Repete os mesmos erros', 'Corrige uma redação e acaba cometendo os mesmos problemas na próxima.'],
+                ['🎯', 'Não sabe qual competência te segura', 'C1? C2? C3? C4? C5? Descubra onde concentrar seu estudo.'],
+                ['⏳', 'Precisa esperar por uma correção', 'Tenha feedback rápido para transformar prática em aprendizado.'],
+              ].map(([icon, titulo, texto]) => (
+                <div key={titulo} className="glass-card p-6 text-left">
+                  <div className="text-2xl">{icon}</div>
+                  <h3 className="mt-4 text-[17px] font-bold">{titulo}</h3>
+                  <p className="mt-1.5 text-[13px] text-tinta-fraca">{texto}</p>
                 </div>
-
-                <div className="mt-6 border-t border-regua pt-5">
-                  <p className="mb-1.5 text-[11px] uppercase tracking-[0.16em] text-vermelho">
-                    Competência 1 · Norma culta
-                  </p>
-                  <p className="text-[13px] leading-relaxed text-tinta-suave">
-                    O verbo &ldquo;ter&rdquo; na terceira pessoa do plural exige acento circunflexo
-                    diferencial obrigatório: <strong className="text-tinta">têm</strong>.
-                  </p>
-                </div>
-              </div>
-
-              {/* Placar de competências */}
-              <div className="border border-regua bg-folha p-6 sm:p-8">
-                <p className="mb-5 text-[11px] uppercase tracking-[0.16em] text-tinta-fraca">
-                  Notas por competência
-                </p>
-                <ul className="space-y-3.5">
-                  {[
-                    ['C1', 'Norma culta', 160],
-                    ['C2', 'Tema e repertório', 200],
-                    ['C3', 'Argumentação', 160],
-                    ['C4', 'Coesão', 200],
-                    ['C5', 'Intervenção', 200],
-                  ].map(([sigla, nome, nota]) => (
-                    <li key={sigla as string} className="flex items-baseline gap-3">
-                      <span className="fonte-serifada w-7 shrink-0 text-sm font-semibold text-tinta">
-                        {sigla}
-                      </span>
-                      <span className="flex-1 text-[13px] text-tinta-suave">{nome}</span>
-                      <span className="text-sm font-semibold tabular-nums text-tinta">
-                        {nota}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-5 flex items-baseline justify-between border-t border-regua pt-5">
-                  <span className="text-[11px] uppercase tracking-[0.16em] text-tinta-fraca">
-                    Nota final
-                  </span>
-                  <span className="fonte-serifada text-3xl font-semibold tabular-nums text-vermelho">
-                    920
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Benefícios como rubrica numerada */}
-        <section className="border-b border-regua bg-folha">
-          <div className="mx-auto max-w-5xl px-5 py-16">
-            <h2 className="fonte-serifada mb-10 max-w-2xl text-2xl font-semibold leading-snug tracking-tight text-balance sm:text-3xl">
-              Um corretor rigoroso, disponível a qualquer hora
-            </h2>
-
-            <ul className="divide-y divide-regua border-y border-regua">
-              {BENEFICIOS.map((item) => (
-                <li key={item.titulo} className="grid gap-2 py-6 md:grid-cols-[1fr_1.6fr] md:gap-10">
-                  <h3 className="fonte-serifada text-lg font-semibold leading-snug text-tinta">
-                    {item.titulo}
-                  </h3>
-                  <p className="text-[15px] leading-[1.75] text-tinta-suave">{item.texto}</p>
-                </li>
-              ))}
-            </ul>
+        {/* A virada */}
+        <section className="border-y border-regua bg-folha-2/60 py-24 text-center">
+          <div className="mx-auto max-w-2xl px-6">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">A virada</span>
+            <h2 className="mt-3 text-[1.75rem] font-black tracking-tight">Nota sem diagnóstico não ensina.</h2>
+            <p className="mt-4 text-[15px] text-tinta-suave">
+              Você precisa entender <strong className="text-tinta">onde perdeu pontos, por que perdeu e como melhorar.</strong>
+            </p>
+            <h2 className="mt-6 text-2xl font-black tracking-tight text-azul">É isso que o Nota 1000 faz.</h2>
           </div>
         </section>
 
-        {/* Como funciona — sequência real, por isso numerada */}
-        <section className="border-b border-regua">
-          <div className="mx-auto max-w-5xl px-5 py-16">
-            <h2 className="fonte-serifada mb-10 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Como funciona
+        {/* Como funciona */}
+        <section id="como" className="py-24">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">Como funciona</span>
+            <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+              Da redação ao diagnóstico em poucos passos.
             </h2>
 
-            <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {PASSOS.map((passo, i) => (
-                <li key={passo.titulo} className="margem-caderno pl-5">
-                  <span className="fonte-serifada block text-sm font-semibold text-vermelho">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="fonte-serifada mt-1.5 text-base font-semibold leading-snug text-tinta">
-                    {passo.titulo}
-                  </h3>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-tinta-suave">{passo.texto}</p>
-                </li>
+            <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              {PASSOS.map((p, i) => (
+                <div key={p.titulo} className="glass-card p-6 text-left">
+                  <span className="text-xs font-black text-azul">{String(i + 1).padStart(2, '0')}</span>
+                  <h3 className="mt-2 text-[17px] font-bold">{p.titulo}</h3>
+                  <p className="mt-1.5 text-[13px] text-tinta-fraca">{p.texto}</p>
+                </div>
               ))}
-            </ol>
+            </div>
+          </div>
+        </section>
+
+        {/* As competências */}
+        <section id="competencias" className="border-y border-regua bg-folha-2/60 py-24">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">As 5 competências</span>
+            <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+              Sua redação é avaliada por cinco competências.
+            </h2>
+
+            <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+              {COMPETENCIAS.map((c) => (
+                <div key={c.sigla} className="glass-card p-5 text-left">
+                  <b className="text-2xl font-black text-azul">{c.sigla}</b>
+                  <h3 className="mt-2 text-[15px] font-bold">{c.titulo}</h3>
+                  <p className="mt-1 text-[12px] text-tinta-fraca">{c.texto}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Benefícios */}
+        <section className="py-24">
+          <div className="mx-auto max-w-6xl px-6 text-center">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">Benefícios</span>
+            <h2 className="mx-auto mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+              Estude redação com mais clareza.
+            </h2>
+
+            <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              {BENEFICIOS.map((b) => (
+                <div key={b.titulo} className="glass-card p-6 text-left">
+                  <div className="text-2xl">{b.icon}</div>
+                  <h3 className="mt-4 text-[17px] font-bold">{b.titulo}</h3>
+                  <p className="mt-1.5 text-[13px] text-tinta-fraca">{b.texto}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Planos */}
-        <section id="oferta" className="border-b border-regua bg-folha">
-          <div className="mx-auto max-w-5xl px-5 py-16">
-            <h2 className="fonte-serifada text-2xl font-semibold tracking-tight sm:text-3xl">
-              Planos de acesso
-            </h2>
-            <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-tinta-suave">
-              Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
-            </p>
+        <section id="planos" className="border-y border-regua bg-folha-2/60 py-24">
+          <div className="mx-auto max-w-5xl px-6">
+            <div className="text-center">
+              <span className="text-[11px] font-black uppercase tracking-widest text-azul">Oferta</span>
+              <h2 className="mx-auto mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+                Escolha como você quer treinar sua redação.
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-[15px] text-tinta-suave">
+                Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
+              </p>
+            </div>
 
             {erroCheckout && (
-              <p className="mt-5 border border-vermelho bg-vermelho-claro px-4 py-2.5 text-[13px] text-vermelho-escuro">
+              <p className="mx-auto mt-6 max-w-md rounded-xl border border-vermelho/30 bg-vermelho-claro px-4 py-2.5 text-center text-[13px] text-vermelho">
                 {erroCheckout}
               </p>
             )}
 
-            <div className="mt-10 grid gap-6 md:grid-cols-2">
-              {/* Mensal recorrente — destaque */}
-              <div className="relative flex flex-col justify-between border-2 border-vermelho bg-papel p-7">
-                <span className="fonte-manuscrita absolute -top-3.5 left-6 bg-papel px-2 text-base text-vermelho">
-                  o mais escolhido
+            <div className="mt-12 grid gap-5 md:grid-cols-2">
+              {/* Mensal — destaque */}
+              <div className="price relative flex flex-col justify-between rounded-2xl border-2 border-azul bg-folha p-7 shadow-[0_0_0_1px_rgba(79,140,255,0.15),0_25px_60px_rgba(0,0,0,0.25)]">
+                <span className="absolute right-5 top-5 rounded-full bg-azul-claro px-2.5 py-1 text-[10px] font-black text-azul">
+                  MAIS ESCOLHIDO
                 </span>
                 <div>
-                  <h3 className="fonte-serifada text-lg font-semibold">Mensal</h3>
+                  <h3 className="text-lg font-bold">Mensal</h3>
                   <p className="mt-1 text-[13px] text-tinta-fraca">Renova todo mês, cancele quando quiser.</p>
-                  <p className="fonte-serifada mt-5 text-3xl font-semibold tabular-nums">
-                    R$ 97,00
-                  </p>
+                  <p className="mt-5 text-4xl font-black tracking-tight">R$ 97,00</p>
                   <p className="text-[12px] text-tinta-fraca">por mês, assinatura recorrente</p>
 
                   <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Correções ilimitadas todo mês
                     </li>
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Avaliação pelas cinco competências
                     </li>
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Versão reescrita nota 1000
                     </li>
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Marcação de erros no texto
                     </li>
                   </ul>
@@ -377,37 +321,31 @@ export default function PaginaDeVendas() {
                 <button
                   onClick={() => iniciarCheckout('mensal')}
                   disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center bg-vermelho px-5 py-3.5 text-[13px] font-bold text-folha transition-colors hover:bg-vermelho-escuro disabled:opacity-50"
+                  className="mt-7 flex cursor-pointer items-center justify-center rounded-xl bg-azul px-5 py-3.5 text-[13px] font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110 disabled:opacity-50"
                 >
-                  {planoCarregando === 'mensal' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Assinar mensal'
-                  )}
+                  {planoCarregando === 'mensal' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Assinar mensal'}
                 </button>
               </div>
 
               {/* Único — 40 dias */}
-              <div className="flex flex-col justify-between border border-regua bg-papel p-7">
+              <div className="flex flex-col justify-between rounded-2xl border border-regua bg-folha p-7">
                 <div>
-                  <h3 className="fonte-serifada text-lg font-semibold">Acesso 40 dias</h3>
+                  <h3 className="text-lg font-bold">Acesso 40 dias</h3>
                   <p className="mt-1 text-[13px] text-tinta-fraca">Pagamento único, sem renovar sozinho.</p>
-                  <p className="fonte-serifada mt-5 text-3xl font-semibold tabular-nums">
-                    R$ 147,00
-                  </p>
+                  <p className="mt-5 text-4xl font-black tracking-tight">R$ 147,00</p>
                   <p className="text-[12px] text-tinta-fraca">pagamento único, 40 dias de acesso</p>
 
                   <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Correções ilimitadas por 40 dias
                     </li>
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Versão reescrita nota 1000
                     </li>
                     <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
                       Matriz das cinco competências
                     </li>
                   </ul>
@@ -416,49 +354,46 @@ export default function PaginaDeVendas() {
                 <button
                   onClick={() => iniciarCheckout('unico')}
                   disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center border border-tinta px-5 py-3 text-[13px] font-bold text-tinta transition-colors hover:bg-tinta hover:text-folha disabled:opacity-50"
+                  className="mt-7 flex cursor-pointer items-center justify-center rounded-xl border border-regua bg-folha-2 px-5 py-3.5 text-[13px] font-bold text-tinta transition hover:border-azul disabled:opacity-50"
                 >
-                  {planoCarregando === 'unico' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Comprar acesso de 40 dias'
-                  )}
+                  {planoCarregando === 'unico' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Comprar acesso de 40 dias'}
                 </button>
               </div>
             </div>
 
-            {/* Garantia como carimbo */}
-            <div className="mt-12 flex flex-col items-start gap-6 border-t border-regua pt-10 sm:flex-row sm:items-center">
-              <div className="carimbo shrink-0 px-5 py-3 text-center">
-                <span className="block text-[10px] uppercase tracking-[0.18em]">Garantia</span>
-                <span className="fonte-serifada block text-xl font-bold leading-tight">7 dias</span>
+            {/* Garantia */}
+            <div className="mt-12 flex flex-col items-start gap-5 rounded-2xl border border-regua bg-folha p-7 sm:flex-row sm:items-center">
+              <div className="text-4xl">🛡️</div>
+              <div>
+                <h3 className="text-base font-bold">Você pode testar sem medo.</h3>
+                <p className="mt-1 text-[13px] text-tinta-fraca">
+                  Use o avaliador, envie suas redações e analise a qualidade dos diagnósticos. Se não
+                  for útil para os seus estudos, peça o reembolso em até sete dias e receba o valor
+                  integral de volta, sem justificativa.
+                </p>
               </div>
-              <p className="max-w-xl text-[14px] leading-relaxed text-tinta-suave">
-                Use o avaliador, envie suas redações e analise a qualidade dos diagnósticos. Se não
-                for útil para os seus estudos, peça o reembolso em até sete dias e receba o valor
-                integral de volta, sem justificativa.
-              </p>
             </div>
           </div>
         </section>
 
         {/* FAQ */}
-        <section className="border-b border-regua">
-          <div className="mx-auto max-w-3xl px-5 py-16">
-            <h2 className="fonte-serifada mb-8 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Perguntas frequentes
-            </h2>
+        <section id="faq" className="py-24">
+          <div className="mx-auto max-w-3xl px-6">
+            <div className="text-center">
+              <span className="text-[11px] font-black uppercase tracking-widest text-azul">Dúvidas</span>
+              <h2 className="mx-auto mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+                Perguntas frequentes
+              </h2>
+            </div>
 
-            <div className="divide-y divide-regua border-y border-regua">
+            <div className="mt-10 space-y-2.5">
               {FAQ.map((item, idx) => (
-                <div key={item.q}>
+                <div key={item.q} className="rounded-xl border border-regua bg-folha">
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                    className="flex w-full cursor-pointer items-center justify-between gap-6 py-5 text-left"
+                    className="flex w-full cursor-pointer items-center justify-between gap-6 px-5 py-4 text-left"
                   >
-                    <span className="fonte-serifada text-[15px] font-semibold text-tinta">
-                      {item.q}
-                    </span>
+                    <span className="text-[14px] font-bold">{item.q}</span>
                     <ChevronDown
                       className={`h-4 w-4 shrink-0 text-tinta-fraca transition-transform ${
                         openFaq === idx ? 'rotate-180' : ''
@@ -466,29 +401,41 @@ export default function PaginaDeVendas() {
                     />
                   </button>
                   {openFaq === idx && (
-                    <p className="pb-5 pr-10 text-[14px] leading-[1.75] text-tinta-suave">{item.a}</p>
+                    <p className="px-5 pb-5 text-[13px] leading-relaxed text-tinta-fraca">{item.a}</p>
                   )}
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            <div className="mt-12 text-center">
-              <button
-                onClick={scrollToPricing}
-                className="cursor-pointer bg-vermelho px-8 py-3.5 text-sm font-bold text-folha transition-colors hover:bg-vermelho-escuro"
-              >
-                Ver planos de acesso
-              </button>
-            </div>
+        {/* CTA final */}
+        <section className="relative overflow-hidden py-28 text-center">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="h-[500px] w-[700px] rounded-full bg-azul/10 blur-[100px]" />
+          </div>
+          <div className="relative mx-auto max-w-xl px-6">
+            <span className="text-[11px] font-black uppercase tracking-widest text-azul">Comece agora</span>
+            <h2 className="mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+              Pare de escrever redações no escuro.
+            </h2>
+            <p className="mt-4 text-[15px] text-tinta-suave">
+              Envie sua redação, descubra onde está perdendo pontos e saiba o que melhorar no próximo
+              texto.
+            </p>
+            <button
+              onClick={scrollToPricing}
+              className="mt-8 cursor-pointer rounded-xl bg-azul px-8 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
+            >
+              CORRIGIR MINHA PRIMEIRA REDAÇÃO →
+            </button>
           </div>
         </section>
       </main>
 
-      <footer className="mx-auto max-w-5xl px-5 py-10">
-        <div className="flex flex-col justify-between gap-3 text-[12px] text-tinta-fraca sm:flex-row">
-          <span className="fonte-serifada text-tinta-suave">
-            Nota 1000 · Avaliador de redação do ENEM
-          </span>
+      <footer className="border-t border-regua py-10">
+        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-3 px-6 text-[12px] text-tinta-fraca sm:flex-row">
+          <span className="font-bold text-tinta-suave">Nota 1000 · Avaliador de redação do ENEM</span>
           <span>suporte@avaliadornota1000.com</span>
         </div>
       </footer>

@@ -25,7 +25,7 @@ export default function LandingPage() {
       num: 'C1',
       title: 'Norma Culta',
       desc: 'Detecção profunda de desvios gramaticais, pontuação, crase, concordância e regência verbal e nominal.',
-      color: 'border-vermelho text-vermelho',
+      color: 'border-azul text-azul',
     },
     {
       num: 'C2',
@@ -43,13 +43,13 @@ export default function LandingPage() {
       num: 'C4',
       title: 'Coesão & Conectivos',
       desc: 'Análise detalhada de recursos coesivos interparágrafos e intraparágrafos sem repetições excessivas.',
-      color: 'border-vermelho text-vermelho',
+      color: 'border-azul text-azul',
     },
     {
       num: 'C5',
       title: 'Proposta de Intervenção',
       desc: 'Contagem rigorosa dos 5 elementos (Agente, Ação, Meio, Efeito, Detalhamento) com respeito aos Direitos Humanos.',
-      color: 'border-vermelho text-vermelho',
+      color: 'border-azul text-azul',
     },
   ];
 
@@ -63,7 +63,7 @@ export default function LandingPage() {
     {
       step: '02',
       title: 'Correção Especialista em < 10s',
-      desc: 'Nossa IA calibrada na Matriz Oficial do ENEM analisa cada parágrafo, linha por linha, com precisão cirúrgica.',
+      desc: 'Nosso sistema calibrado na Matriz Oficial do ENEM analisa cada parágrafo, linha por linha, com precisão cirúrgica.',
       icon: Sparkles,
     },
     {
@@ -84,8 +84,8 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center space-y-8">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-vermelho text-vermelho text-xs font-semibold shadow-lg shadow-tinta/10 animate-fade-in">
-            <Sparkles className="w-3.5 h-3.5 text-vermelho animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-azul text-azul text-xs font-semibold shadow-lg shadow-tinta/10 animate-fade-in">
+            <Sparkles className="w-3.5 h-3.5 text-azul animate-pulse" />
             <span>Matriz Oficial do INEP Calibrada para o ENEM</span>
           </div>
 
@@ -96,14 +96,14 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg md:text-xl text-tinta-suave max-w-2xl mx-auto leading-relaxed">
-            Correção detalhada em segundos, nota pelas 5 competências oficiais, marcação de erros linha a linha e versão reescrita nota 1000 gerada por Inteligência Artificial.
+            Correção detalhada em segundos, nota pelas 5 competências oficiais, marcação de erros linha a linha e versão reescrita nota 1000.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <Link
               href="/nova-redacao"
-              className="w-full sm:w-auto px-8 py-4 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha font-bold text-base shadow-xl shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-azul hover:brightness-110 text-folha font-bold text-base shadow-xl shadow-tinta/10 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
             >
               <PenTool className="w-5 h-5" />
               <span>Corrigir Redação Agora</span>
@@ -112,7 +112,7 @@ export default function LandingPage() {
 
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto px-7 py-4 rounded-sm bg-folha/90 hover:bg-folha-2 text-tinta font-semibold text-base border border-regua/80 shadow-lg hover:border-regua transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-folha/90 hover:bg-folha-2 text-tinta font-semibold text-base border border-regua/80 shadow-lg hover:border-regua transition-all flex items-center justify-center gap-2"
             >
               <span>Ver Demonstração</span>
               <ChevronRight className="w-4 h-4 text-tinta-fraca" />
@@ -130,7 +130,7 @@ export default function LandingPage() {
               <span>Critérios 100% alinhados ao INEP</span>
             </div>
             <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-vermelho" />
+              <Award className="w-4 h-4 text-azul" />
               <span>Análise das 5 Competências</span>
             </div>
           </div>
@@ -140,10 +140,10 @@ export default function LandingPage() {
       {/* Feature Preview Card Section */}
       <section className="py-12 bg-papel/60 border-y border-regua">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass-panel p-6 sm:p-10 rounded-sm border border-regua shadow-2xl relative overflow-hidden">
+          <div className="glass-panel p-6 sm:p-10 rounded-xl border border-regua shadow-2xl relative overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-6 space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-vermelho-claro text-vermelho text-xs font-semibold">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-azul-claro text-azul text-xs font-semibold">
                   <Sparkles className="w-3.5 h-3.5" />
                   Feedback Pedagógico Completo
                 </div>
@@ -178,7 +178,7 @@ export default function LandingPage() {
 
               {/* Mockup Preview Card */}
               <div className="lg:col-span-6">
-                <div className="p-6 rounded-sm bg-folha border border-regua space-y-4 shadow-xl">
+                <div className="p-6 rounded-xl bg-folha border border-regua space-y-4 shadow-xl">
                   <div className="flex items-center justify-between border-b border-regua pb-3">
                     <span className="text-xs font-bold text-tinta-suave">Prévia de Avaliação</span>
                     <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-verde-claro text-verde border border-verde/30">
@@ -188,14 +188,14 @@ export default function LandingPage() {
 
                   <div className="space-y-2">
                     <div className="text-xs font-semibold text-tinta-fraca">Competência V (Proposta de Intervenção):</div>
-                    <div className="p-3 rounded-sm bg-papel/80 border border-regua/80 text-xs text-tinta-suave">
+                    <div className="p-3 rounded-xl bg-papel/80 border border-regua/80 text-xs text-tinta-suave">
                       <span className="text-verde font-bold">200/200 pts:</span> Todos os 5 elementos (Agente, Ação, Meio, Efeito e Detalhamento) foram validados com pleno respeito aos Direitos Humanos.
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="text-xs font-semibold text-tinta-fraca">Correção Linha por Linha:</div>
-                    <div className="p-3 rounded-sm bg-vermelho-claro border border-vermelho/30 text-xs space-y-1">
+                    <div className="p-3 rounded-xl bg-vermelho-claro border border-vermelho/30 text-xs space-y-1">
                       <div className="text-tinta-suave">
                         <span className="line-through text-vermelho">"ensino básica e superior"</span> → <span className="text-verde font-bold">"ensino básico e superior"</span>
                       </div>
@@ -215,7 +215,7 @@ export default function LandingPage() {
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-vermelho uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-azul uppercase tracking-wider">
               <Award className="w-4 h-4" />
               Matriz do INEP
             </div>
@@ -231,9 +231,9 @@ export default function LandingPage() {
             {competencias.map((comp) => (
               <div
                 key={comp.num}
-                className="glass-panel p-6 rounded-sm border border-regua hover:border-regua transition-all space-y-3"
+                className="glass-panel p-6 rounded-xl border border-regua hover:border-regua transition-all space-y-3"
               >
-                <div className={`w-10 h-10 rounded-sm bg-vermelho flex items-center justify-center font-black text-sm border ${comp.color}`}>
+                <div className={`w-10 h-10 rounded-xl bg-azul flex items-center justify-center font-black text-sm border ${comp.color}`}>
                   {comp.num}
                 </div>
                 <h3 className="text-base font-bold text-tinta">{comp.title}</h3>
@@ -242,8 +242,8 @@ export default function LandingPage() {
             ))}
 
             {/* Card Extra: Gráfico de Evolução */}
-            <div className="glass-panel p-6 rounded-sm border border-vermelho bg-vermelho hover:bg-vermelho-escuro to-folha hover:border-vermelho transition-all space-y-3">
-              <div className="w-10 h-10 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center text-vermelho">
+            <div className="glass-panel p-6 rounded-xl border border-azul bg-azul hover:brightness-110 to-folha hover:border-azul transition-all space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-azul-claro border border-azul flex items-center justify-center text-azul">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-tinta">Histórico & Radar</h3>
@@ -271,9 +271,9 @@ export default function LandingPage() {
             {passos.map((p) => {
               const Icon = p.icon;
               return (
-                <div key={p.step} className="glass-panel p-8 rounded-sm border border-regua relative space-y-4">
+                <div key={p.step} className="glass-panel p-8 rounded-xl border border-regua relative space-y-4">
                   <div className="text-4xl font-black text-tinta">{p.step}</div>
-                  <div className="w-12 h-12 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center text-vermelho">
+                  <div className="w-12 h-12 rounded-xl bg-azul-claro border border-azul flex items-center justify-center text-azul">
                     <Icon className="w-6 h-6" />
                   </div>
                   <h3 className="text-lg font-bold text-tinta">{p.title}</h3>
@@ -288,8 +288,8 @@ export default function LandingPage() {
       {/* CTA Final */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <div className="glass-panel p-8 sm:p-12 rounded-sm border border-vermelho bg-vermelho hover:bg-vermelho-escuro to-folha relative overflow-hidden shadow-2xl">
-            <div className="w-16 h-16 rounded-sm bg-vermelho-claro border border-vermelho flex items-center justify-center mx-auto text-vermelho shadow-inner">
+          <div className="glass-panel p-8 sm:p-12 rounded-xl border border-azul bg-azul hover:brightness-110 to-folha relative overflow-hidden shadow-2xl">
+            <div className="w-16 h-16 rounded-xl bg-azul-claro border border-azul flex items-center justify-center mx-auto text-azul shadow-inner">
               <GraduationCap className="w-8 h-8" />
             </div>
 
@@ -297,13 +297,13 @@ export default function LandingPage() {
               Pronto para elevar seu desempenho rumo à nota 1000?
             </h2>
             <p className="text-sm sm:text-base text-tinta-suave max-w-xl mx-auto">
-              Envie sua redação agora mesmo e receba o diagnóstico completo com a banca especialista de IA.
+              Envie sua redação agora mesmo e receba o diagnóstico completo com a nossa banca especialista.
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/nova-redacao"
-                className="w-full sm:w-auto px-8 py-4 rounded-sm bg-vermelho hover:bg-vermelho-escuro text-folha font-bold text-base shadow-xl shadow-tinta/10 transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-azul hover:brightness-110 text-folha font-bold text-base shadow-xl shadow-tinta/10 transition-all flex items-center justify-center gap-2"
               >
                 <PenTool className="w-5 h-5" />
                 <span>Iniciar Minha Primeira Redação</span>

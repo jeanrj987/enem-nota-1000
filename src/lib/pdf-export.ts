@@ -13,7 +13,7 @@ export function exportarCorrecaoParaPDF(correcao: Correcao, redacao: Redacao): v
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(30, 41, 59);
-  doc.text('Relatório Oficial de Correção ENEM - Nota 1000 AI', 14, y);
+  doc.text('Relatório Oficial de Correção ENEM - Nota 1000', 14, y);
   y += 10;
 
   doc.setFontSize(11);

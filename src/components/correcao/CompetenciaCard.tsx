@@ -11,7 +11,7 @@ export function CompetenciaCard({ comp }: CompetenciaCardProps) {
   const porcentagem = (comp.nota / 200) * 100;
 
   return (
-    <div className="glass-panel p-5 rounded-sm border border-regua/90 space-y-3 hover:border-regua transition-colors">
+    <div className="glass-panel p-5 rounded-xl border border-regua/90 space-y-3 hover:border-regua transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs font-bold text-vermelho uppercase tracking-wider">

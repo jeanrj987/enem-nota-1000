@@ -24,7 +24,7 @@ export function CorrecaoBloqueada({
 }) {
   return (
     <div className="space-y-6">
-      <div className="glass-panel rounded-sm border border-regua p-6 sm:p-8">
+      <div className="glass-panel rounded-xl border border-regua p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-tinta-fraca">
           Correção concluída
         </p>
@@ -34,7 +34,7 @@ export function CorrecaoBloqueada({
         <p className="mt-1 text-sm text-tinta-fraca">Tema: {redacao.tema}</p>
 
         {chamariz.anulada && (
-          <div className="mt-5 flex items-start gap-3 rounded-sm border border-vermelho/30 bg-vermelho-claro p-4">
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-vermelho/30 bg-vermelho-claro p-4">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-vermelho" />
             <p className="text-sm text-vermelho">
               Sua redação se enquadrou em uma situação que <strong>zera a nota</strong> pelos
@@ -44,7 +44,7 @@ export function CorrecaoBloqueada({
         )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-sm border border-regua bg-folha/60 p-5">
+          <div className="rounded-xl border border-regua bg-folha/60 p-5">
             <span className="text-3xl font-black tabular-nums text-tinta">
               {chamariz.total_erros}
             </span>
@@ -54,7 +54,7 @@ export function CorrecaoBloqueada({
                 : 'desvios identificados no seu texto'}
             </p>
           </div>
-          <div className="rounded-sm border border-regua bg-folha/60 p-5">
+          <div className="rounded-xl border border-regua bg-folha/60 p-5">
             <span className="text-3xl font-black text-tinta-fraca">•••</span>
             <p className="mt-1 text-sm text-tinta-fraca">
               Nota nas 5 competências, disponível com um plano ativo
@@ -67,7 +67,7 @@ export function CorrecaoBloqueada({
       <div className="relative">
         <div className="pointer-events-none select-none space-y-4 opacity-40 blur-[6px]" aria-hidden>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-sm border border-regua bg-folha/60 p-6">
+            <div key={i} className="rounded-xl border border-regua bg-folha/60 p-6">
               <div className="mb-3 h-3 w-1/3 rounded bg-pauta" />
               <div className="mb-2 h-2.5 w-full rounded bg-folha-2" />
               <div className="mb-2 h-2.5 w-11/12 rounded bg-folha-2" />
@@ -77,7 +77,7 @@ export function CorrecaoBloqueada({
         </div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-vermelho/30 bg-vermelho-claro text-vermelho">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-azul/30 bg-azul-claro text-azul">
             <Lock className="h-7 w-7" />
           </div>
           <div className="max-w-md space-y-1">
@@ -89,7 +89,7 @@ export function CorrecaoBloqueada({
           </div>
           <Link
             href="/vendas"
-            className="inline-flex items-center gap-2 rounded-sm bg-vermelho px-7 py-3 text-sm font-bold text-folha shadow-lg shadow-tinta/10 transition-colors hover:bg-vermelho"
+            className="inline-flex items-center gap-2 rounded-xl bg-azul px-7 py-3 text-sm font-bold text-folha shadow-lg shadow-tinta/10 transition-colors hover:bg-azul"
           >
             Ver planos
             <ArrowRight className="h-4 w-4" />

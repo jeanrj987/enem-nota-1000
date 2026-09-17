@@ -83,7 +83,7 @@ export default function PaginaResultadoCorrecao() {
         <div className="flex items-center gap-2">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-tinta-fraca hover:text-tinta px-3 py-1.5 rounded-sm bg-folha border border-regua transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-tinta-fraca hover:text-tinta px-3 py-1.5 rounded-xl bg-folha border border-regua transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar ao Dashboard</span>
@@ -91,15 +91,15 @@ export default function PaginaResultadoCorrecao() {
         </div>
 
         {loading ? (
-          <div className="glass-panel p-16 rounded-sm border border-regua text-center space-y-4">
-            <Loader2 className="w-8 h-8 text-vermelho animate-spin mx-auto" />
+          <div className="glass-panel p-16 rounded-xl border border-regua text-center space-y-4">
+            <Loader2 className="w-8 h-8 text-azul animate-spin mx-auto" />
             <p className="text-sm text-tinta-fraca">Carregando relatório da redação...</p>
           </div>
         ) : redacao && !redacao.correcao && redacao.chamariz ? (
           <CorrecaoBloqueada redacao={redacao} chamariz={redacao.chamariz} />
         ) : !redacao || !redacao.correcao ? (
-          <div className="glass-panel p-16 rounded-sm border border-regua text-center space-y-4">
-            <div className="w-12 h-12 rounded-sm bg-vermelho-claro border border-vermelho/30 flex items-center justify-center mx-auto text-vermelho">
+          <div className="glass-panel p-16 rounded-xl border border-regua text-center space-y-4">
+            <div className="w-12 h-12 rounded-xl bg-vermelho-claro border border-vermelho/30 flex items-center justify-center mx-auto text-vermelho">
               <AlertCircle className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-tinta">Redação não encontrada</h2>
@@ -109,7 +109,7 @@ export default function PaginaResultadoCorrecao() {
             <div className="pt-2">
               <Link
                 href="/nova-redacao"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-sm bg-vermelho text-folha text-xs font-semibold shadow-md"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-azul text-folha text-xs font-semibold shadow-md"
               >
                 <PenTool className="w-4 h-4" />
                 <span>Escrever Nova Redação</span>
@@ -119,8 +119,8 @@ export default function PaginaResultadoCorrecao() {
         ) : (
           <>
             {completando && (
-              <div className="glass-panel rounded-sm border border-regua p-4 flex items-center gap-3">
-                <Loader2 className="w-4 h-4 text-vermelho animate-spin shrink-0" />
+              <div className="glass-panel rounded-xl border border-regua p-4 flex items-center gap-3">
+                <Loader2 className="w-4 h-4 text-azul animate-spin shrink-0" />
                 <p className="text-xs text-tinta-suave">
                   Rodando a segunda correção independente e reconciliando as notas, como faz a
                   banca do ENEM. A nota abaixo pode se ajustar em instantes.
