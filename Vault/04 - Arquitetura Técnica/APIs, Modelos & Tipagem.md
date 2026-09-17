@@ -148,7 +148,7 @@ export interface Redacao {
   ```
 
 ### 2. `POST /api/upload`
-- **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`/pdfjs-dist, com OCR via Gemini quando não há texto selecionável).
+- **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`, só texto selecionável — sem OCR desde o ADR 025; PDF de foto/scan retorna 422 pedindo para colar o texto).
 - **Limites**: 15 requisições/IP a cada 10min (`429`), arquivo máx. 10MB (`413`).
 - **Resposta**:
   ```json

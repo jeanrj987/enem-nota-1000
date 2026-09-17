@@ -1,74 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
-import { GoogleGenAI } from '@google/genai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_PAGINAS_OCR = 5;
 const MAX_TAMANHO_ARQUIVO_BYTES = 10 * 1024 * 1024; // 10MB
 const LIMITE_UPLOADS = 15;
 const JANELA_UPLOADS_MS = 10 * 60 * 1000; // 10 minutos
 
-/**
- * OCR de último recurso para PDFs sem texto selecionável (foto/scan de
- * redação manuscrita): renderiza as páginas como imagem via pdf-parse e pede
- * transcrição literal ao Gemini. Retorna string vazia se não houver chave
- * configurada ou se o modelo não conseguir transcrever nada.
- */
-async function extrairTextoViaOCR(buffer: Buffer): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey.trim() === '' || apiKey === 'sua-chave-gemini-aqui') {
-    return '';
-  }
-
-  const parser = new PDFParse({ data: buffer });
-  let paginas: Uint8Array[];
-  try {
-    const screenshot = await parser.getScreenshot({ scale: 2, first: MAX_PAGINAS_OCR });
-    paginas = screenshot.pages.map((p) => p.data).filter((d): d is Uint8Array => !!d);
-  } finally {
-    await parser.destroy();
-  }
-
-  if (paginas.length === 0) return '';
-
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: 'Transcreva literalmente o texto manuscrito ou impresso nas imagens a seguir, que são páginas de uma redação escolar. Preserve a divisão em parágrafos. Não corrija erros de português, não resuma, não comente — apenas transcreva exatamente o que está escrito. Se não conseguir ler algum trecho com confiança, indique com [ilegível] naquele ponto.',
-            },
-            ...paginas.map((data) => ({
-              inlineData: { mimeType: 'image/png', data: Buffer.from(data).toString('base64') },
-            })),
-          ],
-        },
-      ],
-      config: { temperature: 0 },
-    });
-
-    return response.text?.trim() || '';
-  } catch (ocrError) {
-    console.error('OCR de PDF via Gemini falhou:', ocrError);
-    return '';
-  }
-}
-
 export async function POST(req: NextRequest) {
-  // Autenticação antes do rate limit e antes de ler o corpo: um PDF sem texto
-  // selecionável dispara OCR por visão, que custa por chamada. Sem esta
-  // barreira, qualquer pessoa da internet consegue gastar essa cota, e o
-  // limite por IP não segura quem troca de IP. A tela já exigia login —
-  // era a rota por baixo que estava aberta.
+  // Autenticação antes do rate limit e antes de ler o corpo: sem essa
+  // barreira, qualquer pessoa da internet consegue martelar o parser de
+  // arquivo, e o limite por IP não segura quem troca de IP. A tela já exigia
+  // login — era a rota por baixo que estava aberta.
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) {
     return NextResponse.json(
@@ -140,18 +87,17 @@ export async function POST(req: NextRequest) {
       }
 
       if (!extractedText.trim()) {
-        // PDF sem texto selecionável (foto/scan) — tenta OCR via visão do Gemini.
-        extractedText = await extrairTextoViaOCR(buffer);
-
-        if (!extractedText.trim()) {
-          return NextResponse.json(
-            {
-              error:
-                'Não encontramos texto selecionável neste PDF, e não foi possível transcrevê-lo automaticamente (verifique se a chave do Gemini está configurada ou se a imagem está legível). Copie e cole o texto manualmente na área de produção textual.',
-            },
-            { status: 422 }
-          );
-        }
+        // PDF sem texto selecionável (foto ou digitalização da folha, não um
+        // PDF com texto de verdade) — não tentamos mais transcrever via OCR:
+        // orientamos a digitar/colar o texto, que garante a leitura correta
+        // pela IA em vez de depender da legibilidade da letra manuscrita.
+        return NextResponse.json(
+          {
+            error:
+              'Não encontramos texto selecionável neste PDF — parece ser uma foto ou digitalização da redação manuscrita, não um documento com texto real. Para garantir a melhor precisão da nota, copie e cole o texto diretamente na área de produção textual, ou envie um arquivo .txt/.docx com o texto já digitado.',
+          },
+          { status: 422 }
+        );
       }
     } else {
       return NextResponse.json(

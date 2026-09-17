@@ -161,6 +161,13 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 025: Remoção do OCR de fotos/scans — só texto real é aceito
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `/api/upload` tinha um caminho de último recurso para PDFs sem texto selecionável: renderizava as páginas como imagem e pedia transcrição literal ao Gemini via visão (`extrairTextoViaOCR`). Na prática isso tentava "ler" fotos ou digitalizações de redação manuscrita — dependente da caligrafia do aluno, sujeito a erro de transcrição silencioso, e gastando uma chamada de LLM cara (visão) por tentativa.
+- **Decisão**: removida inteiramente a função `extrairTextoViaOCR` e o import de `@google/genai` de `route.ts` (o pacote continua no projeto — ainda é o provedor principal de correção em `openai.ts`, só não é mais usado para OCR). Um PDF sem texto selecionável agora falha direto com 422, orientando a colar o texto ou enviar `.txt`/`.docx` já digitado. Adicionado um aviso permanente na tela de upload (`AreaProducaoTextual.tsx`), visível antes mesmo de tentar enviar, pedindo texto real (não foto) e letra legível para garantir a melhor precisão da nota — a pedido do usuário.
+- **Por que isso é uma melhoria, não só uma remoção**: transcrição de letra manuscrita por visão é a etapa mais sujeita a erro do pipeline inteiro — um `[ilegível]` ou uma palavra mal transcrita vira erro de português que não existe no texto original do aluno, distorcendo a nota. Recusar de forma clara e pedir o texto direto é mais honesto do que tentar adivinhar.
+- **Testes**: 149 (sem variação — não havia teste cobrindo o caminho de OCR).
+
 ### ADR 024: Modal de carregamento não promete tempo nem menciona "IA"
 - **Status**: Aprovado e Implementado.
 - **Contexto**: `ModalCarregamento.tsx` exibia o título "Corrigindo com Inteligência Artificial" e a estimativa fixa "Tempo médio de análise: ~5 a 15 segundos" — o usuário identificou que essa estimativa não é real. A correção de assinante roda 2-3 chamadas de LLM em sequência (dupla correção + eventual arbitragem, ver ADR 006), o que facilmente ultrapassa 15 segundos; publicar um tempo que a maioria das correções não cumpre é a mesma categoria de problema já corrigida antes no projeto (cronômetro falso do `SalesStickyBar`, "60% OFF" inexistente no Footer).
@@ -200,6 +207,11 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.11.0] - 2026-09-17 (fim do OCR de fotos; aviso de texto legível)
+- **Removido**: `/api/upload` não tenta mais transcrever foto/scan de redação manuscrita via visão do Gemini — um PDF sem texto selecionável falha com uma mensagem clara pedindo para colar o texto ou enviar `.txt`/`.docx`. Ver ADR 025.
+- **Adicionado**: aviso permanente na tela de upload orientando a enviar texto real, com letra legível, para a melhor precisão da nota.
+- **Testes**: 149 (sem variação).
 
 ### [v2.10.0] - 2026-09-14 (modal de carregamento sem tempo estimado nem menção a IA)
 - **Removido**: `ModalCarregamento.tsx` não anuncia mais "~5 a 15 segundos" (não era real, a dupla correção facilmente passa disso) nem "Inteligência Artificial" no título — agora só "Corrigindo sua redação". Ver ADR 024.

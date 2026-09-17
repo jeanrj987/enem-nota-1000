@@ -121,7 +121,7 @@ O provider Google precisa ser habilitado manualmente (não é código, é config
 
 | Variável | Obrigatória? | Descrição |
 | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | Recomendada | Chave da API do Google Gemini (`gemini-3.6-flash`), também usada no OCR de PDF sem texto selecionável. |
+| `GEMINI_API_KEY` | Recomendada | Chave da API do Google Gemini (`gemini-3.6-flash`), provedor principal de correção. Não é mais usada em `/api/upload` — o OCR de PDF sem texto selecionável foi removido (ADR 025). |
 | `OPENAI_API_KEY` | Opcional (Fallback) | Chave da OpenAI para o modelo `gpt-4o-mini`. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Configurada | `https://jzsudeviiosbhgkeljaf.supabase.co` — pode ser derivada do claim `ref` do JWT da anon key. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Configurada | Chave anônima pública do Supabase. |

@@ -98,6 +98,17 @@ export function AreaProducaoTextual({
         </div>
       )}
 
+      {!uploadedFileName && !uploadError && (
+        <div className="flex items-start gap-2 px-3 py-2 rounded-sm bg-ambar-claro border border-ambar/30 text-[11px] text-tinta-suave">
+          <AlertCircle className="w-3.5 h-3.5 text-ambar shrink-0 mt-0.5" />
+          <span>
+            Envie um arquivo com <strong>texto real</strong> (não uma foto ou digitalização da folha
+            escrita à mão). Letra legível e texto digitado garantem a melhor precisão da nota e a
+            análise mais completa possível.
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 overflow-x-auto py-1">
         <span className="text-[11px] font-semibold text-tinta-fraca whitespace-nowrap">
           Conectivos rápidos:
