@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
-import { PlanoId } from '@/lib/planos';
-import { supabase } from '@/lib/supabase';
+import { PLANOS, PlanoId } from '@/lib/planos';
 import { useAuth } from '@/contexts/AuthContext';
 import { urlDeLogin } from '@/lib/redirecionamento';
 
@@ -54,44 +53,29 @@ export default function PaginaDeVendas() {
   const { usuario } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
-  const [erroCheckout, setErroCheckout] = useState<string | null>(null);
 
   const scrollToPricing = () => {
     document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const iniciarCheckout = async (planoId: PlanoId) => {
-    setErroCheckout(null);
-
+  // O checkout da Kiwify é um link fixo (não uma sessão criada dinamicamente
+  // pela nossa API, como era no Stripe), então não há como carimbar o
+  // user_id nele. Pré-preencher o e-mail da conta logada é o que reduz a
+  // chance de a compra chegar no webhook com um e-mail que não bate com
+  // nenhuma conta — mas depende de a aluna/aluno não trocar o e-mail na
+  // hora de pagar.
+  const iniciarCheckout = (planoId: PlanoId) => {
     if (!usuario) {
       router.push(urlDeLogin('/vendas'));
       return;
     }
 
     setPlanoCarregando(planoId);
-    try {
-      const { data: sessionData } = await supabase!.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) {
-        router.push(urlDeLogin('/vendas'));
-        return;
-      }
-
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ planoId }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || 'Não foi possível iniciar o pagamento.');
-      }
-      window.location.href = data.url;
-    } catch (err) {
-      const mensagem = err instanceof Error ? err.message : 'Erro ao iniciar o pagamento.';
-      setErroCheckout(mensagem);
-      setPlanoCarregando(null);
+    const url = new URL(PLANOS[planoId].checkoutUrl);
+    if (usuario.email) {
+      url.searchParams.set('email', usuario.email);
     }
+    window.location.href = url.toString();
   };
 
   return (
@@ -279,12 +263,6 @@ export default function PaginaDeVendas() {
                 Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
               </p>
             </div>
-
-            {erroCheckout && (
-              <p className="mx-auto mt-6 max-w-md rounded-xl border border-vermelho/30 bg-vermelho-claro px-4 py-2.5 text-center text-[13px] text-vermelho">
-                {erroCheckout}
-              </p>
-            )}
 
             <div className="mt-12 grid gap-5 md:grid-cols-2">
               {/* Mensal — destaque */}

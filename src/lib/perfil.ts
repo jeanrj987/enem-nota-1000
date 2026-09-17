@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export interface Perfil {
   nome_completo: string | null;
@@ -38,6 +39,29 @@ export async function buscarPerfil(userId: string): Promise<Perfil | null> {
     return null;
   }
   return data;
+}
+
+/**
+ * Busca o user_id a partir do e-mail — usada pelo webhook da Kiwify, que só
+ * nos dá o e-mail de quem comprou, não o user_id. Roda com service role (sem
+ * sessão de usuário no contexto de um webhook). `email` fica gravado em
+ * `perfis` desde o cadastro (trigger `handle_new_user`); ver
+ * `schema-perfis-email.sql` para quem já tinha conta antes dessa coluna
+ * existir.
+ */
+export async function buscarUserIdPorEmail(email: string): Promise<string | null> {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin
+    .from('perfis')
+    .select('user_id')
+    .ilike('email', email.trim())
+    .maybeSingle();
+
+  if (error) {
+    console.error('Erro ao buscar usuário por e-mail:', error);
+    return null;
+  }
+  return data?.user_id ?? null;
 }
 
 export async function salvarPerfil(userId: string, dados: DadosCadastroPerfil): Promise<{ sucesso: boolean; erro?: string }> {

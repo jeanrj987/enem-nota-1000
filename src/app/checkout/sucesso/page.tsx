@@ -20,17 +20,10 @@ function ConteudoSucesso() {
     let tentativas = 0;
     let cancelado = false;
 
-    // Verifica direto na Stripe (session_id do redirect) em vez de esperar
-    // passivamente o webhook — necessário em dev (Stripe não alcança
-    // localhost) e reforça produção contra webhook atrasado/perdido.
-    if (sessionId) {
-      fetch('/api/checkout/verificar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      }).catch(() => {});
-    }
-
+    // A Kiwify redireciona para cá depois do pagamento, mas quem confirma o
+    // acesso é o webhook (/api/kiwify/webhook) — aqui só ficamos consultando
+    // se o acesso já apareceu, sem verificação síncrona própria (diferente
+    // do fluxo antigo do Stripe, que consultava a Checkout Session direto).
     const checar = async () => {
       const ativo = await temAcessoAtivo();
       if (cancelado) return;

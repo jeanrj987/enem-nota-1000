@@ -161,6 +161,17 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 028: Integração com a Kiwify implementada — checkout por link fixo + webhook
+- **Status**: Aprovado e Implementado, **pendente de verificação contra um envio real** (ver abaixo).
+- **Contexto**: com a Kiwify como gateway definido (ADR 027), os 2 produtos foram criados no painel dela pelo usuário — Plano Mensal (R$97, assinatura recorrente, `https://pay.kiwify.com.br/C2b4RMM`) e Acesso 40 dias (R$147, pagamento único, `https://pay.kiwify.com.br/BE4tQoq`) — e um webhook cadastrado com 5 eventos: compra aprovada, assinatura cancelada, assinatura atrasada, reembolso, chargeback.
+- **Mudança de arquitetura em relação ao Stripe**: no Stripe, `/api/checkout` criava uma Checkout Session dinâmica por requisição, carimbando o `user_id` do comprador nela — o webhook sempre sabia exatamente qual conta liberar. Na Kiwify, os links de checkout são **fixos** (criados uma vez no painel, não por API a cada compra), então não existe onde carimbar o `user_id`. Duas consequências:
+  - **Checkout virou navegação direta**: `/vendas` não chama mais nenhuma rota de API para iniciar o pagamento — o clique no botão monta a URL do link fixo do plano (`PLANOS[planoId].checkoutUrl`) com o e-mail da conta logada como query param (`?email=...`, se a Kiwify aceitar prefill por e-mail) e redireciona direto. `/api/checkout` e `/api/checkout/verificar` (Stripe) foram apagados.
+  - **Vínculo compra↔conta por e-mail**: o webhook recebe o e-mail de quem comprou, não o `user_id`. Nova coluna `email` em `public.perfis` (migração `schema-perfis-email.sql`, com backfill e trigger `handle_new_user` atualizado) permite `buscarUserIdPorEmail()` (`src/lib/perfil.ts`) resolver a conta certa. **Risco aceito conscientemente com o usuário**: se o aluno pagar com um e-mail diferente do cadastro, a compra não é vinculada automaticamente — fica registrada no painel da Kiwify para ativação manual, sem tela de suporte dedicada (decisão explícita para não construir complexidade para um caso raro agora).
+- **`/api/kiwify/webhook`** (novo): valida a assinatura HMAC-SHA1 do payload (query param `signature`, chave = `KIWIFY_WEBHOOK_TOKEN`) com `crypto.timingSafeEqual`; em "compra aprovada" chama `ativarAssinatura` (reaproveitada do Stripe, já era genérica o suficiente); nos demais eventos chama a nova `revogarAssinatura()` (`src/lib/ativar-assinatura.ts`), que marca as assinaturas ativas do usuário com o motivo (`cancelada`/`reembolsada`/`chargeback`/`atrasada`) e zera `expira_em` na hora — nunca deixa acesso pago esperando expirar sozinho depois de reembolso/chargeback.
+- **⚠️ Formato do payload NÃO confirmado contra um envio real da Kiwify.** O parsing (`extrairEmail`, `identificarPlano`, `normalizarStatus`) foi escrito a partir do padrão mais comum de integração Kiwify que eu conhecia, não de documentação consultada ao vivo nem de um payload de teste real. A rota grava o corpo bruto de cada chamada em log (`console.log('kiwify_webhook_payload_bruto', ...)`) de propósito, para permitir corrigir o mapeamento a partir dos logs do Vercel assim que a primeira chamada real (teste ou compra) chegar, em vez de continuar adivinhando. **Isso precisa ser verificado antes de confiar no fluxo em produção.**
+- **Limpeza**: removidos `/api/checkout`, `/api/checkout/verificar`, `/api/stripe/webhook`, `scripts/stripe-setup.ts`, a dependência `stripe` do `package.json`, e os testes correspondentes (6 testes). `/checkout/sucesso` perdeu a verificação síncrona (exclusiva do Stripe) e agora só espera o webhook.
+- **Testes**: 149 → 153 (10 novos em `kiwify-webhook-route.test.ts`, cobrindo assinatura inválida/ausente, identificação de plano por nome e por valor, e-mail sem conta correspondente, e os 4 motivos de revogação; 6 testes do Stripe removidos junto com as rotas).
+
 ### ADR 027: Gateway de pagamento definido como Kiwify (não Kirvano)
 - **Status**: Aprovado.
 - **Histórico da decisão no mesmo dia**: o projeto saiu do Stripe e cogitou a Kirvano (ver ADR 026, que já registra "migrando para a Kirvano"); depois o usuário considerou rodar nas duas — Kirvano e Kiwify — ao mesmo tempo; por fim decidiu usar **só a Kiwify**. Nenhuma integração de código chegou a ser escrita para a Kirvano — só o texto de comentários/documentação, que foi atualizado para não deixar rastro de uma decisão já revertida.
@@ -222,6 +233,12 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.0.0] - 2026-09-17 (Stripe removido, Kiwify integrada)
+- **Adicionado**: `/api/kiwify/webhook`, checkout por link fixo em `/vendas`, vínculo compra↔conta por e-mail (`perfis.email`). Ver ADR 028.
+- **Removido**: toda a integração com o Stripe (`/api/checkout`, `/api/checkout/verificar`, `/api/stripe/webhook`, `scripts/stripe-setup.ts`, dependência `stripe`).
+- **⚠️ Pendente de verificação**: o formato do payload do webhook da Kiwify ainda não foi confirmado contra um envio real — ver aviso no ADR 028 antes de considerar o fluxo de pagamento confiável em produção.
+- **Testes**: 149 → 153.
 
 ### [v2.12.1] - 2026-09-17 (gateway definido: Kiwify, não Kirvano)
 - **Corrigido**: comentários em `planos.ts` e `stripe-setup.ts` que citavam "Kirvano" foram atualizados para "Kiwify" — decisão final do usuário no mesmo dia, depois de cogitar rodar nas duas plataformas. Nenhuma integração de gateway foi implementada ainda. Ver ADR 027.
