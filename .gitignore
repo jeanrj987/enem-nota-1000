@@ -49,3 +49,7 @@ next-env.d.ts
 # muda a cada vez que o vault é aberto, não é documentação
 **/.obsidian/workspace.json
 **/.obsidian/workspace-mobile.json
+
+# claude code: permissões e preferências locais de cada dev. As skills e o
+# AGENTS.md são compartilhados, este arquivo não.
+.claude/settings.local.json

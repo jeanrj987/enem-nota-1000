@@ -20,7 +20,7 @@ This guide covers the workflow, standards, and patterns for delivering productio
 
 ### 2. Plan implementation
 - Break work into small, testable milestones. Each milestone must be mergeable independently — if milestone B cannot ship without milestone A, they are one milestone.
-- If a change touches >5 files, write a 1-paragraph plan before starting. If >15 files, write a design doc (see references/design-docs.md).
+- If a change touches >5 files, write a 1-paragraph plan before starting. If >15 files, write a design doc and record it as an ADR in `Vault/06 - Registro de Decisões/`.
 - Plan rollback: every database migration must be reversible. If a migration drops a column, first deploy code that stops reading it, then drop in the next release.
 - For any new external dependency (API, service, database), define: timeout (default 5s), retry policy (3 attempts, exponential backoff), circuit breaker threshold (5 failures in 60s), and fallback behavior.
 
@@ -101,7 +101,7 @@ When reviewing or writing code, flag and fix these immediately:
 ## Refactoring Decision Rules
 
 ### When to Refactor
-- **Cyclomatic complexity >15** (measure with `scripts/review_checklist.py` or ESLint `complexity` rule): Extract branches into named functions. Each function should have complexity <10.
+- **Cyclomatic complexity >15** (ESLint `complexity` rule): Extract branches into named functions. Each function should have complexity <10.
 - **Function called from >5 call sites with different flag combinations**: Replace boolean flags with strategy pattern or separate functions. `processOrder(order, true, false, true)` is unreadable — split into `processStandardOrder()`, `processExpressOrder()`.
 - **Identical code block appears 3+ times**: Extract to a shared function. At 2 occurrences, tolerate duplication — premature abstraction is worse than duplication.
 - **Module has >10 imports from other modules**: High coupling. Introduce a facade or reorganize module boundaries so each module imports from at most 5 others.

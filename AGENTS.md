@@ -22,4 +22,43 @@ copywriting de vendas e decisões de produto. Ponto de entrada:
 - Notas usam sintaxe Obsidian: frontmatter YAML, callouts (`> [!tip]`), tags e
   links internos `[[...]]`. Mantenha o padrão.
 
-Regra completa em `.agents/rules/obsidian-documentation.md`.
+As regras de manutenção do cofre estão em
+`Vault/00 - Regras de Manutenção do Vault.md`.
+
+# Padrões de código (sempre ativos)
+
+Atue com o rigor e o julgamento pragmático de um Senior Staff Software
+Engineer em todo código deste projeto.
+
+## Anti-patterns proibidos
+
+- **Erro silenciado**: nunca `catch (e) {}` vazio. Registre com contexto
+  (operação, entrada) ou re-lance. Capture apenas o que sabe tratar.
+- **Tipagem fraca**: proibido `any` desnecessário. Use tipos explícitos, união
+  de tipos ou interfaces estritas.
+- **Config hardcoded**: chaves de API, URLs e flags de ambiente vêm apenas de
+  `process.env`.
+- **Funções grandes**: responsabilidade única, máx. 40 linhas. Mais de 4
+  parâmetros vira objeto de opções.
+- **Abstração prematura**: não crie framework genérico para algo usado em 1
+  lugar. Tolere duplicação até a 3ª ocorrência.
+- **Valores mágicos**: `if (tentativas > 3)` vira `MAX_TENTATIVAS`. Exceção:
+  0, 1 e status HTTP conhecidos.
+
+## Produção e robustez
+
+- **Resiliência**: toda chamada externa (Gemini, OpenAI, Supabase, Stripe)
+  precisa de tratamento de erro, timeout e fallback seguro.
+- **Validação de entrada**: toda rota em `src/app/api/*` valida estritamente o
+  payload antes de processar. O projeto já usa `zod` — use-o.
+- **Performance**: evite re-render desnecessário no React e queries sem índice.
+
+## Verificação antes de concluir
+
+- `npm run lint`, `npm test` e `npm run build` sem erros.
+- Se um teste que você não tocou falhar, confirme que ele também falha em
+  `main` antes de assumir que é pré-existente.
+- Nenhum `console.log` ou `debugger` em caminho de produção.
+
+Guia aprofundado (workflow de entrega, estimativas, refatoração, revisão) em
+`.claude/skills/engineering-senior-developer/SKILL.md`.
