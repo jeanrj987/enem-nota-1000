@@ -161,6 +161,12 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 029: Aviso (não bloqueio) quando C1 recebe nota reduzida sem erro grounded correspondente
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o usuário reportou uma correção onde a Competência I recebeu 160/200 com o comentário "foram identificados deslizes pontuais de regência e colocação pronominal", mas — diferente das outras competências, que sempre citam o trecho exato — esse comentário não apontava nenhum erro específico ao lado. Investigação confirmou que existia sim um erro real vinculado (trecho "se manifestando a partir do apagamento", um caso de próclise antes de gerúndio, gramaticalmente defensável como desvio da norma culta estrita), então este caso específico não era um bug. Mas a investigação expôs uma lacuna real na validação: `validarCorrecaoIA` já rejeitava a contradição inversa (C1 = 200 com 2+ erros grounded contraditórios, ver checagem original do ADR de schema), mas não existia nenhuma checagem para o caso de uma nota **reduzida** vir sem nenhum erro `grounded` (trecho real encontrado no texto do aluno) vinculado a essa competência.
+- **Decisão**: adicionada em `src/lib/correcao-schema.ts` uma checagem que, quando C1 recebe nota abaixo de 200 e nenhum erro em `erros[]` sobrevive à validação de trecho real para essa competência, adiciona um item a `avisos` (não rejeita a correção). Optado por aviso e não rejeição/retry porque a matriz do ENEM permite deduções holísticas de C1 sem um erro pontual sempre itemizado (ex.: registro de habilidades via `habilidades_c1`, impressão geral de fluência) — uma tentativa inicial de tornar isso uma rejeição dura quebrou 13 dos testes existentes, confirmando que o comportamento "nota reduzida sem erro itemizado" é às vezes legítimo no domínio, não um bug em si. O aviso fica registrado (mesmo canal de `avisos` já usado para trechos alucinados descartados) para permitir auditoria/monitoramento futuro sem impedir a entrega da correção ao aluno.
+- **Testes**: 155 → 157 (2 novos em `correcao-schema.test.ts`: gera aviso quando falta erro grounded, não gera quando existe).
+
 ### ADR 028: Integração com a Kiwify implementada — checkout por link fixo + webhook
 - **Status**: Aprovado, Implementado e **Verificado com pagamento real** em 17 de setembro.
 - **Contexto**: com a Kiwify como gateway definido (ADR 027), os 2 produtos foram criados no painel dela pelo usuário — Plano Mensal (R$97, assinatura recorrente, `https://pay.kiwify.com.br/C2b4RMM`) e Acesso 40 dias (R$147, pagamento único, `https://pay.kiwify.com.br/BE4tQoq`) — e um webhook cadastrado com 5 eventos: compra aprovada, assinatura cancelada, assinatura atrasada, reembolso, chargeback.
@@ -233,6 +239,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.1.0] - 2026-09-17 (aviso de C1 sem erro grounded)
+- **Adicionado**: `validarCorrecaoIA` agora registra um aviso (`avisos[]`, sem rejeitar) quando a Competência I recebe nota abaixo de 200 e nenhum erro em `erros[]` com trecho real do texto do aluno está vinculado a ela — protege contra deduções de nota sem evidência apontável, mantendo a rejeição dura só para a contradição inversa (nota 200 com 2+ erros grounded). Ver ADR 029.
+- **Testes**: 155 → 157.
 
 ### [v3.0.1] - 2026-09-17 (Kiwify verificada com pagamento real)
 - **Corrigido**: `KIWIFY_WEBHOOK_TOKEN` estava com o valor de exemplo da tela de criação do webhook, não o token real da Kiwify — corrigido na Vercel e no `.env.local`.
