@@ -16,24 +16,22 @@ if (!secretKey) {
 
 const stripe = new Stripe(secretKey);
 
+// Modelo de planos atualizado em 14 de setembro (ver src/lib/planos.ts). O
+// projeto está migrando o gateway de pagamento para a Kirvano — este script
+// fica como registro de como os preços foram criados no Stripe em modo de
+// teste, não como o processo ativo de configuração.
 const PLANOS = [
   {
     lookupKey: 'nota1000_mensal',
-    nome: 'Nota 1000 AI — Plano Mensal',
-    valorCentavos: 2990,
+    nome: 'Nota 1000 AI — Plano Mensal (recorrente)',
+    valorCentavos: 9700,
     diasDeAcesso: 30,
   },
   {
-    lookupKey: 'nota1000_anual',
-    nome: 'Nota 1000 AI — Plano Anual (até o ENEM)',
+    lookupKey: 'nota1000_unico',
+    nome: 'Nota 1000 AI — Acesso 40 dias (pagamento único)',
     valorCentavos: 14700,
-    diasDeAcesso: 365,
-  },
-  {
-    lookupKey: 'nota1000_semestral',
-    nome: 'Nota 1000 AI — Plano Semestral',
-    valorCentavos: 8900,
-    diasDeAcesso: 180,
+    diasDeAcesso: 40,
   },
 ];
 

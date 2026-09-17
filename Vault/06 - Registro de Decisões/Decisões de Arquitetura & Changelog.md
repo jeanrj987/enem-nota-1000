@@ -161,6 +161,14 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 026: `/vendas` e `planos.ts` reduzidos a dois planos
+- **Status**: Aprovado e Implementado.
+- **Contexto**: seguindo a decisão de migrar o gateway para a Kirvano (ADR pendente de migração no checklist), o modelo de planos mudou de 3 opções (mensal R$29,90, semestral R$89,00, anual R$147,00) para 2: **R$97 mensal recorrente** e **R$147 pagamento único, 40 dias de acesso**.
+- **Decisão**: `PlanoId` em `src/lib/planos.ts` passou de `'mensal' | 'anual' | 'semestral'` para `'mensal' | 'unico'`, com um novo campo `recorrente: boolean` no tipo `Plano` (documentando a diferença de comportamento, mesmo antes de o checkout saber tratar renovação de verdade). `/vendas` foi de 3 cards para 2, com o mensal marcado como "o mais escolhido" (era o anual antes). `scripts/stripe-setup.ts` atualizado para coerência, embora esteja em vias de ficar obsoleto com a migração de gateway.
+- **Corrigido de passagem**: a resposta do FAQ "posso enviar em arquivo?" ainda dizia que "fotos de redação manuscrita em PDF também são lidas" — falso desde o ADR 025 (OCR removido no mesmo dia). Corrigido para reforçar a exigência de texto real e legível.
+- **O que NÃO mudou ainda**: o botão de cada plano continua chamando `/api/checkout` (Stripe), que trata todo plano como pagamento único (`mode: 'payment'`) — a renovação automática do plano mensal só existirá de fato depois da migração para a Kirvano, que ainda está pendente no checklist junto com cancelamento e reembolso.
+- **Testes**: 149 (sem variação — `checkout-route.test.ts` já testava com `planoId: 'mensal'`, que continua existindo).
+
 ### ADR 025: Remoção do OCR de fotos/scans — só texto real é aceito
 - **Status**: Aprovado e Implementado.
 - **Contexto**: `/api/upload` tinha um caminho de último recurso para PDFs sem texto selecionável: renderizava as páginas como imagem e pedia transcrição literal ao Gemini via visão (`extrairTextoViaOCR`). Na prática isso tentava "ler" fotos ou digitalizações de redação manuscrita — dependente da caligrafia do aluno, sujeito a erro de transcrição silencioso, e gastando uma chamada de LLM cara (visão) por tentativa.
@@ -207,6 +215,11 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v2.12.0] - 2026-09-17 (dois planos: R$97 mensal + R$147/40 dias)
+- **Alterado**: `/vendas` e `src/lib/planos.ts` foram de 3 planos para 2 — R$97,00 assinatura mensal recorrente e R$147,00 pagamento único com 40 dias de acesso. Ver ADR 026.
+- **Corrigido**: FAQ de `/vendas` não promete mais leitura de foto de redação manuscrita (ficou desatualizado depois do ADR 025).
+- **Testes**: 149 (sem variação).
 
 ### [v2.11.0] - 2026-09-17 (fim do OCR de fotos; aviso de texto legível)
 - **Removido**: `/api/upload` não tenta mais transcrever foto/scan de redação manuscrita via visão do Gemini — um PDF sem texto selecionável falha com uma mensagem clara pedindo para colar o texto ou enviar `.txt`/`.docx`. Ver ADR 025.

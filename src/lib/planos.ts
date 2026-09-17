@@ -1,15 +1,20 @@
 /**
- * IDs de preço do Stripe (modo de teste), gerados por scripts/stripe-setup.ts.
- * Ao migrar para produção (modo live), rodar o script de novo com a chave
- * live e atualizar os IDs aqui.
+ * Modelo de planos definido em 14 de setembro: só duas opções, substituindo
+ * as três antigas (mensal/semestral/anual). O gateway está migrando de
+ * Stripe para Kirvano (ver checklist) — os `stripePriceId` abaixo são os
+ * antigos, de teste, e ficam como placeholder só até essa migração terminar;
+ * não refletem mais o preço real do plano `unico` e não têm efeito nenhum
+ * depois que o checkout for reescrito para a Kirvano.
  */
-export type PlanoId = 'mensal' | 'anual' | 'semestral';
+export type PlanoId = 'mensal' | 'unico';
 
 export interface Plano {
   id: PlanoId;
   nome: string;
   stripePriceId: string;
   diasDeAcesso: number;
+  /** Assinatura que renova sozinha (mensal) vs. pagamento único com prazo fixo. */
+  recorrente: boolean;
 }
 
 export const PLANOS: Record<PlanoId, Plano> = {
@@ -18,17 +23,13 @@ export const PLANOS: Record<PlanoId, Plano> = {
     nome: 'Plano Mensal',
     stripePriceId: 'price_1UCLVPHHPGtJuCmcg85Y9iau',
     diasDeAcesso: 30,
+    recorrente: true,
   },
-  anual: {
-    id: 'anual',
-    nome: 'Plano Anual (até o ENEM)',
+  unico: {
+    id: 'unico',
+    nome: 'Acesso 40 dias',
     stripePriceId: 'price_1UCLVPHHPGtJuCmcRF19oFcQ',
-    diasDeAcesso: 365,
-  },
-  semestral: {
-    id: 'semestral',
-    nome: 'Plano Semestral',
-    stripePriceId: 'price_1UCLVQHHPGtJuCmcuA0AnoNP',
-    diasDeAcesso: 180,
+    diasDeAcesso: 40,
+    recorrente: false,
   },
 };

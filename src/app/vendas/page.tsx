@@ -70,7 +70,7 @@ const FAQ = [
   },
   {
     q: 'Posso enviar redações em arquivo ou apenas digitando?',
-    a: 'Você pode escrever diretamente no editor da plataforma ou importar arquivos nos formatos PDF, Word (.docx) ou bloco de notas (.txt). Fotos de redação manuscrita em PDF também são lidas.',
+    a: 'Você pode escrever diretamente no editor da plataforma ou importar arquivos nos formatos PDF, Word (.docx) ou bloco de notas (.txt), desde que tenham texto real e legível — fotos ou digitalizações de redação manuscrita não são aceitas, para garantir a melhor precisão da nota.',
   },
 ];
 
@@ -340,25 +340,32 @@ export default function PaginaDeVendas() {
               </p>
             )}
 
-            <div className="mt-10 grid gap-6 md:grid-cols-3">
-              {/* Mensal */}
-              <div className="flex flex-col justify-between border border-regua bg-papel p-7">
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
+              {/* Mensal recorrente — destaque */}
+              <div className="relative flex flex-col justify-between border-2 border-vermelho bg-papel p-7">
+                <span className="fonte-manuscrita absolute -top-3.5 left-6 bg-papel px-2 text-base text-vermelho">
+                  o mais escolhido
+                </span>
                 <div>
                   <h3 className="fonte-serifada text-lg font-semibold">Mensal</h3>
-                  <p className="mt-1 text-[13px] text-tinta-fraca">Para testar no seu ritmo.</p>
+                  <p className="mt-1 text-[13px] text-tinta-fraca">Renova todo mês, cancele quando quiser.</p>
                   <p className="fonte-serifada mt-5 text-3xl font-semibold tabular-nums">
-                    R$ 29,90
+                    R$ 97,00
                   </p>
-                  <p className="text-[12px] text-tinta-fraca">por mês</p>
+                  <p className="text-[12px] text-tinta-fraca">por mês, assinatura recorrente</p>
 
                   <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Correções ilimitadas no mês
+                      Correções ilimitadas todo mês
                     </li>
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
                       Avaliação pelas cinco competências
+                    </li>
+                    <li className="flex gap-2">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
+                      Versão reescrita nota 1000
                     </li>
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
@@ -370,7 +377,7 @@ export default function PaginaDeVendas() {
                 <button
                   onClick={() => iniciarCheckout('mensal')}
                   disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center border border-tinta px-5 py-3 text-[13px] font-bold text-tinta transition-colors hover:bg-tinta hover:text-folha disabled:opacity-50"
+                  className="mt-7 flex cursor-pointer items-center justify-center bg-vermelho px-5 py-3.5 text-[13px] font-bold text-folha transition-colors hover:bg-vermelho-escuro disabled:opacity-50"
                 >
                   {planoCarregando === 'mensal' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -380,66 +387,20 @@ export default function PaginaDeVendas() {
                 </button>
               </div>
 
-              {/* Anual — destaque */}
-              <div className="relative flex flex-col justify-between border-2 border-vermelho bg-papel p-7">
-                <span className="fonte-manuscrita absolute -top-3.5 left-6 bg-papel px-2 text-base text-vermelho">
-                  o mais escolhido
-                </span>
+              {/* Único — 40 dias */}
+              <div className="flex flex-col justify-between border border-regua bg-papel p-7">
                 <div>
-                  <h3 className="fonte-serifada text-lg font-semibold">Anual</h3>
-                  <p className="mt-1 text-[13px] text-tinta-fraca">Acesso até a prova.</p>
+                  <h3 className="fonte-serifada text-lg font-semibold">Acesso 40 dias</h3>
+                  <p className="mt-1 text-[13px] text-tinta-fraca">Pagamento único, sem renovar sozinho.</p>
                   <p className="fonte-serifada mt-5 text-3xl font-semibold tabular-nums">
                     R$ 147,00
                   </p>
-                  <p className="text-[12px] text-tinta-fraca">ou 12x de R$ 14,90</p>
+                  <p className="text-[12px] text-tinta-fraca">pagamento único, 40 dias de acesso</p>
 
                   <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Tudo do plano mensal
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Versão reescrita nota 1000
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Auditoria completa da C5
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Exportação do relatório em PDF
-                    </li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => iniciarCheckout('anual')}
-                  disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center bg-vermelho px-5 py-3.5 text-[13px] font-bold text-folha transition-colors hover:bg-vermelho-escuro disabled:opacity-50"
-                >
-                  {planoCarregando === 'anual' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Garantir acesso até o ENEM'
-                  )}
-                </button>
-              </div>
-
-              {/* Semestral */}
-              <div className="flex flex-col justify-between border border-regua bg-papel p-7">
-                <div>
-                  <h3 className="fonte-serifada text-lg font-semibold">Semestral</h3>
-                  <p className="mt-1 text-[13px] text-tinta-fraca">Para a reta de preparação.</p>
-                  <p className="fonte-serifada mt-5 text-3xl font-semibold tabular-nums">
-                    R$ 89,00
-                  </p>
-                  <p className="text-[12px] text-tinta-fraca">pagamento único, seis meses</p>
-
-                  <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
-                      Correções ilimitadas por seis meses
+                      Correções ilimitadas por 40 dias
                     </li>
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-vermelho" />
@@ -453,14 +414,14 @@ export default function PaginaDeVendas() {
                 </div>
 
                 <button
-                  onClick={() => iniciarCheckout('semestral')}
+                  onClick={() => iniciarCheckout('unico')}
                   disabled={planoCarregando !== null}
                   className="mt-7 flex cursor-pointer items-center justify-center border border-tinta px-5 py-3 text-[13px] font-bold text-tinta transition-colors hover:bg-tinta hover:text-folha disabled:opacity-50"
                 >
-                  {planoCarregando === 'semestral' ? (
+                  {planoCarregando === 'unico' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    'Assinar semestral'
+                    'Comprar acesso de 40 dias'
                   )}
                 </button>
               </div>
