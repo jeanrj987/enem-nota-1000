@@ -26,9 +26,9 @@ export const PLANOS: Record<PlanoId, Plano> = {
   },
   unico: {
     id: 'unico',
-    nome: 'Acesso 40 dias',
+    nome: 'Acesso 30 dias',
     checkoutUrl: 'https://pay.kiwify.com.br/BE4tQoq',
-    diasDeAcesso: 40,
+    diasDeAcesso: 30,
     recorrente: false,
   },
 };

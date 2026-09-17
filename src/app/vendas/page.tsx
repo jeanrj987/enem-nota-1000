@@ -305,18 +305,18 @@ export default function PaginaDeVendas() {
                 </button>
               </div>
 
-              {/* Único — 40 dias */}
+              {/* Único — 30 dias */}
               <div className="flex flex-col justify-between rounded-2xl border border-regua bg-folha p-7">
                 <div>
-                  <h3 className="text-lg font-bold">Acesso 40 dias</h3>
+                  <h3 className="text-lg font-bold">Acesso 30 dias</h3>
                   <p className="mt-1 text-[13px] text-tinta-fraca">Pagamento único, sem renovar sozinho.</p>
                   <p className="mt-5 text-4xl font-black tracking-tight">R$ 147,00</p>
-                  <p className="text-[12px] text-tinta-fraca">pagamento único, 40 dias de acesso</p>
+                  <p className="text-[12px] text-tinta-fraca">pagamento único, 30 dias de acesso</p>
 
                   <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Correções ilimitadas por 40 dias
+                      Correções ilimitadas por 30 dias
                     </li>
                     <li className="flex gap-2">
                       <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
@@ -334,7 +334,7 @@ export default function PaginaDeVendas() {
                   disabled={planoCarregando !== null}
                   className="mt-7 flex cursor-pointer items-center justify-center rounded-xl border border-regua bg-folha-2 px-5 py-3.5 text-[13px] font-bold text-tinta transition hover:border-azul disabled:opacity-50"
                 >
-                  {planoCarregando === 'unico' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Comprar acesso de 40 dias'}
+                  {planoCarregando === 'unico' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Comprar acesso de 30 dias'}
                 </button>
               </div>
             </div>

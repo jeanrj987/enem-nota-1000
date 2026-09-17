@@ -82,14 +82,14 @@ describe('POST /api/kiwify/webhook — compra aprovada', () => {
     expect(estado.ativou).toEqual({ sessionId: 'kiwify_pedido_1', userId: 'user-1', planoId: 'mensal' });
   });
 
-  it('ativa o plano único quando o produto é identificado pelo nome "40 dias"', async () => {
+  it('ativa o plano único quando o produto é identificado pelo nome "30 dias"', async () => {
     estado.userIdPorEmail = 'user-2';
     const res = await POST(
       requisicao({
         order_id: 'kiwify_pedido_2',
         order_status: 'paid',
         Customer: { email: 'aluno2@exemplo.com' },
-        Product: { product_name: 'Nota 1000 AI — Acesso 40 dias' },
+        Product: { product_name: 'Nota 1000 AI — Acesso 30 dias' },
       })
     );
     expect(res.status).toBe(200);

@@ -57,7 +57,7 @@ function identificarPlano(payload: any): PlanoId | null {
   ).toLowerCase();
 
   if (nomeProduto.includes('mensal')) return 'mensal';
-  if (nomeProduto.includes('40 dias') || nomeProduto.includes('único') || nomeProduto.includes('unico')) {
+  if (nomeProduto.includes('30 dias') || nomeProduto.includes('único') || nomeProduto.includes('unico')) {
     return 'unico';
   }
 

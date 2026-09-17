@@ -240,6 +240,10 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 ## 📋 Changelog do Projeto
 
+### [v3.1.1] - 2026-09-17 (plano único corrigido para 30 dias)
+- **Corrigido**: o plano de pagamento único (`PlanoId: 'unico'`) prometia 40 dias de acesso, mas isso não é possível de configurar na Kiwify — ajustado para **30 dias** em `src/lib/planos.ts` (`diasDeAcesso`, `nome`), no texto de `/vendas`, e no reconhecimento de nome de produto do webhook (`identificarPlano` em `src/app/api/kiwify/webhook/route.ts`). Produto correspondente renomeado no painel da Kiwify pelo usuário para manter consistência.
+- **Testes**: 155 (sem variação de quantidade — só o texto esperado em `kiwify-webhook-route.test.ts` foi atualizado de "40 dias" para "30 dias").
+
 ### [v3.1.0] - 2026-09-17 (aviso de C1 sem erro grounded)
 - **Adicionado**: `validarCorrecaoIA` agora registra um aviso (`avisos[]`, sem rejeitar) quando a Competência I recebe nota abaixo de 200 e nenhum erro em `erros[]` com trecho real do texto do aluno está vinculado a ela — protege contra deduções de nota sem evidência apontável, mantendo a rejeição dura só para a contradição inversa (nota 200 com 2+ erros grounded). Ver ADR 029.
 - **Testes**: 155 → 157.
