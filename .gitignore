@@ -44,3 +44,6 @@ next-env.d.ts
 # fonte para o conjunto de calibração em src/lib/calibracao/fixtures.ts —
 # não deve ir para o repositório
 /Redacao
+
+# obsidian (estado local da interface, não é conteúdo de documentação)
+Vault/.obsidian/workspace.json
