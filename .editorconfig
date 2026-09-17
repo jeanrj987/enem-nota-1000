@@ -1,0 +1,19 @@
+; Padrao de formatacao do projeto, lido nativamente pelo VS Code, WebStorm e
+; a maioria dos editores. Mantem a indentacao que o codigo ja usa hoje
+; (2 espacos, zero tabs) em vez de introduzir um padrao novo.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+# Markdown usa dois espacos no fim da linha como quebra de linha explicita.
+trim_trailing_whitespace = false
+
+[*.{sql,json}]
+indent_size = 2

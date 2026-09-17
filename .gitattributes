@@ -1,0 +1,16 @@
+# Normaliza quebras de linha: o repositorio guarda LF, o checkout usa o padrao
+# da plataforma. Sem isso, abrir o Vault no Obsidian (ou salvar um arquivo em
+# qualquer editor no Windows) marcava arquivos como modificados sem ter havido
+# nenhuma alteracao de conteudo.
+* text=auto eol=lf
+
+# Binarios: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.woff binary
+*.woff2 binary
