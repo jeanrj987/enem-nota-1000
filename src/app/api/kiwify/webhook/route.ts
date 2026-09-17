@@ -92,7 +92,15 @@ export async function POST(req: NextRequest) {
   const assinaturaRecebida = new URL(req.url).searchParams.get('signature');
 
   if (!assinaturaValida(payloadBruto, assinaturaRecebida)) {
-    console.error('Assinatura do webhook da Kiwify inválida ou ausente.');
+    // Diagnóstico temporário: ainda não confirmamos onde/como a Kiwify manda
+    // a assinatura de verdade. Loga tudo que a chamada trouxe para
+    // descobrir pelo log real, em vez de adivinhar de novo.
+    console.error('kiwify_webhook_assinatura_invalida', {
+      url_completa: req.url,
+      assinatura_recebida_na_query: assinaturaRecebida,
+      todos_os_headers: Object.fromEntries(req.headers.entries()),
+      payload_bruto: payloadBruto,
+    });
     return NextResponse.json({ error: 'Assinatura inválida.' }, { status: 400 });
   }
 
