@@ -7,24 +7,20 @@ import { buscarUserIdPorEmail } from '@/lib/perfil';
 const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
 
 /**
- * ATENÇÃO — mapeamento de payload não confirmado contra um envio real.
+ * Formato do payload confirmado contra a Kiwify real em 17/09 (ADR 028): o
+ * "Testar Webhook" do painel (evento "Compra aprovada") bateu exatamente com
+ * `order_status`/`Product.product_name`/`Customer.email`/
+ * `Commissions.charge_amount`, e uma compra real de valor mínimo confirmou o
+ * fluxo de ponta a ponta (webhook recebido, conta resolvida, acesso
+ * liberado). Único ponto ainda sem confirmação contra um envio real: os
+ * eventos de cancelamento/atraso de assinatura, que o "Testar Webhook" da
+ * Kiwify não simula — o mapeamento de `ehCancelamento`/`ehAtraso` em
+ * `normalizarStatus` continua sendo a melhor suposição.
  *
- * Este arquivo foi escrito a partir do padrão mais comum de integração com
- * a Kiwify (assinatura HMAC-SHA1 na query string `?signature=`, payload com
- * `order_status`/`Customer`/`Product` em algum formato aproximado disso),
- * mas NINGUÉM confirmou o formato exato contra um envio de teste real da
- * conta do usuário. Antes de confiar nisso em produção: disparar "Testar
- * Webhook" no painel da Kiwify (ou uma compra de teste) e conferir os logs
- * de erro desta rota (`kiwify_webhook_assinatura_invalida` e afins) — eles
- * já trazem o payload bruto quando algo falha, sem precisar logar todo
- * envio bem-sucedido.
- */
-
-/**
- * Formato não confirmado contra um envio real (ver aviso acima) — por isso
- * todos os campos são opcionais e em variações de grafia (`Customer` vs
- * `customer`): é a mesma incerteza de `extrairEmail`/`identificarPlano`
- * refletida no tipo, em vez de escondida atrás de `any`.
+ * Os campos abaixo continuam todos opcionais e em variações de grafia
+ * (`Customer` vs `customer`) porque a Kiwify documenta o payload de forma
+ * inconsistente entre os próprios eventos — mais seguro aceitar as
+ * variantes conhecidas do que assumir uma grafia fixa.
  */
 interface PayloadWebhookKiwify {
   Customer?: { email?: string };
