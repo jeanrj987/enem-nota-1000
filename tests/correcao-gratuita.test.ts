@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { NextRequest } from 'next/server';
 import type { Correcao } from '@/types';
 
 const estado = {
@@ -86,7 +87,7 @@ function requisicao(texto: string) {
       'x-forwarded-for': `30.0.${Math.floor(contadorIp / 250)}.${contadorIp % 250}`,
       authorization: 'Bearer token-valido',
     },
-  }) as any;
+  }) as unknown as NextRequest;
 }
 
 const TEXTO = 'Uma redação de teste com tamanho suficiente para passar na validação de entrada.';

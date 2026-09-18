@@ -133,8 +133,9 @@ function AuthPageConteudo() {
         type: 'success',
         text: 'Conta criada! Confirme o cadastro pelo link enviado ao seu e-mail e depois entre por aqui.',
       });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Não foi possível concluir a operação.' });
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : 'Não foi possível concluir a operação.';
+      setMessage({ type: 'error', text: mensagem });
     } finally {
       setLoading(false);
     }
@@ -151,8 +152,9 @@ function AuthPageConteudo() {
       const { error } = await entrarComGoogle();
       if (error) throw error;
       // navegador é redirecionado para o Google — não há mais o que fazer aqui
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Não foi possível iniciar o login com Google.' });
+    } catch (err) {
+      const mensagem = err instanceof Error ? err.message : 'Não foi possível iniciar o login com Google.';
+      setMessage({ type: 'error', text: mensagem });
       setLoadingGoogle(false);
     }
   };

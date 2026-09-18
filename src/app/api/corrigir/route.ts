@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       redacaoId,
       ...(assinante ? { correcao } : { chamariz }),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro na rota /api/corrigir:', error);
     return NextResponse.json(
       {

@@ -107,8 +107,8 @@ export function Editor({
 
       setTexto(data.text);
       setUploadedFileName(file.name);
-    } catch (err: any) {
-      setUploadError(err.message || 'Erro ao enviar arquivo.');
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Erro ao enviar arquivo.');
     } finally {
       setIsUploading(false);
     }
@@ -161,10 +161,10 @@ export function Editor({
       // cliente não grava nada e, sem assinatura, sequer recebe o diagnóstico.
       clearInterval(interval);
       router.push(`/correcao/${data.redacaoId}`);
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(interval);
       setIsCorrigindo(false);
-      setErrorMessage(err.message || 'Falha ao processar a correção.');
+      setErrorMessage(err instanceof Error ? err.message : 'Falha ao processar a correção.');
     }
   };
 

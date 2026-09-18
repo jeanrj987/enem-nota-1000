@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { NextRequest } from 'next/server';
 
 vi.mock('@/lib/supabase-admin', () => ({
   supabaseAdmin: {
@@ -33,7 +34,7 @@ function requestComArquivo(
     method: 'POST',
     body: formData,
     headers,
-  }) as any;
+  }) as unknown as NextRequest;
 }
 
 function arquivoTxt(texto: string) {

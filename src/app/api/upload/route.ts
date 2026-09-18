@@ -125,11 +125,9 @@ export async function POST(req: NextRequest) {
       fileSize: file.size,
       text: extractedText,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro na extração de texto do arquivo:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Erro ao processar arquivo.' },
-      { status: 500 }
-    );
+    const mensagem = error instanceof Error ? error.message : 'Erro ao processar arquivo.';
+    return NextResponse.json({ error: mensagem }, { status: 500 });
   }
 }

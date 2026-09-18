@@ -6,7 +6,7 @@ describe('regressão — casos reais analisados manualmente', () => {
   for (const caso of CASOS_REGRESSAO) {
     it(`${caso.id} — continua passando pelas regras do validador`, () => {
       const r = validarCorrecaoIA(caso.respostaModelo, caso.texto);
-      expect(r.success, r.success ? '' : (r as any).error).toBe(true);
+      expect(r.success, r.success ? '' : r.error).toBe(true);
     });
   }
 

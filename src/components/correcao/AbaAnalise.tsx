@@ -71,10 +71,10 @@ export function AbaAnalise({ correcao, textoOriginal, selectedErrorId, onSelectE
                 </button>
               </div>
               <div className="text-xs text-tinta">
-                <strong>Trecho original:</strong> <span className="line-through text-vermelho">"{selectedError.trecho}"</span>
+                <strong>Trecho original:</strong> <span className="line-through text-vermelho">&quot;{selectedError.trecho}&quot;</span>
               </div>
               <div className="text-xs text-verde">
-                <strong>Sugestão:</strong> "{selectedError.correcao}"
+                <strong>Sugestão:</strong> &quot;{selectedError.correcao}&quot;
               </div>
               <p className="text-xs text-tinta-suave leading-relaxed pt-1">
                 {selectedError.explicacao}

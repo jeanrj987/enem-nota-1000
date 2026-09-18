@@ -18,11 +18,13 @@ const AuthContext = createContext<AuthContextValue>({ usuario: null, carregando:
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<User | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  // Sem Supabase configurado não há sessão a esperar — nasce já resolvido,
+  // em vez de setar `false` de dentro do efeito (dispara um render em
+  // cascata evitável logo na montagem).
+  const [carregando, setCarregando] = useState(() => isSupabaseConfigured);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
-      setCarregando(false);
       return;
     }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -20,7 +20,6 @@ import { Redacao } from '@/types';
 
 export default function PaginaResultadoCorrecao() {
   const params = useParams();
-  const router = useRouter();
   const id = params?.id as string;
 
   const [redacao, setRedacao] = useState<Redacao | null>(null);

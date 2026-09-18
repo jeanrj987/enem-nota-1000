@@ -4,10 +4,10 @@ import type { Redacao } from '@/types';
 const mockState: {
   isSupabaseConfigured: boolean;
   usuario: { id: string } | null;
-  selectResult: { data: any; error: any };
-  maybeSingleResult: { data: any; error: any };
-  correcoesResult: { data: any; error: any };
-  correcaoUnicaResult: { data: any; error: any };
+  selectResult: { data: unknown; error: unknown };
+  maybeSingleResult: { data: unknown; error: unknown };
+  correcoesResult: { data: unknown; error: unknown };
+  correcaoUnicaResult: { data: unknown; error: unknown };
 } = {
   isSupabaseConfigured: true,
   usuario: { id: 'user-teste' },
@@ -32,11 +32,11 @@ vi.mock('@/lib/supabase', () => ({
           eq: (_field: string, _value: string) => ({
             // `correcoes` responde conforme a RLS: quando não há assinatura
             // ativa, o banco simplesmente não devolve linha.
-            order: async (_f: string, _o: any) =>
+            order: async (_f: string, _o: { ascending?: boolean }) =>
               tabela === 'correcoes' ? mockState.correcoesResult : mockState.selectResult,
             maybeSingle: async () =>
               tabela === 'correcoes' ? mockState.correcaoUnicaResult : mockState.maybeSingleResult,
-            then: (resolve: any) =>
+            then: (resolve: (value: unknown) => unknown) =>
               resolve(tabela === 'correcoes' ? mockState.correcoesResult : mockState.selectResult),
           }),
         }),

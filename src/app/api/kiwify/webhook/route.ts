@@ -20,6 +20,32 @@ const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
  * envio bem-sucedido.
  */
 
+/**
+ * Formato não confirmado contra um envio real (ver aviso acima) — por isso
+ * todos os campos são opcionais e em variações de grafia (`Customer` vs
+ * `customer`): é a mesma incerteza de `extrairEmail`/`identificarPlano`
+ * refletida no tipo, em vez de escondida atrás de `any`.
+ */
+interface PayloadWebhookKiwify {
+  Customer?: { email?: string };
+  customer?: { email?: string };
+  Buyer?: { email?: string };
+  buyer?: { email?: string };
+  email?: string;
+  Product?: { product_name?: string; name?: string };
+  product?: { product_name?: string };
+  product_name?: string;
+  Commissions?: { charge_amount?: number };
+  charge_amount?: number;
+  amount?: number;
+  price?: number;
+  order_status?: string;
+  webhook_event_type?: string;
+  status?: string;
+  order_id?: string;
+  id?: string;
+}
+
 function assinaturaValida(payloadBruto: string, assinaturaRecebida: string | null): boolean {
   if (!webhookToken) return false;
   if (!assinaturaRecebida) return false;
@@ -30,7 +56,7 @@ function assinaturaValida(payloadBruto: string, assinaturaRecebida: string | nul
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-function extrairEmail(payload: any): string | null {
+function extrairEmail(payload: PayloadWebhookKiwify): string | null {
   return (
     payload?.Customer?.email ||
     payload?.customer?.email ||
@@ -47,7 +73,7 @@ function extrairEmail(payload: any): string | null {
  * não sabemos ainda o formato exato do identificador de produto que a
  * Kiwify manda no payload.
  */
-function identificarPlano(payload: any): PlanoId | null {
+function identificarPlano(payload: PayloadWebhookKiwify): PlanoId | null {
   const nomeProduto: string = (
     payload?.Product?.product_name ||
     payload?.product?.product_name ||
@@ -77,7 +103,7 @@ function identificarPlano(payload: any): PlanoId | null {
   return null;
 }
 
-function normalizarStatus(payload: any): string {
+function normalizarStatus(payload: PayloadWebhookKiwify): string {
   return String(
     payload?.order_status || payload?.webhook_event_type || payload?.status || ''
   ).toLowerCase();
@@ -104,7 +130,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Assinatura inválida.' }, { status: 400 });
   }
 
-  let payload: any;
+  let payload: PayloadWebhookKiwify;
   try {
     payload = JSON.parse(payloadBruto);
   } catch {
