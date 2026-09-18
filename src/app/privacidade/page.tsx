@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { CONTROLADOR, SUBPROCESSADORES, VERSAO_DOCUMENTOS_LEGAIS } from '@/lib/controlador';
+import {
+  CONTROLADOR,
+  SUBPROCESSADORES,
+  VERSAO_DOCUMENTOS_LEGAIS,
+  dadosDoControladorCompletos,
+  identificacaoDoControlador,
+} from '@/lib/controlador';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade | Nota 1000',
@@ -33,23 +39,44 @@ export default function PoliticaDePrivacidade() {
           produto, não só por advogado.
         </p>
 
+        {/* O aviso que `controlador.ts` prometia desde sempre e que nunca
+            chegou a ser renderizado: a função existia e ninguém a chamava,
+            então a política entrou em produção dizendo "a ser publicado" sem
+            nada sinalizar que aquilo era pendência, e não texto final. */}
+        {!dadosDoControladorCompletos() && (
+          <div className="mt-6 rounded-xl border border-ambar/30 bg-ambar-claro p-4 text-sm text-ambar">
+            <strong>Documento incompleto.</strong> A identificação de quem responde pelos dados
+            ainda não foi publicada. Se você precisa exercer algum direito sobre os seus dados
+            agora, escreva para o contato do suporte no rodapé do site.
+          </div>
+        )}
+
         <Secao titulo="Quem é responsável pelos seus dados">
           <p>
-            {CONTROLADOR.razaoSocial
-              ? `${CONTROLADOR.razaoSocial}, inscrita no CNPJ ${CONTROLADOR.cnpj}, com sede em ${CONTROLADOR.endereco}.`
-              : 'A empresa responsável pelo Nota 1000 (identificação completa a ser publicada).'}
+            {identificacaoDoControlador() ??
+              'O responsável pelo Nota 1000 (identificação completa a ser publicada).'}
           </p>
           <p>
-            Encarregado pelo tratamento de dados pessoais (DPO), conforme o Art. 41 da LGPD:{' '}
             {CONTROLADOR.encarregadoNome ? (
               <>
+                Encarregado pelo tratamento de dados pessoais (DPO), conforme o Art. 41 da LGPD:{' '}
                 {CONTROLADOR.encarregadoNome} —{' '}
                 <a className="text-vermelho underline" href={`mailto:${CONTROLADOR.encarregadoEmail}`}>
                   {CONTROLADOR.encarregadoEmail}
                 </a>
               </>
+            ) : CONTROLADOR.emailContato ? (
+              // Operação de pequeno porte não precisa nomear encarregado
+              // (Resolução CD/ANPD nº 2/2022), mas precisa oferecer um canal
+              // para o titular exercer os direitos dele. É este.
+              <>
+                Para exercer qualquer direito sobre os seus dados, fale direto com o responsável:{' '}
+                <a className="text-vermelho underline" href={`mailto:${CONTROLADOR.emailContato}`}>
+                  {CONTROLADOR.emailContato}
+                </a>
+              </>
             ) : (
-              'a ser publicado.'
+              'Canal para exercício de direitos: a ser publicado.'
             )}
           </p>
         </Secao>
@@ -112,8 +139,22 @@ export default function PoliticaDePrivacidade() {
               </tbody>
             </table>
           </div>
+          {/* Esta frase dizia "não os entregamos a anunciantes" — o que
+              deixou de ser verdade no ADR 042, quando Meta e Google entraram
+              para medir anúncio. A tabela logo acima já os declarava, então o
+              documento se contradizia a duas linhas de distância. Corrigido
+              para descrever o que de fato acontece. */}
           <p>
-            Não vendemos seus dados e não os entregamos a anunciantes.
+            <strong className="text-tinta">Não vendemos seus dados.</strong> Compartilhamos com
+            Meta e Google apenas o necessário para medir anúncio: identificadores de navegador
+            (cookies), seu endereço IP e, quando você compra, o seu e-mail criptografado — nunca o
+            texto das suas redações, nunca a sua nota. Esse compartilhamento serve para sabermos
+            quais anúncios trazem alunos de verdade, e é o que nos permite continuar anunciando.
+          </p>
+          <p>
+            Se você não quiser ser medido dessa forma, um bloqueador de anúncios ou a opção
+            &quot;Do Not Track&quot; do seu navegador impedem o carregamento desses scripts — e o
+            produto continua funcionando igual para você.
           </p>
         </Secao>
 
