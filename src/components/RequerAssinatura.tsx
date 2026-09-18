@@ -13,9 +13,10 @@ import { decidirGateAssinatura } from '@/lib/gates';
  * Bloqueia o conteúdo interno até confirmar login + cadastro completo +
  * assinatura ativa do usuário autenticado — sem sessão, redireciona para
  * /auth; logado com perfil incompleto, para /completar-perfil; sem
- * assinatura, para /vendas. Usado nas páginas que exigem pagamento
- * (dashboard, histórico). Nova redação e visualização de correção usam
- * `RequerLogin` — não exigem assinatura, só bloqueiam (blur) o resultado.
+ * assinatura, para a home (`/`), que é a página de vendas. Usado nas
+ * páginas que exigem pagamento (dashboard, histórico). Nova redação e
+ * visualização de correção usam `RequerLogin` — não exigem assinatura, só
+ * bloqueiam (blur) o resultado.
  */
 export function RequerAssinatura({ children }: { children: React.ReactNode }) {
   const router = useRouter();

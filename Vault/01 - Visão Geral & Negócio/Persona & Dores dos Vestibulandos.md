@@ -87,6 +87,6 @@ graph LR
 ---
 
 ## 🔗 Links Relacionados
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Copywriting e Gatilhos da Página de Vendas /vendas]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Copywriting e Gatilhos da Landing de Vendas (`/`)]]
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz de Avaliação do INEP]]
 - [[02 - Metodologia ENEM/Competências Detalhadas C1 a C5|Como a C5 e C1 são Avaliadas]]

@@ -25,7 +25,7 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ### 🎯 01. Visão Geral, Persona & Negócio
 - [[01 - Visão Geral & Negócio/Visão do Produto|Visão Geral do Produto & Proposta de Valor]]
 - [[01 - Visão Geral & Negócio/Persona & Dores dos Vestibulandos|Persona, Dores Críticas & Psicologia do Vestibulando]]
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia de Vendas, Copywriting da Rota /vendas, Planos & Bônus]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia de Vendas, Copywriting da Home (`/`), Planos & Bônus]]
 
 ### ✍️ 02. Metodologia de Correção Oficial (INEP / ENEM)
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz Oficial do INEP — As 5 Competências & Faixas de Nota]]
@@ -49,8 +49,8 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 
 | Rota | Descrição | Nota Relacionada |
 | :--- | :--- | :--- |
-| `/` | Landing Page Institucional | [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas]] |
-| `/vendas` | Página de Vendas de Alta Conversão | [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting]] |
+| `/` | Landing única do produto — é a página de vendas (ADR 030) | [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting]] |
+| `/vendas` | Redirect permanente (308) para `/` — rota antiga, mantida por causa de links já divulgados | [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas]] |
 | `/nova-redacao` | Editor Inteligente de Redação & Upload | [[04 - Arquitetura Técnica/Componentes & Design System]] |
 | `/correcao/[id]` | Diagnóstico Linha a Linha & Versão 1000 | [[04 - Arquitetura Técnica/Componentes & Design System]] |
 | `/dashboard` | Painel do Aluno & Gestão de Redações | [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas]] |

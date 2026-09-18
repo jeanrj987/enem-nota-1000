@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
+updated: 2026-09-17 (landing única: a página de vendas virou a home)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -161,6 +161,16 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 030: Landing única — a página de vendas virou a home e `/` deixou de ter uma landing institucional concorrente
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o usuário relatou que o site "muda por completo" depois de criar uma conta. Não era bug de deploy nem de cache: existiam **duas portas de entrada com identidades visuais diferentes**. `/` renderizava uma `LandingPage` institucional (headline "Alcance a Nota 1000 na Redação do ENEM", `Navbar` + `Footer` do app, menu Início/Dashboard/Nova Redação/Histórico) e `/vendas` renderizava a página de vendas com shell próprio (header "NOTA 1000" com âncoras, footer próprio, headline "Descubra exatamente por que sua redação não está chegando aos 900+"). Quem criava conta e clicava em qualquer CTA da home caía no gate de assinatura (`RequerAssinatura`, ADR 023) e era despejado em `/vendas` — atravessando o funil inteiro de uma identidade para a outra sem nunca voltar à primeira.
+- **Decisão**: manter **uma landing só, a que vende**. O conteúdo de `/vendas` passou a ser `src/app/page.tsx` (componente `PaginaInicial`); a `LandingPage` institucional foi descartada. `decidirGateAssinatura` agora redireciona para `/` em vez de `/vendas`.
+- **`/vendas` continua existindo, como redirect 308**: a rota virou um Server Component de uma linha (`permanentRedirect('/')`). O link já foi divulgado e pode estar em anúncio, bio e mensagem antiga — 308 preserva o método e informa ao buscador que o endereço canônico é a raiz. Verificado com `next start`: `GET /vendas` → `308` com `location: /`.
+- **Por que não o contrário (manter `Navbar`/`Footer` na página de vendas)**: o menu do app só oferece destinos que exigem assinatura — visitante deslogado que clicasse em "Dashboard" seria devolvido para a própria landing. Um shell próprio, sem navegação para dentro do produto, é o que faz sentido para quem ainda não comprou.
+- **Porta de volta para quem já tem conta**: como a home agora também é o destino do item "Início" do `Navbar` (visível na área logada), o header da landing ganhou um link único que alterna entre **"Entrar"** (`urlDeLogin('/')`) e **"Minha conta"** (`DESTINO_PADRAO`, `/nova-redacao`) conforme `useAuth`. Sem ele, quem já é assinante entraria na página de vendas e ficaria sem saída.
+- **CTAs de paywall apontam para `/#planos`**: os links "Ver planos" (`CorrecaoBloqueada.tsx`) e "Planos e preços" (`Footer.tsx`) vão direto à seção de preços, porque quem clica ali já viu a proposta de valor. O gate automático continua indo para `/` puro — quem é rebatido para lá nunca viu a oferta, e pular a página inteira para cair em cima do preço converte pior.
+- **Testes**: 155 (sem variação — `gates.test.ts` teve o destino esperado atualizado de `/vendas` para `/`).
+
 ### ADR 029: Aviso (não bloqueio) quando C1 recebe nota reduzida sem erro grounded correspondente
 - **Status**: Aprovado e Implementado.
 - **Contexto**: o usuário reportou uma correção onde a Competência I recebeu 160/200 com o comentário "foram identificados deslizes pontuais de regência e colocação pronominal", mas — diferente das outras competências, que sempre citam o trecho exato — esse comentário não apontava nenhum erro específico ao lado. Investigação confirmou que existia sim um erro real vinculado (trecho "se manifestando a partir do apagamento", um caso de próclise antes de gerúndio, gramaticalmente defensável como desvio da norma culta estrita), então este caso específico não era um bug. Mas a investigação expôs uma lacuna real na validação: `validarCorrecaoIA` já rejeitava a contradição inversa (C1 = 200 com 2+ erros grounded contraditórios, ver checagem original do ADR de schema), mas não existia nenhuma checagem para o caso de uma nota **reduzida** vir sem nenhum erro `grounded` (trecho real encontrado no texto do aluno) vinculado a essa competência.
@@ -239,6 +249,12 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.2.0] - 2026-09-17 (landing única: a página de vendas virou a home)
+- **Alterado**: `/` deixou de ser uma landing institucional própria e passou a ser a página de vendas — acabou a troca de identidade visual no meio do funil, que aparecia para todo usuário recém-cadastrado. Ver ADR 030.
+- **Alterado**: `/vendas` virou redirect permanente (308) para `/`, para não quebrar links já divulgados; `decidirGateAssinatura` redireciona para `/`; "Ver planos" e "Planos e preços" apontam para `/#planos`.
+- **Adicionado**: link "Entrar"/"Minha conta" no header da landing, para quem já tem conta não ficar sem porta de volta ao app.
+- **Testes**: 155 (sem variação — só o destino esperado em `gates.test.ts`).
 
 ### [v3.1.1] - 2026-09-17 (plano único corrigido para 30 dias)
 - **Corrigido**: o plano de pagamento único (`PlanoId: 'unico'`) prometia 40 dias de acesso, mas isso não é possível de configurar na Kiwify — ajustado para **30 dias** em `src/lib/planos.ts` (`diasDeAcesso`, `nome`), no texto de `/vendas`, e no reconhecimento de nome de produto do webhook (`identificarPlano` em `src/app/api/kiwify/webhook/route.ts`). Produto correspondente renomeado no painel da Kiwify pelo usuário para manter consistência.

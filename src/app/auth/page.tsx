@@ -28,7 +28,7 @@ function AuthPageConteudo() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // De onde a pessoa veio. Quem chega pela navbar não traz nada e cai no
-  // padrão; quem clicou em "Assinar" na /vendas volta para lá depois de
+  // padrão; quem clicou em "Assinar" na home volta para lá depois de
   // entrar, em vez de ser despejado no editor e perder a compra.
   const destino = destinoSeguro(searchParams.get('redirect'));
   const { usuario, carregando } = useAuth();

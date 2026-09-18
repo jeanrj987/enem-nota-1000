@@ -60,9 +60,9 @@ describe('decidirGateAssinatura (RequerAssinatura — exige login + cadastro + a
     });
   });
 
-  it('perfil completo mas sem assinatura ativa, manda para /vendas', () => {
+  it('perfil completo mas sem assinatura ativa, manda para a home de vendas', () => {
     const r = decidirGateAssinatura(true, perfilCompleto, false, '/dashboard');
-    expect(r).toEqual({ tipo: 'redirecionar', url: '/vendas' });
+    expect(r).toEqual({ tipo: 'redirecionar', url: '/' });
   });
 
   it('perfil completo e assinatura ativa, libera', () => {

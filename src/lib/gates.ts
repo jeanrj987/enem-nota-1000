@@ -53,7 +53,11 @@ export function decidirGateAssinatura(
     };
   }
   if (!assinaturaAtiva) {
-    return { tipo: 'redirecionar', url: '/vendas' };
+    // A home é a página de vendas desde 17/09 (antes era `/vendas`, hoje só
+    // um redirect). Mandar para `/#planos` em vez de `/` pouparia um scroll,
+    // mas quem chega aqui nunca viu a oferta — pular a página inteira e
+    // despejar a pessoa em cima do preço é o que converte pior.
+    return { tipo: 'redirecionar', url: '/' };
   }
   return { tipo: 'liberado' };
 }

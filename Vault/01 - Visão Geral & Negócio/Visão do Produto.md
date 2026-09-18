@@ -59,6 +59,6 @@ Para cada redação enviada, o modelo gera uma versão reescrita nota 1000 mante
 
 ## 🔗 Links Relacionados
 - [[01 - Visão Geral & Negócio/Persona & Dores dos Vestibulandos|Dores Profundas da Persona & Análise do SISU]]
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia da Página de Vendas /vendas]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia da Landing de Vendas (`/`)]]
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz de Correção Oficial do INEP]]
 - [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|Engenharia de Prompt e Modelos de IA]]

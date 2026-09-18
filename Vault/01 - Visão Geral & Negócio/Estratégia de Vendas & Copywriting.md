@@ -1,21 +1,24 @@
 ---
-title: Estratégia de Vendas, Copywriting Sóbrio & Rota /vendas
+title: Estratégia de Vendas, Copywriting Sóbrio & Landing (`/`)
 tags:
   - vendas
   - copywriting
   - marketing
   - landing-page
   - oferta
-updated: 2026-09-05 (checkout real integrado)
+updated: 2026-09-17 (a página de vendas virou a home)
 ---
 
-# 📑 Estrutura de Copywriting & Página de Vendas (`/vendas`)
+# 📑 Estrutura de Copywriting & Landing de Vendas (`/`)
 
 > [!tip] **Diretriz de Comunicação**
-> A página de vendas `/vendas` adota um tom sóbrio, humano, transparente e focado em clareza, eliminando clichês de infoproduto e mantendo foco no benefício real para o vestibulando.
+> A landing de vendas — que desde o ADR 030 é a própria home, `/` — adota um tom sóbrio, humano, transparente e focado em clareza, eliminando clichês de infoproduto e mantendo foco no benefício real para o vestibulando.
 
 > [!warning] **Não é mais independente do produto — acesso é bloqueado até pagar**
 > Até 2026-09-05, os botões de `/vendas` levavam direto para `/nova-redacao` sem nenhuma verificação, tornando a página apenas decorativa. Isso foi corrigido: os 3 planos agora criam uma sessão real do Stripe Checkout, e `/nova-redacao`, `/dashboard`, `/historico` e `/correcao/[id]` verificam assinatura ativa antes de renderizar (componente `RequerAssinatura`), redirecionando para `/vendas` quando não há pagamento confirmado. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 010]] e [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|Supabase, Storage & Env]].
+
+> [!info] **A landing virou a home em 2026-09-17**
+> A rota `/vendas` deixou de ter conteúdo próprio: virou um redirect 308 para `/`, que agora é esta página. Havia duas landings concorrentes, com identidades visuais diferentes, e o usuário recém-cadastrado saltava de uma para a outra dentro do funil. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 030]].
 
 ---
 
@@ -88,5 +91,5 @@ graph TD
 ---
 
 ## 🔗 Links Relacionados
-- [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|Rota /vendas no Next.js]]
+- [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|A landing `/` no Next.js]]
 - [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz de Avaliação do INEP]]

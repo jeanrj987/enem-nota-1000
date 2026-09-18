@@ -16,7 +16,7 @@ import { resgatarDestino } from '@/lib/redirecionamento';
  * Google — a query string não sobrevive à ida e volta pelo provedor. Sem
  * destino guardado cai em /nova-redacao (livre para qualquer usuário logado)
  * e não em /dashboard: o dashboard exige assinatura, então quem acabou de
- * criar conta seria rebatido direto para /vendas sem nunca ver que pode
+ * criar conta seria rebatido direto para a página de vendas sem nunca ver que pode
  * escrever uma redação de graça.
  */
 export default function AuthCallbackPage() {

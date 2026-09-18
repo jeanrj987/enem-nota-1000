@@ -161,6 +161,6 @@ Ambas retornam `429` com header `Retry-After` quando o limite é excedido; `/api
 ## 🔗 Links Relacionados
 - [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript e Endpoints]]
 - [[03 - Inteligência Artificial/Arquitetura de IA & Prompts|Uso das Chaves de IA no Backend]]
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Fluxo de Checkout em /vendas]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Fluxo de Checkout na landing (`/`)]]
 - [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 008, 009, 010]]
 - [[00 - Índice Principal|Retornar ao Índice Principal]]

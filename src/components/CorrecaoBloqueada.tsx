@@ -88,7 +88,7 @@ export function CorrecaoBloqueada({
             </p>
           </div>
           <Link
-            href="/vendas"
+            href="/#planos"
             className="inline-flex items-center gap-2 rounded-xl bg-azul px-7 py-3 text-sm font-bold text-folha shadow-lg shadow-tinta/10 transition-colors hover:bg-azul"
           >
             Ver planos

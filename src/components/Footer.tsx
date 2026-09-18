@@ -62,7 +62,7 @@ export function Footer() {
                     nunca existiu — publicidade enganosa pelo CDC. Se um dia
                     houver promoção real, o número volta com o preço de origem
                     ao lado. */}
-                <Link href="/vendas" className="text-ambar font-bold hover:text-ambar transition-colors flex items-center gap-1">
+                <Link href="/#planos" className="text-ambar font-bold hover:text-ambar transition-colors flex items-center gap-1">
                   Planos e preços <ArrowUpRight className="w-3 h-3 text-ambar" />
                 </Link>
               </li>

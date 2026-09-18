@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obrigatório)
+updated: 2026-09-17 (landing única: a página de vendas virou a home)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -43,9 +43,9 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 src/app/
 ├── layout.tsx                # Root Layout (Dark Mode, Fontes Outfit & Inter)
 ├── globals.css               # Variáveis CSS, Glassmorphism, Highlights de Erro
-├── page.tsx                  # Rota "/" (Landing Page Institucional)
+├── page.tsx                  # Rota "/" (landing única = página de vendas, ADR 030)
 ├── vendas/
-│   └── page.tsx              # Rota "/vendas" (Página de Vendas de Alta Conversão)
+│   └── page.tsx              # Rota "/vendas" — só um permanentRedirect("/") 308, mantido por links já divulgados
 ├── nova-redacao/
 │   └── page.tsx              # Rota "/nova-redacao" (Editor Tiptap / Upload) — atrás de RequerLogin (login + perfil completo, SEM exigir assinatura)
 ├── correcao/[id]/
@@ -67,24 +67,22 @@ src/app/
     │   └── route.ts          # Endpoint POST /api/corrigir
     ├── upload/
     │   └── route.ts          # Endpoint POST /api/upload
-    ├── checkout/
-    │   ├── route.ts          # Endpoint POST /api/checkout (cria Stripe Checkout Session)
-    │   └── verificar/
-    │       └── route.ts      # Endpoint POST /api/checkout/verificar (confirma pagamento pelo session_id)
-    └── stripe/webhook/
-        └── route.ts          # Endpoint POST /api/stripe/webhook (ativa assinatura no Supabase)
+    └── kiwify/webhook/
+        └── route.ts          # Endpoint POST /api/kiwify/webhook (ativa/revoga assinatura no Supabase — ADR 028; as rotas do Stripe foram apagadas)
 ```
 
 ---
 
 ## 🧭 Detalhamento das Principais Páginas
 
-### 1. Landing Page (`/`)
-- Apresentação do produto, demonstração em vídeo/mockup, as 5 competências do INEP e primeiros passos para o vestibulando.
+### 1. Landing única / Página de Vendas (`/`)
+- **Desde o ADR 030 existe uma landing só.** Antes, `/` era uma landing institucional e `/vendas` era a página de conversão, cada uma com o seu próprio visual — quem criava conta atravessava o funil de uma para a outra e via o site "mudar por completo" no meio do caminho.
+- Página de conversão com hero, blocos de problema/virada, como funciona, as 5 competências, benefícios, os 2 planos (checkout por link fixo da Kiwify, ver ADR 028), garantia de 7 dias, FAQ e CTA final.
+- **Shell próprio**: não usa `Navbar`/`Footer` do app, porque o menu interno só leva a destinos que exigem assinatura. O header tem âncoras (`#como`, `#competencias`, `#planos`, `#faq`) e um link que alterna entre "Entrar" e "Minha conta" conforme `useAuth`.
+- Caminhos de entrada: acesso direto, o item "Início" do `Navbar` na área logada, os CTAs de paywall (`Footer.tsx` e `CorrecaoBloqueada.tsx`, que apontam para `/#planos`) e o redirecionamento automático de `RequerAssinatura` quando alguém sem assinatura ativa tenta abrir `/dashboard` ou `/historico`.
 
-### 2. Página de Vendas (`/vendas`)
-- Página de conversão com termômetro interativo de risco, comparativo tradicional vs IA, tabela de preços, bônus e garantia incondicional de 7 dias. Os 3 CTAs de plano criam uma sessão real do Stripe Checkout via `/api/checkout` (sem cronômetro nem "vagas restantes" — removidos por serem falsos, ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog]]).
-- **Não há mais link direto para `/vendas` no menu principal** (`src/components/Navbar.tsx`) — o item "⚡ Planos & Oferta" foi removido a pedido do usuário, que não queria essa rota exposta como destino de navegação livre. O único caminho de entrada agora é o redirecionamento automático feito por `RequerAssinatura` quando alguém sem assinatura ativa tenta abrir `/nova-redacao`, `/dashboard`, `/historico` ou `/correcao/[id]`. O link continua existindo no rodapé (`Footer.tsx`).
+### 2. Redirect de `/vendas`
+- A rota antiga sobrevive só como `permanentRedirect("/")` (308), para não quebrar link divulgado em anúncio, bio ou mensagem antiga. Não tem conteúdo próprio.
 
 ### 3. Nova Redação (`/nova-redacao`)
 - Editor inteligente com contagem de palavras/linhas, seleção de temas oficiais/inéditos do ENEM e aba de upload para arquivos `.pdf`, `.docx` e `.txt`.
@@ -100,4 +98,4 @@ src/app/
 ## 🔗 Links Relacionados
 - [[04 - Arquitetura Técnica/Componentes & Design System|Design System e Componentes]]
 - [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Tipos TypeScript e Endpoints de API]]
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia da Página /vendas]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Estratégia da landing de vendas (`/`)]]

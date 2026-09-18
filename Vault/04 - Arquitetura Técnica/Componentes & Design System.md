@@ -56,7 +56,7 @@ A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada 
 
 ### 1. `Navbar.tsx`
 - Barra de navegação superior responsiva (Desktop e Mobile Drawer) com efeito sticky e vidro fosco.
-- Destaque especial pulsante para o link **"⚡ Planos & Oferta"** (`/vendas`).
+- Links: Início (`/`), Dashboard, Nova Redação e Histórico, mais "Entrar"/"Sair" e o CTA "Escrever Redação". **Não tem item de planos/oferta** — foi removido a pedido do usuário. Desde o ADR 030, "Início" leva à landing de vendas, que é a home; por isso a própria landing tem um link "Minha conta" de volta ao app.
 
 ### 2. `Footer.tsx`
 - Rodapé institucional com colunas para Competências do ENEM, Recursos da Plataforma e links de acesso direto.
@@ -83,5 +83,5 @@ A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada 
 
 ## 🔗 Links Relacionados
 - [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|Estrutura de Rotas]]
-- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Página de Vendas /vendas]]
+- [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Landing de Vendas (`/`)]]
 - [[02 - Metodologia ENEM/Competências Detalhadas C1 a C5|Marcações de Erros no Texto]]
