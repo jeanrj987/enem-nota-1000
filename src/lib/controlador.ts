@@ -62,8 +62,12 @@ export const CONTROLADOR = {
    * Ou seja, a única forma de falar com o suporte apontava para uma caixa
    * que provavelmente nunca existiu.
    *
-   * ATENÇÃO ao grafar: é `nota100enem` (um zero a menos que a marca), não
-   * `nota1000enem`. Errar isso mata o canal em silêncio.
+   * NÃO "CORRIJA" ESTE ENDEREÇO. É `nota100enem`, com um zero a menos que a
+   * marca — e está certo assim. Confirmado em 18/09 com envio de teste real
+   * para a caixa. Parece erro de digitação justamente por destoar de
+   * `nota1000enem.digital`, e é por isso que este aviso existe: trocar para
+   * `nota1000enem` mataria em silêncio o único canal que a LGPD obriga a
+   * manter aberto.
    */
   emailContato: 'nota100enem@outlook.com',
 
