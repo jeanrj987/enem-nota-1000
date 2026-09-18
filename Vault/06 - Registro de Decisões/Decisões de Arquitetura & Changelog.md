@@ -5,13 +5,16 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (teste de fluxo dos gates com Testing Library; rate limiting via Upstash Redis; páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
+updated: 2026-09-18 (nota sobre contagem de testes não confiável; teste de fluxo dos gates; rate limiting via Upstash Redis; páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
 
 > [!info] **Histórico Evolutivo do Projeto**
 > Registro cronológico de todas as decisões arquiteturais tomadas e das principais funcionalidades desenvolvidas no projeto.
+
+> [!warning] **Contagem de testes: confie em `npx vitest run`, não na aritmética do log**
+> Entradas antigas às vezes fazem "X → Y" assumindo que o Y da entrada anterior é o X correto desta — nem sempre é (ver achado documentado no ADR 029, P2 item 9 do relatório de 17/09). Para saber o número real de testes a qualquer momento, rode a suíte; não some deltas do changelog.
 
 ---
 
@@ -239,6 +242,8 @@ updated: 2026-09-18 (teste de fluxo dos gates com Testing Library; rate limiting
 - **Contexto**: o usuário reportou uma correção onde a Competência I recebeu 160/200 com o comentário "foram identificados deslizes pontuais de regência e colocação pronominal", mas — diferente das outras competências, que sempre citam o trecho exato — esse comentário não apontava nenhum erro específico ao lado. Investigação confirmou que existia sim um erro real vinculado (trecho "se manifestando a partir do apagamento", um caso de próclise antes de gerúndio, gramaticalmente defensável como desvio da norma culta estrita), então este caso específico não era um bug. Mas a investigação expôs uma lacuna real na validação: `validarCorrecaoIA` já rejeitava a contradição inversa (C1 = 200 com 2+ erros grounded contraditórios, ver checagem original do ADR de schema), mas não existia nenhuma checagem para o caso de uma nota **reduzida** vir sem nenhum erro `grounded` (trecho real encontrado no texto do aluno) vinculado a essa competência.
 - **Decisão**: adicionada em `src/lib/correcao-schema.ts` uma checagem que, quando C1 recebe nota abaixo de 200 e nenhum erro em `erros[]` sobrevive à validação de trecho real para essa competência, adiciona um item a `avisos` (não rejeita a correção). Optado por aviso e não rejeição/retry porque a matriz do ENEM permite deduções holísticas de C1 sem um erro pontual sempre itemizado (ex.: registro de habilidades via `habilidades_c1`, impressão geral de fluência) — uma tentativa inicial de tornar isso uma rejeição dura quebrou 13 dos testes existentes, confirmando que o comportamento "nota reduzida sem erro itemizado" é às vezes legítimo no domínio, não um bug em si. O aviso fica registrado (mesmo canal de `avisos` já usado para trechos alucinados descartados) para permitir auditoria/monitoramento futuro sem impedir a entrega da correção ao aluno.
 - **Testes**: 155 → 157 (2 novos em `correcao-schema.test.ts`: gera aviso quando falta erro grounded, não gera quando existe).
+
+> [!bug] **Contagem que não se sustentou (achado do relatório de 17/09, P2 item 9)**: os 2 testes novos citados acima realmente existem no arquivo (`gera aviso...`/`não gera esse aviso...` em `correcao-schema.test.ts`), mas os 7 ADRs seguintes (030 a 037) voltaram a registrar "155" em vez de carregar o "157" adiante — provavelmente alguém copiou o número da entrada anterior sem somar. `npx vitest run` no início da limpeza do P2 (18/09) confirmou **155** como valor real naquele momento, então o "157" nunca chegou a se sustentar (2 testes a mais em algum ponto entre 029 e 030 sem um "-2" registrado, ou o "157" já nasceu errado). Não dá para reconstruir com certeza qual dos dois aconteceu sem o histórico de commits daquele dia — registrado aqui em vez de forjar um número. **A partir de aqui, todo "Testes" deste changelog é o valor real de `npx vitest run` no momento em que a entrada foi escrita, não aritmética sobre a entrada anterior.**
 
 ### ADR 028: Integração com a Kiwify implementada — checkout por link fixo + webhook
 - **Status**: Aprovado, Implementado e **Verificado com pagamento real** em 17 de setembro.
