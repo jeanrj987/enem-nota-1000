@@ -26,8 +26,9 @@ async function run() {
         const correcao = await corrigirRedacaoComIA(caso.texto, caso.tema, caso.titulo);
         console.log(`nota_geral=${correcao.nota_geral}`);
         resultados.push({ variante: caso.variante, correcao });
-      } catch (err: any) {
-        console.log(`FALHOU: ${err?.message?.slice(0, 100)}`);
+      } catch (err) {
+        const mensagem = err instanceof Error ? err.message : String(err);
+        console.log(`FALHOU: ${mensagem.slice(0, 100)}`);
       }
     }
 

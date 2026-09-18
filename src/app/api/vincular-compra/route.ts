@@ -45,7 +45,12 @@ export async function POST(req: NextRequest) {
 
   // Por usuário, com o IP como reserva: quem quiser martelar precisa criar
   // contas, e conta criada deixa rastro.
-  const rate = checarRateLimit(
+  // `await` porque o rate limit passou a viver no Redis (ADR 037): o
+  // contador é compartilhado entre as instâncias serverless, o que importa
+  // especialmente aqui — com contador por instância, o limite real seria
+  // 5 vezes o número de instâncias, e a força bruta que esta rota precisa
+  // conter voltaria a ser viável.
+  const rate = await checarRateLimit(
     `vincular:${userData.user.id || obterIpCliente(req)}`,
     LIMITE_TENTATIVAS,
     JANELA_TENTATIVAS_MS

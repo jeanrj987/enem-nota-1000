@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 
 const TOKEN = 'token-de-teste-kiwify';
@@ -31,7 +32,7 @@ vi.mock('@/lib/compras-orfas', () => ({
 }));
 
 vi.mock('@/lib/ativar-assinatura', () => ({
-  ativarAssinatura: async (params: any) => {
+  ativarAssinatura: async (params: { sessionId: string; userId: string; planoId: string }) => {
     estado.ativou = params;
     return { sucesso: true };
   },
@@ -62,7 +63,7 @@ function requisicao(corpoObjeto: unknown, opcoes: { semAssinatura?: boolean; ass
     method: 'POST',
     body: corpo,
     headers: { 'Content-Type': 'application/json' },
-  }) as any;
+  }) as unknown as NextRequest;
 }
 
 beforeEach(() => {

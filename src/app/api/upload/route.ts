@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   // precisa criar contas, o que deixa rastro. O IP entra só como reserva
   // caso o identificador do usuário venha vazio.
   const ip = obterIpCliente(req);
-  const rate = checarRateLimit(
+  const rate = await checarRateLimit(
     `upload:${userData.user.id || ip}`,
     LIMITE_UPLOADS,
     JANELA_UPLOADS_MS
@@ -125,11 +125,9 @@ export async function POST(req: NextRequest) {
       fileSize: file.size,
       text: extractedText,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro na extração de texto do arquivo:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Erro ao processar arquivo.' },
-      { status: 500 }
-    );
+    const mensagem = error instanceof Error ? error.message : 'Erro ao processar arquivo.';
+    return NextResponse.json({ error: mensagem }, { status: 500 });
   }
 }

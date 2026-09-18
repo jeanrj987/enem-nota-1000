@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { NextRequest } from 'next/server';
 
 vi.mock('@/lib/supabase-admin', () => ({
   supabaseAdmin: {
@@ -24,7 +25,7 @@ function requestDeCorrecao(body: Record<string, unknown>, ip: string, token?: st
       'x-forwarded-for': ip,
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
-  }) as any;
+  }) as unknown as NextRequest;
 }
 
 describe('POST /api/corrigir — validação, autenticação e limites (sem chamar LLM)', () => {

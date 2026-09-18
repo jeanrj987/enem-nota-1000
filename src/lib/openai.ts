@@ -72,9 +72,10 @@ ${texto}
           console.warn(`Tentativa ${attempt} no Gemini falhou validação: ${validacao.error}`);
           logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: false, duracao_ms: duration, motivo_falha: `validacao: ${validacao.error}` });
         }
-      } catch (geminiError: any) {
-        console.warn(`Tentativa ${attempt} no Gemini falhou (${geminiError?.message?.slice(0, 80)}).`);
-        logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: geminiError?.message?.slice(0, 200) || 'erro desconhecido' });
+      } catch (geminiError) {
+        const mensagem = geminiError instanceof Error ? geminiError.message : 'erro desconhecido';
+        console.warn(`Tentativa ${attempt} no Gemini falhou (${mensagem.slice(0, 80)}).`);
+        logCorrecao({ evento: 'tentativa_provedor', provedor: 'gemini', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: mensagem.slice(0, 200) });
       }
 
       if (attempt < maxRetries) {
@@ -127,9 +128,10 @@ ${texto}
           console.warn(`Tentativa ${attempt} na OpenAI falhou validação: ${validacao.error}`);
           logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: false, duracao_ms: duration, motivo_falha: truncado ? `resposta truncada; validacao: ${validacao.error}` : `validacao: ${validacao.error}` });
         }
-      } catch (openaiError: any) {
-        console.error(`Tentativa ${attempt} na OpenAI falhou:`, openaiError?.message || openaiError);
-        logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: openaiError?.message?.slice(0, 200) || 'erro desconhecido' });
+      } catch (openaiError) {
+        const mensagem = openaiError instanceof Error ? openaiError.message : 'erro desconhecido';
+        console.error(`Tentativa ${attempt} na OpenAI falhou:`, mensagem);
+        logCorrecao({ evento: 'tentativa_provedor', provedor: 'openai', tentativa: attempt, sucesso: false, duracao_ms: Date.now() - startTime, motivo_falha: mensagem.slice(0, 200) });
       }
     }
   }
@@ -327,10 +329,9 @@ export async function corrigirRedacaoComDuplaCorrecao(
 // corrigirRedacaoComIA nunca deve devolver uma correção que não veio de um modelo real.
 export function gerarCorrecaoMock(
   texto: string,
-  tema: string = 'Tema Livre',
-  titulo: string = 'Sem título'
+  _tema: string = 'Tema Livre',
+  _titulo: string = 'Sem título'
 ): Correcao {
-  const words = texto.trim().split(/\s+/).filter(Boolean);
   const paragraphs = texto.split(/\n\s*\n/).filter(p => p.trim().length > 0);
   const lowerText = texto.toLowerCase();
 

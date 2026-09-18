@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { buscarPerfil, salvarPerfil, perfilCompleto } from '@/lib/perfil';
 import { destinoSeguro, urlDeLogin } from '@/lib/redirecionamento';
 import { formatarWhatsapp, normalizarWhatsapp, validarWhatsapp } from '@/lib/whatsapp';
+import { UFS_BRASIL, buscarMunicipiosPorUf } from '@/lib/localidades';
 
 function CompletarPerfilForm() {
   const router = useRouter();
@@ -23,7 +24,12 @@ function CompletarPerfilForm() {
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [erroWhatsapp, setErroWhatsapp] = useState<string | null>(null);
-  const [cidadeEstado, setCidadeEstado] = useState('');
+  const [uf, setUf] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [municipios, setMunicipios] = useState<string[]>([]);
+  const [carregandoMunicipios, setCarregandoMunicipios] = useState(false);
+  const [erroMunicipios, setErroMunicipios] = useState<string | null>(null);
+  const [tentativaMunicipios, setTentativaMunicipios] = useState(0);
   const [dataNascimento, setDataNascimento] = useState('');
   const [cursoDosSonhos, setCursoDosSonhos] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -44,12 +50,49 @@ function CompletarPerfilForm() {
       setNomeCompleto(perfil?.nome_completo || usuario.user_metadata?.full_name || usuario.user_metadata?.name || '');
       // Vem do banco em E.164 (+5511912345678); remascara para leitura.
       setWhatsapp(formatarWhatsapp(perfil?.whatsapp || ''));
-      setCidadeEstado(perfil?.cidade_estado || '');
+      // Perfis salvos antes desta tela virar seleção (formato livre "Cidade - UF")
+      // só são reaproveitados se baterem exatamente com uma sigla de UF válida —
+      // caso contrário, a pessoa escolhe de novo nos dois selects.
+      const cidadeEstadoSalva = perfil?.cidade_estado || '';
+      const partes = cidadeEstadoSalva.split(' - ');
+      const ufSalva = partes[1]?.trim().toUpperCase();
+      if (partes.length === 2 && UFS_BRASIL.some((u) => u.sigla === ufSalva)) {
+        setUf(ufSalva);
+        setCidade(partes[0].trim());
+      }
       setDataNascimento(perfil?.data_nascimento || '');
       setCursoDosSonhos(perfil?.curso_dos_sonhos || '');
       setChecando(false);
     });
   }, [carregando, usuario, router, destino]);
+
+  useEffect(() => {
+    if (!uf) return;
+
+    let cancelado = false;
+    // Sinaliza o início da busca antes da chamada assíncrona ao IBGE — mesmo
+    // padrão de fetch-em-efeito já presente em AuthContext.tsx.
+    setCarregandoMunicipios(true); // eslint-disable-line react-hooks/set-state-in-effect
+    setErroMunicipios(null);
+
+    buscarMunicipiosPorUf(uf)
+      .then((lista) => {
+        if (cancelado) return;
+        setMunicipios(lista);
+      })
+      .catch((erroBusca: Error) => {
+        if (cancelado) return;
+        setErroMunicipios(erroBusca.message);
+        setMunicipios([]);
+      })
+      .finally(() => {
+        if (!cancelado) setCarregandoMunicipios(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [uf, tentativaMunicipios]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +111,7 @@ function CompletarPerfilForm() {
     const resultado = await salvarPerfil(usuario.id, {
       nomeCompleto,
       whatsapp: normalizarWhatsapp(whatsapp),
-      cidadeEstado,
+      cidadeEstado: `${cidade} - ${uf}`,
       dataNascimento,
       cursoDosSonhos,
     });
@@ -145,18 +188,59 @@ function CompletarPerfilForm() {
           {erroWhatsapp && <p className="text-[11px] text-vermelho">{erroWhatsapp}</p>}
         </div>
 
-        <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-tinta-suave">Cidade e Estado</label>
-          <div className="relative">
-            <MapPin className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-tinta-suave">Estado</label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-tinta-fraca absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                required
+                value={uf}
+                onChange={(e) => {
+                  setUf(e.target.value);
+                  setCidade('');
+                  setMunicipios([]);
+                  setErroMunicipios(null);
+                }}
+                className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta focus:outline-none focus:border-azul appearance-none"
+              >
+                <option value="">Selecione</option>
+                {UFS_BRASIL.map((u) => (
+                  <option key={u.sigla} value={u.sigla}>
+                    {u.sigla} — {u.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-tinta-suave">Cidade</label>
+            <select
               required
-              placeholder="Ex: Fortaleza - CE"
-              value={cidadeEstado}
-              onChange={(e) => setCidadeEstado(e.target.value)}
-              className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
-            />
+              disabled={!uf || carregandoMunicipios}
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
+              className="w-full bg-folha/90 border border-regua/80 rounded-xl px-3 py-2.5 text-xs text-tinta focus:outline-none focus:border-azul appearance-none disabled:opacity-50"
+            >
+              <option value="">
+                {!uf ? 'Escolha o estado' : carregandoMunicipios ? 'Carregando...' : 'Selecione'}
+              </option>
+              {municipios.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            {erroMunicipios && (
+              <button
+                type="button"
+                onClick={() => setTentativaMunicipios((n) => n + 1)}
+                className="text-[11px] text-vermelho underline"
+              >
+                {erroMunicipios} Tentar de novo.
+              </button>
+            )}
           </div>
         </div>
 

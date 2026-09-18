@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-18 (vincular-compra, robots/sitemap, medição e landing reestruturada)
+updated: 2026-09-18 (páginas de erro 404/runtime, vincular-compra, robots/sitemap, medição e landing reestruturada)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -45,6 +45,8 @@ updated: 2026-09-18 (vincular-compra, robots/sitemap, medição e landing reestr
 src/app/
 ├── layout.tsx                # Root Layout (tema dark V2, fontes Newsreader/Karla/Caveat)
 ├── globals.css               # Tokens do @theme, utilitários de superfície, highlights de erro
+├── not-found.tsx             # Fallback de rota inexistente (404) — Navbar/Footer + CTA para "/"
+├── error.tsx                 # Error boundary de runtime — Client Component minimalista, sem Navbar/Footer de propósito (ver comentário no arquivo)
 ├── page.tsx                  # Rota "/" (landing única = página de vendas, ADR 030)
 ├── vendas/
 │   └── page.tsx              # Rota "/vendas" — só um permanentRedirect("/") 308, mantido por links já divulgados
@@ -89,7 +91,7 @@ src/app/
 - **Desde o ADR 030 existe uma landing só.** Antes, `/` era uma landing institucional e `/vendas` era a página de conversão, cada uma com o seu próprio visual — quem criava conta atravessava o funil de uma para a outra e via o site "mudar por completo" no meio do caminho.
 - **Reestruturada em 18/09 em torno da prova (ADR 043).** A ordem das seções é o argumento: hero → problema → virada → **a prova** (`ExemploCorrecao`) → como funciona → 5 competências → **o que é grátis e o que é pago** → planos → garantia → FAQ → CTA final.
 - **O CTA principal é a correção gratuita, não o preço.** Antes, todo botão dizia "CORRIGIR MINHA REDAÇÃO" e rolava para a tabela de planos. Hoje leva a `/nova-redacao` (via `/auth` quando deslogado), que é a ação prometida. O CTA do topo e o do rodapé são a mesma ação, de propósito.
-- **Seção "A prova"**: `src/components/vendas/ExemploCorrecao.tsx` monta uma correção de exemplo com as **mesmas classes do produto** (`highlight-*`, `risco-corretor`, `bloco-pautado`), para a demonstração não envelhecer separada do que é entregue.
+- **Seção "A prova"**: `src/components/vendas/ExemploCorrecao.tsx` monta uma correção de exemplo com as **mesmas classes de marcação do produto** (`highlight-*`, as mesmas de `TextoDestacado`), para a demonstração não envelhecer separada do que é entregue. O riscado e a superfície do texto usam Tailwind, já que `.risco-corretor`/`.bloco-pautado` saíram no ADR 035.
 - **Seção "O que é grátis e o que é pago"** vem antes do preço: o gratuito entrega a correção e **quantos desvios** o texto tem; o diagnóstico completo é do plano (RLS de `correcoes`, ADR 013).
 - **Shell próprio**: não usa `Navbar`/`Footer` do app, porque o menu interno só leva a destinos que exigem assinatura. O header tem âncoras (`#exemplo`, `#como`, `#planos`, `#faq`) e um link que alterna entre "Entrar" e "Minha conta" conforme `useAuth`.
 - **Medição**: dispara `ViewContent` ao montar e `InitiateCheckout` no clique de assinar, e guarda a atribuição do anúncio (`_fbc`/`_fbp`) via `/api/atribuicao` antes de redirecionar para a Kiwify. Ver ADR 042.

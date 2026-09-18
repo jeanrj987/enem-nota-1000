@@ -33,7 +33,6 @@
 
   --font-serifada: var(--font-newsreader), Georgia, "Times New Roman", serif;
   --font-humanista: var(--font-karla), -apple-system, "Segoe UI", sans-serif;
-  --font-manuscrita: var(--font-caveat), "Segoe Script", cursive;
 }
 
 @layer base {
@@ -63,10 +62,6 @@
 
 .fonte-humanista {
   font-family: var(--font-humanista);
-}
-
-.fonte-manuscrita {
-  font-family: var(--font-manuscrita);
 }
 
 ::-webkit-scrollbar {
@@ -112,47 +107,6 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-/* Margem de destaque à esquerda, agora em azul (acento principal da V2). */
-.margem-caderno {
-  position: relative;
-}
-.margem-caderno::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  background: rgba(79, 140, 255, 0.4);
-}
-
-/* Bloco pautado — mantém o ritmo de leitura, agora com linhas sutis sobre o dark. */
-.bloco-pautado {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent 31px,
-    var(--color-pauta) 31px,
-    var(--color-pauta) 32px
-  );
-  line-height: 32px;
-}
-
-/* Correção do corretor sobre o texto do aluno. */
-.risco-corretor {
-  text-decoration: line-through;
-  text-decoration-color: var(--color-vermelho);
-  text-decoration-thickness: 2px;
-  color: var(--color-tinta-fraca);
-}
-
-/* Selo de garantia. */
-.carimbo {
-  border: 2px solid var(--color-vermelho);
-  color: var(--color-vermelho);
-  transform: rotate(-3deg);
 }
 
 /* ---------------------------------------------------------------------------

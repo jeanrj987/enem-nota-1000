@@ -5,13 +5,16 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valor na landing e SEO)
+updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de funil/anúncio, prova de valor na landing e SEO)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
 
 > [!info] **Histórico Evolutivo do Projeto**
 > Registro cronológico de todas as decisões arquiteturais tomadas e das principais funcionalidades desenvolvidas no projeto.
+
+> [!warning] **Contagem de testes: confie em `npx vitest run`, não na aritmética do log**
+> Entradas antigas às vezes fazem "X → Y" assumindo que o Y da entrada anterior é o X correto desta — nem sempre é (ver achado documentado no ADR 029, P2 item 9 do relatório de 17/09). Para saber o número real de testes a qualquer momento, rode a suíte; não some deltas do changelog.
 
 ---
 
@@ -166,7 +169,7 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 - **Contexto**: a landing afirmava "análise detalhada", "erros destacados no texto" e "versão reescrita nota 1000", e pedia que se acreditasse. Não havia **uma única demonstração** do produto. Pior: o produto já dava 3 correções gratuitas (`LIMITE_CORRECOES_GRATUITAS`, `src/lib/assinatura-servidor.ts`) e `/nova-redacao` nunca exigiu assinatura (só `RequerLogin`) — mas a página não mencionava isso em lugar nenhum. A prova de valor mais forte do produto estava construída e escondida.
 - **A incoerência central**: todo CTA dizia "CORRIGIR MINHA REDAÇÃO" e chamava `scrollToPricing()`. Quem clicava pedindo para corrigir recebia uma tabela de preços. A quebra de promessa acontecia no primeiro clique, antes de qualquer argumento de venda ter sido feito.
 - **Decisão**: o CTA principal passou a ser a ação que ele promete — ir para a correção gratuita (`/nova-redacao`, via login quando preciso). O CTA do topo e o do rodapé são agora a **mesma ação**, para a página fechar o argumento que abriu. O caminho para o preço continua existindo, mas como escolha de quem já viu valor, não como pedágio do primeiro clique.
-- **Nova seção "A prova" (`ExemploCorrecao`)**: uma correção de exemplo montada com as **mesmas classes do produto real** (`highlight-concordancia`, `highlight-coesao`, `risco-corretor`, `bloco-pautado`, de `globals.css`) — nota geral, as 5 competências com barra, dois trechos marcados com o comentário do corretor ao lado, e o "próximo passo". Usar as classes reais é deliberado: se o visual da correção mudar, a demonstração muda junto. Demonstração que envelhece separada do produto vira promessa falsa. O conteúdo é ilustrativo, escrito para a demonstração e rotulado como exemplo na tela — não é redação de aluno real, e nenhum depoimento ou número de usuários foi inventado.
+- **Nova seção "A prova" (`ExemploCorrecao`)**: uma correção de exemplo montada com as **mesmas classes de marcação do produto real** (`highlight-concordancia`, `highlight-coesao`, de `globals.css`, as mesmas que `TextoDestacado` aplica) — nota geral, as 5 competências com barra, dois trechos marcados com o comentário do corretor ao lado, e o "próximo passo". Usar as classes reais é deliberado: se o visual da correção mudar, a demonstração muda junto. Demonstração que envelhece separada do produto vira promessa falsa. O conteúdo é ilustrativo, escrito para a demonstração e rotulado como exemplo na tela — não é redação de aluno real, e nenhum depoimento ou número de usuários foi inventado.
 - **Nova seção "O que é grátis e o que é pago", declarada ANTES do preço**: o usuário gratuito recebe a redação corrigida, **quantos desvios** o texto tem e o alerta de anulação — não o diagnóstico completo, que a RLS de `correcoes` só entrega com plano ativo (ADR 013). A landing agora diz exatamente isso. Omitir essa fronteira até depois do pagamento é o que gera sensação de engano, e reembolso/chargeback custam mais caro do que a venda que a omissão traria.
 - **`precoReais` movido para `PLANOS`**: os valores 97 e 147 estavam cravados dentro de `identificarPlano` no webhook como números soltos. Agora a landing, o webhook e o valor mandado ao Meta leem a mesma fonte.
 - **FAQ**: nova pergunta sobre as correções gratuitas (explicando que não se pede cartão e o que exatamente vem de graça), nova sobre reembolso, e a de liberação de acesso passou a citar `/vincular-compra` (ADR 040).
@@ -207,6 +210,54 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 - **Status desconhecido deixou de ser silêncio**: o webhook ganhou `classificarStatus`, e um status que não casa com nada conhecido agora loga `kiwify_status_desconhecido` com o payload cru, sem revogar nada. Antes, um status inesperado caía nas cadeias de `includes` sem cair em nenhuma — e revogar por engano tiraria o acesso de quem está em dia. É também o instrumento para finalmente descobrir os nomes reais dos eventos de cancelamento e atraso, que continuam sendo suposição nossa (ver pendência no ADR 028).
 - **Descoberta da tela**: dois pontos, os dois onde a pessoa de fato aparece — o estado "ainda confirmando" de `/checkout/sucesso` (que agora explica que não vai confirmar sozinho e oferece a saída) e uma linha abaixo da garantia, na seção de planos da home, para quem volta ao preço achando que a compra não passou.
 - **Testes**: 157 → 171 (12 novos em `compras-orfas.test.ts`, com foco em resgate indevido, e 4 novos/alterados em `kiwify-webhook-route.test.ts`).
+### ADR 039: Fonte Caveat removida — ficou órfã após o ADR 035
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 035 removeu `.fonte-manuscrita` (e os demais utilitários da identidade "caderno") de `globals.css` por não ter nenhuma ocorrência em `src/**/*.tsx`, mas deixou passar que esse era o único consumidor da variável `--font-caveat` — a fonte Google `Caveat`, carregada em `src/app/layout.tsx` e aplicada via `className` no `<html>`, continuou sendo baixada e declarada sem nenhum CSS a referenciar.
+- **Decisão**: removidos o import de `Caveat` de `next/font/google`, a constante `caveat` e sua entrada no `className` do `<html>` em `layout.tsx`. Restam `Newsreader` (serifada, enunciado) e `Karla` (humanista, leitura corrida).
+- **Testes**: 161 (sem variação — troca de fonte não tinha teste próprio nem afeta lógica).
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 022 extraiu a decisão dos gates (`RequerLogin`/`RequerAssinatura`) para funções puras justamente porque o projeto não tinha jsdom/Testing Library — `gates.test.ts` cobre bem a regra de decisão, mas não garante que o componente de verdade (o `useEffect`, a chamada a `router.replace`, o que renderiza enquanto carrega) se comporta como o esperado. Item de dívida listado no relatório de operação de 17/09.
+- **Decisão**: adicionadas as dependências de dev `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (pacotes npm gratuitos, sem serviço/conta externa — diferente da decisão de infraestrutura do ADR 037). `vitest.config.ts` ganhou `setupFiles` (`tests/setup/jest-dom.ts`, estende `expect` com os matchers do jest-dom) e passou a incluir `*.test.tsx`. Testes de fluxo continuam em `node` por padrão (mais rápido, sem o custo de simular DOM); `tests/gates-fluxo.test.tsx` opta em `jsdom` só para si via o pragma `// @vitest-environment jsdom` no topo do arquivo.
+- **O que o teste novo cobre que `gates.test.ts` não cobre**: `RequerLogin` e `RequerAssinatura` renderizados de verdade com React, `useAuth`/`next/navigation`/`buscarPerfil`/`temAcessoAtivo` mockados — confirma que `router.replace()` é chamado com a URL exata esperada (ou não é chamado, quando libera) e que os filhos só aparecem no DOM quando o gate realmente libera.
+- **Detalhe descoberto ao escrever o teste**: `urlDeLogin` omite o `?redirect=` quando o destino já é o padrão daquele gate (`/nova-redacao` para `RequerLogin`, indiretamente `/dashboard` para `RequerAssinatura` via `destinoPadrao` local) — os testes usam pathnames diferentes do padrão (`/correcao/abc123`, `/dashboard`) para exercitar o caso em que a query realmente precisa ser preservada.
+- **Testes**: 155 → 161 (6 novos em `tests/gates-fluxo.test.tsx`).
+
+### ADR 037: Rate limiting movido para Upstash Redis (compartilhado entre instâncias)
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `checarRateLimit` guardava o contador num `Map` em memória, por processo. Em ambiente serverless (Vercel), cada instância fria tem o próprio `Map` vazio — o limite real sob múltiplas instâncias concorrentes é N vezes o configurado, N = número de instâncias, não o valor declarado. Limitação documentada desde a criação (`src/lib/rate-limit.ts`), nunca resolvida.
+- **Decisão**: o usuário criou uma conta Upstash (projeto `helpful-starling-284381`, plano free) e forneceu `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`. `checarRateLimit` virou assíncrona: com as duas variáveis configuradas, o contador vive no Redis via `INCR` (primeira chamada da janela dispara `PEXPIRE`) — compartilhado de verdade entre instâncias. As 3 chamadas (`/api/corrigir`, `/api/upload`, `/api/corrigir/completar`) já estavam em handlers `async`, então virou só adicionar `await`.
+- **Fallback preservado, não removido**: sem as variáveis configuradas (dev local sem `.env.local` preenchido) ou se a chamada ao Redis falhar (rede, cota, serviço fora do ar), cai para o `Map` em memória local de antes — pior sob múltiplas instâncias, mas nunca derruba a rota por causa do rate limiter estar indisponível. Consistente com a regra do projeto de toda chamada externa ter fallback seguro.
+- **Verificado**: conexão real testada contra a instância Upstash (`INCR`/`PEXPIRE`/`PTTL` via script isolado, removido depois do teste) antes de considerar a integração funcionando.
+- **Pendente**: as mesmas duas variáveis precisam ser configuradas em **Vercel → Settings → Environment Variables** para valerem em produção — só foram adicionadas ao `.env.local` (dev) até aqui.
+- **Testes**: 155 (sem variação de contagem — `rate-limit.test.ts` só precisou de `await` nas chamadas, já que roda sem as variáveis do Upstash configuradas no ambiente de teste, exercitando o fallback em memória).
+
+### ADR 036: Páginas próprias de 404 e de erro de runtime
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o app não tinha `not-found.tsx` nem `error.tsx` em `src/app/` — uma rota inexistente ou uma falha de runtime em produção caíam na tela padrão e genérica do Next.js, fora da identidade visual do produto.
+- **Decisão**: `src/app/not-found.tsx` reaproveita `Navbar`/`Footer` (é um Server Component comum, roda dentro do layout normal) com CTA para voltar à home. `src/app/error.tsx` é um Client Component (exigência do App Router para error boundaries) deliberadamente **sem** `Navbar`/`Footer`: um error boundary precisa ser a peça mais simples possível da árvore — se a causa da falha for algo que esses componentes também dependem (ex: `AuthContext`), reaproveitá-los aqui aumentaria a chance de o próprio fallback quebrar junto. `error.tsx` loga o erro recebido via `console.error` e oferece "Tentar de novo" (`reset()`) e "Voltar para a home".
+- **Verificado**: `npm run dev` + acesso a uma rota inexistente confirmou a página 404 customizada respondendo com status 404.
+- **Testes**: sem variação — páginas de fallback sem lógica testável no escopo atual.
+
+### ADR 035: Utilitários CSS órfãos da identidade "caderno" removidos de `globals.css`
+- **Status**: Aprovado e Implementado.
+- **Contexto**: segundo item da dívida do ADR 031 — `.margem-caderno`, `.bloco-pautado`, `.risco-corretor`, `.carimbo` e `.fonte-manuscrita` sobraram da identidade visual anterior ("caderno & caneta vermelha") sem nenhuma ocorrência em `src/**/*.tsx`.
+- **Decisão**: as 5 classes (e a variável `--font-manuscrita`, que só alimentava `.fonte-manuscrita`) foram removidas de `src/app/globals.css`. Elas já estão preservadas em `design-alternativas/vendas-caderno.css`, a fonte que o próprio `design-alternativas/README.md` instrui colar de volta em `globals.css` caso a direção "caderno" seja restaurada — nada foi perdido.
+- **`--color-pauta` foi mantida**: apesar de alimentar `.bloco-pautado` (removida), a variável também vira o utilitário `bg-pauta` do Tailwind, ativamente usado em `AbaReescrita.tsx`, `CorrecaoBloqueada.tsx`, `CorrecaoView.tsx` e `AreaProducaoTextual.tsx`.
+- **Efeito colateral não resolvido**: a fonte `Caveat` continua carregada em `layout.tsx` (`--font-caveat`) mas, sem `.fonte-manuscrita`, não tem mais nenhum consumidor — é uma fonte baixada por todo visitante sem efeito visual algum. Decidir se remove o `next/font` do Caveat ou acha um uso real para ela ficou fora do escopo desta limpeza.
+- **Testes**: sem variação — CSS puro, sem lógica testável.
+
+### ADR 034: `src/components/ui/` apagado — a dívida do ADR 031 foi resolvida pelo lado de apagar
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 031 registrou `Button`, `ButtonLink`, `Card` e `Badge` como dívida em aberto — criados junto com o tema dark, sem nenhuma tela importando nenhum dos quatro. Adotar o kit exigiria refatorar botões/cards já existentes em várias telas (nova-redacao, dashboard, historico, auth etc.); o usuário optou por apagar em vez de adotar, para fechar a dívida sem abrir uma tarefa de escopo bem maior.
+- **Decisão**: `src/components/ui/` removido por inteiro. Se um design system de verdade for necessário no futuro, nasce já pensado para uso real nas telas existentes, não como primitivo especulativo.
+- **Testes**: sem variação — os componentes não tinham nenhum caminho de código os exercitando.
+
+### ADR 033: Cidade/Estado do cadastro viram seleção (IBGE), não texto livre
+- **Status**: Aprovado e Implementado.
+- **Contexto**: tanto `/completar-perfil` quanto o formulário de "Criar Conta" em `/auth` tinham o campo "Cidade e Estado" como um `<input type="text">` livre (placeholder "Ex: Fortaleza - CE") — são dois pontos de entrada distintos para o mesmo dado (quem completa o cadastro depois do login social vs. quem já cadastra tudo no signup por e-mail). Texto livre nesse campo gera dado sujo (abreviações, erros de digitação, formatos inconsistentes) sem nenhum ganho real — o valor não é usado para nada além de exibição/registro.
+- **Decisão**: nas duas telas, virou dois `<select>` — Estado (lista fixa de 27 UFs, `src/lib/localidades.ts`) e Cidade (carregada sob demanda da API pública do IBGE, `buscarMunicipiosPorUf`, quando o estado é escolhido). Não há por que embutir as ~5570 cidades do Brasil no bundle — a busca é feita just-in-time, com timeout de 8s via `AbortController` e um botão de "tentar de novo" se a API do IBGE falhar (nunca falha silenciosamente). No submit, os dois valores são recompostos na mesma string `"Cidade - UF"` que já era salva em `perfis.cidade_estado` — sem migração de banco. A lógica de busca (estado, municípios, loading, erro, retry) é praticamente idêntica nas duas telas; não foi extraída para um componente/hook compartilhado porque são só 2 ocorrências (tolerável até a 3ª, ver AGENTS.md).
+- **Compatibilidade com cadastros antigos**: um `cidade_estado` salvo antes desta mudança só pré-popula os selects (em `/completar-perfil`) se bater exatamente no formato `"Cidade - UF"` com uma sigla de UF válida; caso contrário, a pessoa simplesmente escolhe de novo (campo já era obrigatório).
+- **Testes**: 155 (sem variação — são telas de formulário sem teste automatizado prévio, mesmo padrão de `RequerLogin`/`RequerAssinatura` antes do ADR 022; validado via `tsc --noEmit`, `eslint` e `npm run build`).
 
 ### ADR 032: Endereço canônico em `NEXT_PUBLIC_SITE_URL` + card de compartilhamento gerado em build
 - **Status**: Aprovado e Implementado.
@@ -241,6 +292,8 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 - **Contexto**: o usuário reportou uma correção onde a Competência I recebeu 160/200 com o comentário "foram identificados deslizes pontuais de regência e colocação pronominal", mas — diferente das outras competências, que sempre citam o trecho exato — esse comentário não apontava nenhum erro específico ao lado. Investigação confirmou que existia sim um erro real vinculado (trecho "se manifestando a partir do apagamento", um caso de próclise antes de gerúndio, gramaticalmente defensável como desvio da norma culta estrita), então este caso específico não era um bug. Mas a investigação expôs uma lacuna real na validação: `validarCorrecaoIA` já rejeitava a contradição inversa (C1 = 200 com 2+ erros grounded contraditórios, ver checagem original do ADR de schema), mas não existia nenhuma checagem para o caso de uma nota **reduzida** vir sem nenhum erro `grounded` (trecho real encontrado no texto do aluno) vinculado a essa competência.
 - **Decisão**: adicionada em `src/lib/correcao-schema.ts` uma checagem que, quando C1 recebe nota abaixo de 200 e nenhum erro em `erros[]` sobrevive à validação de trecho real para essa competência, adiciona um item a `avisos` (não rejeita a correção). Optado por aviso e não rejeição/retry porque a matriz do ENEM permite deduções holísticas de C1 sem um erro pontual sempre itemizado (ex.: registro de habilidades via `habilidades_c1`, impressão geral de fluência) — uma tentativa inicial de tornar isso uma rejeição dura quebrou 13 dos testes existentes, confirmando que o comportamento "nota reduzida sem erro itemizado" é às vezes legítimo no domínio, não um bug em si. O aviso fica registrado (mesmo canal de `avisos` já usado para trechos alucinados descartados) para permitir auditoria/monitoramento futuro sem impedir a entrega da correção ao aluno.
 - **Testes**: 155 → 157 (2 novos em `correcao-schema.test.ts`: gera aviso quando falta erro grounded, não gera quando existe).
+
+> [!bug] **Contagem que não se sustentou (achado do relatório de 17/09, P2 item 9)**: os 2 testes novos citados acima realmente existem no arquivo (`gera aviso...`/`não gera esse aviso...` em `correcao-schema.test.ts`), mas os 7 ADRs seguintes (030 a 037) voltaram a registrar "155" em vez de carregar o "157" adiante — provavelmente alguém copiou o número da entrada anterior sem somar. `npx vitest run` no início da limpeza do P2 (18/09) confirmou **155** como valor real naquele momento, então o "157" nunca chegou a se sustentar (2 testes a mais em algum ponto entre 029 e 030 sem um "-2" registrado, ou o "157" já nasceu errado). Não dá para reconstruir com certeza qual dos dois aconteceu sem o histórico de commits daquele dia — registrado aqui em vez de forjar um número. **A partir de aqui, todo "Testes" deste changelog é o valor real de `npx vitest run` no momento em que a entrada foi escrita, não aritmética sobre a entrada anterior.**
 
 ### ADR 028: Integração com a Kiwify implementada — checkout por link fixo + webhook
 - **Status**: Aprovado, Implementado e **Verificado com pagamento real** em 17 de setembro.
@@ -315,7 +368,7 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 
 ## 📋 Changelog do Projeto
 
-### [v3.5.0] - 2026-09-18 (prova de valor na landing; medição de funil e anúncio; SEO)
+### [v3.7.0] - 2026-09-18 (prova de valor na landing; medição de funil e anúncio; SEO)
 - **Alterado**: a landing parou de esconder a própria oferta. As 3 correções gratuitas, que já existiam no código e nunca eram mencionadas, viraram o CTA principal — e o botão passou a fazer o que promete (ia para a tabela de preços dizendo "corrigir minha redação"). Ver ADR 043.
 - **Adicionado**: seção "A prova" com uma correção de exemplo (`src/components/vendas/ExemploCorrecao.tsx`), montada com as mesmas classes do produto real, e seção "O que é grátis e o que é pago" declarada antes do preço.
 - **Adicionado**: Meta Pixel (navegador) e Meta Conversions API (servidor) + GA4 — `src/lib/analytics/*`, `src/components/analytics/Medicao.tsx`, tabela `public.atribuicao_anuncio`, rota `/api/atribuicao`. A compra é reportada pelo servidor porque o checkout roda no domínio da Kiwify e o pixel do navegador nunca vê a venda. Ver ADR 042.
@@ -324,7 +377,7 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 - **Corrigido**: `SUBPROCESSADORES` na Política de Privacidade declarava a **Stripe**, removida do projeto no ADR 028, e omitia a **Kiwify**, que é quem de fato recebe os dados de cobrança. Meta e Google adicionados. `VERSAO_DOCUMENTOS_LEGAIS` → `2026-09-18`.
 - **Testes**: 171 → 182.
 
-### [v3.4.0] - 2026-09-18 (compra órfã: fila de resgate + autoatendimento)
+### [v3.6.0] - 2026-09-18 (compra órfã: fila de resgate + autoatendimento)
 - **Adicionado**: tabela `public.compras_orfas` (`supabase/schema-compras-orfas.sql`) — toda compra aprovada que não vira acesso liberado passa a ser registrada com o payload cru, em vez de só gerar um `console.error` e um `200 OK`. Ver ADR 040.
 - **Adicionado**: `/vincular-compra` (tela) e `/api/vincular-compra` (rota) — quem pagou com e-mail diferente do cadastro libera o próprio acesso informando e-mail da compra + código do pedido, com rate limit de 5 tentativas/hora e resposta indistinguível entre pedido inexistente e e-mail errado.
 - **Adicionado**: `src/lib/compras-orfas.ts` (`registrarCompraOrfa`, `vincularCompraOrfa`).
@@ -332,6 +385,13 @@ updated: 2026-09-18 (compras órfãs, medição de funil/anúncio, prova de valo
 - **Corrigido**: `/checkout/sucesso` no estado "ainda confirmando" mandava "recarregue esta página em instantes", o que nunca resolveria a compra órfã; agora explica e oferece o caminho de resgate.
 - **Adicionado**: `classificarStatus` no webhook — status desconhecido da Kiwify passa a ser logado com o payload cru (`kiwify_status_desconhecido`) sem revogar nada, em vez de passar batido.
 - **Testes**: 157 → 171.
+### [v3.5.0] - 2026-09-18 (fonte Caveat órfã removida)
+- **Removido**: fonte Google `Caveat` e a variável `--font-caveat` de `layout.tsx` — ficou sem nenhum consumidor depois que o ADR 035 removeu `.fonte-manuscrita`. Ver ADR 039.
+- **Testes**: 161 (`npx vitest run`, sem variação).
+
+### [v3.4.0] - 2026-09-18 (cidade/estado do cadastro viram seleção)
+- **Alterado**: `/completar-perfil` **e** o formulário de cadastro em `/auth` — o campo de texto livre "Cidade e Estado" virou dois selects em ambas as telas: Estado (lista fixa) e Cidade (via API do IBGE, carregada ao escolher o estado). Ver ADR 033.
+- **Testes**: 155 (sem variação).
 
 ### [v3.3.0] - 2026-09-17 (domínio próprio no código; preview de link)
 - **Adicionado**: `NEXT_PUBLIC_SITE_URL` e `urlDoSite()` (`src/lib/site.ts`); `metadataBase`, link canônico, Open Graph e Twitter Card no `layout.tsx`. Ver ADR 032.

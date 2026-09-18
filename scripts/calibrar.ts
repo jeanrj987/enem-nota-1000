@@ -61,9 +61,10 @@ async function main() {
         const correcao = await corrigirRedacaoComIA(redacao.texto, redacao.tema, redacao.candidato);
         execucoes.push({ redacaoId: redacao.id, execucao: i, correcao, erro: null, duracaoMs: Date.now() - inicio });
         console.log(`nota_geral=${correcao.nota_geral} (esperado ${redacao.notaOficial.geral})`);
-      } catch (e: any) {
-        execucoes.push({ redacaoId: redacao.id, execucao: i, correcao: null, erro: e.message, duracaoMs: Date.now() - inicio });
-        console.log(`FALHOU: ${e.message}`);
+      } catch (e) {
+        const mensagem = e instanceof Error ? e.message : String(e);
+        execucoes.push({ redacaoId: redacao.id, execucao: i, correcao: null, erro: mensagem, duracaoMs: Date.now() - inicio });
+        console.log(`FALHOU: ${mensagem}`);
       }
     }
 

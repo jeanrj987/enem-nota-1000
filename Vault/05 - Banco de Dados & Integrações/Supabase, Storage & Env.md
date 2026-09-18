@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-18 (compras_orfas, atribuicao_anuncio e variáveis de medição)
+updated: 2026-09-18 (rate limiting no Upstash, compras_orfas, atribuicao_anuncio e variáveis de medição)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -222,6 +222,7 @@ O provider Google precisa ser habilitado manualmente (não é código, é config
 | `META_CAPI_TEST_EVENT_CODE` | Opcional | Código de "Testar eventos". Enquanto preenchida, os eventos **não contam como conversão real**. Esvaziar em produção. |
 | `META_GRAPH_API_VERSION` | Opcional | Versão da Graph API (padrão `v23.0`). O Meta aposenta versões a cada ~2 anos e uma versão vencida faz a chamada falhar inteira. |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Opcional (medição) | GA4, formato `G-XXXXXXXXXX`. |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Recomendada em produção | Projeto `helpful-starling-284381` no Upstash (plano free). Rate limiting compartilhado entre instâncias serverless (`src/lib/rate-limit.ts`, ADR 037). Sem elas, cai para um contador em memória por instância. |
 
 ---
 
@@ -258,7 +259,7 @@ Chamadores (`Editor.tsx`, `dashboard/page.tsx`, `historico/page.tsx`, `correcao/
 
 ## 🚦 Rate Limiting & Teto de Tamanho (`src/lib/rate-limit.ts`)
 
-> [!warning] **Limitação conhecida**: contador em memória, por processo — não é compartilhado entre instâncias serverless frias. Suficiente para MVP/instância única; para limitar de forma consistente em produção com múltiplas instâncias, trocar por um store compartilhado (ex: Upstash Redis).
+> [!tip] **Compartilhado entre instâncias via Upstash Redis (ADR 037)**: com `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` configurados, o contador vive no Redis (padrão `INCR` + `PEXPIRE` de janela fixa), não mais por processo. Sem essas variáveis, ou se a chamada ao Redis falhar, cai para o Map em memória local — pior sob múltiplas instâncias concorrentes, mas nunca derruba a rota por causa do rate limiter.
 
 | Rota | Limite | Janela | Teto de tamanho |
 | :--- | :--- | :--- | :--- |

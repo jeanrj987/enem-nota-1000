@@ -85,7 +85,7 @@ Essa última linha é a ponte para a prova. Sem ela, a seção é só mais uma a
 
 Mostra nota geral (840/1000), as 5 competências com barra, um trecho de texto com dois desvios **marcados** (concordância verbal e coesão), o comentário do corretor ao lado de cada um, e o bloco "Seu próximo passo".
 
-> [!info] **Usa as MESMAS classes do produto** (`highlight-concordancia`, `highlight-coesao`, `risco-corretor`, `bloco-pautado`, de `globals.css`), não uma imitação. Se o visual da correção mudar, a demonstração muda junto — demonstração que envelhece separada do produto vira promessa falsa.
+> [!info] **Usa as MESMAS classes do produto** (`highlight-concordancia`, `highlight-coesao`, de `globals.css` — as mesmas que `TextoDestacado` aplica na correção real), não uma imitação. O riscado do corretor e a superfície do texto são utilitários Tailwind, e não as antigas `.risco-corretor`/`.bloco-pautado`, removidas no ADR 035. Se o visual da correção mudar, a demonstração muda junto — demonstração que envelhece separada do produto vira promessa falsa.
 >
 > O conteúdo é **ilustrativo**, escrito para a demonstração e rotulado como exemplo na tela. Não é redação de aluno real.
 

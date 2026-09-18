@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validarCorrecaoIA, contarParagrafos } from '@/lib/correcao-schema';
+import { validarCorrecaoIA, contarParagrafos, type CorrecaoIA } from '@/lib/correcao-schema';
 
 const textoMonobloco =
   'A herança africana é muito importante para o Brasil, mas infelizmente as pessoas não valorizam ela como deveria. Desde os tempos da escravidão, os negros trouxeram muita coisa boa para o nosso país, como a comida, a música, o samba, a capoeira, o candomblé e várias outras coisas. Mas isso tudo é esquecido e desvalorizado pela sociedade brasileira.Na minha opinião, o problema é que o racismo ainda existe muito no Brasil.';
@@ -36,7 +36,7 @@ function correcaoBase(notas: [number, number, number, number, number]) {
     motivo_anulacao: null as string | null,
     nota_geral: notas.reduce((a, b) => a + b, 0),
     competencias: [1, 2, 3, 4, 5].map((n, i) => competencia(n as 1, notas[i])),
-    erros: [],
+    erros: [] as CorrecaoIA['erros'],
     versao_reescrita: 'x',
     feedback_pedagogico: 'x',
     pontos_positivos: [],
@@ -165,7 +165,7 @@ describe('validarCorrecaoIA — teto de C2 em texto monobloco', () => {
 describe('validarCorrecaoIA — descarte de trechos alucinados', () => {
   it('descarta erro cujo trecho não existe no texto original, sem invalidar a resposta inteira', () => {
     const data = correcaoBase([120, 120, 120, 120, 120]);
-    (data as any).erros = [
+    data.erros = [
       {
         id: 'e1',
         trecho: 'isso não está no texto original',
@@ -185,7 +185,7 @@ describe('validarCorrecaoIA — descarte de trechos alucinados', () => {
 
   it('mantém erro cujo trecho existe literalmente no texto original', () => {
     const data = correcaoBase([120, 120, 120, 120, 120]);
-    (data as any).erros = [
+    data.erros = [
       {
         id: 'e1',
         trecho: 'Parágrafo dois desenvolvendo',
@@ -290,7 +290,7 @@ describe('validarCorrecaoIA — consistência das habilidades de C1', () => {
 
   it('rejeita nota 200 em C1 quando há 2 ou mais erros grounded relacionados à Competência I', () => {
     const data = correcaoBase([200, 120, 120, 120, 120]);
-    (data as any).erros = [
+    data.erros = [
       { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'concordancia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
       { id: 'e2', trecho: 'Parágrafo três com outro', tipo: 'ortografia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
     ];
@@ -300,7 +300,7 @@ describe('validarCorrecaoIA — consistência das habilidades de C1', () => {
 
   it('aceita nota 200 em C1 com apenas 1 erro grounded relacionado à Competência I', () => {
     const data = correcaoBase([200, 120, 120, 120, 120]);
-    (data as any).erros = [
+    data.erros = [
       { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'concordancia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
     ];
     const r = validarCorrecaoIA(data, textoComParagrafos);
@@ -318,7 +318,7 @@ describe('validarCorrecaoIA — consistência das habilidades de C1', () => {
 
   it('não gera esse aviso quando C1 recebe nota abaixo de 200 com um erro grounded vinculado', () => {
     const data = correcaoBase([160, 120, 120, 120, 120]);
-    (data as any).erros = [
+    data.erros = [
       { id: 'e1', trecho: 'Parágrafo dois desenvolvendo', tipo: 'regencia', correcao: 'x', explicacao: 'x', competencia_relacionada: 1 },
     ];
     const r = validarCorrecaoIA(data, textoComParagrafos);

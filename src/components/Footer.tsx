@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { GraduationCap, Shield, Sparkles, Heart, Award, ArrowUpRight } from 'lucide-react';
+import { GraduationCap, Shield, Sparkles, ArrowUpRight } from 'lucide-react';
 
 export function Footer() {
   return (

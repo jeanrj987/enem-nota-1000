@@ -22,7 +22,7 @@ const JANELA_MS = 10 * 60 * 1000; // 10 minutos
 
 export async function POST(req: NextRequest) {
   const ip = obterIpCliente(req);
-  const rate = checarRateLimit(`corrigir:${ip}`, LIMITE_REQUISICOES, JANELA_MS);
+  const rate = await checarRateLimit(`corrigir:${ip}`, LIMITE_REQUISICOES, JANELA_MS);
 
   if (!rate.permitido) {
     return NextResponse.json(
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       redacaoId,
       ...(assinante ? { correcao } : { chamariz }),
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erro na rota /api/corrigir:', error);
     return NextResponse.json(
       {

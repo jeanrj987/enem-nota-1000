@@ -14,18 +14,40 @@ const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
 const TOLERANCIA_VALOR_REAIS = 1;
 
 /**
- * ATENÇÃO — mapeamento de payload não confirmado contra um envio real.
+ * Formato do payload confirmado contra a Kiwify real em 17/09 (ADR 028): o
+ * "Testar Webhook" do painel (evento "Compra aprovada") bateu exatamente com
+ * `order_status`/`Product.product_name`/`Customer.email`/
+ * `Commissions.charge_amount`, e uma compra real de valor mínimo confirmou o
+ * fluxo de ponta a ponta (webhook recebido, conta resolvida, acesso
+ * liberado). Único ponto ainda sem confirmação contra um envio real: os
+ * eventos de cancelamento/atraso de assinatura, que o "Testar Webhook" da
+ * Kiwify não simula — o mapeamento de `ehCancelamento`/`ehAtraso` em
+ * `normalizarStatus` continua sendo a melhor suposição.
  *
- * Este arquivo foi escrito a partir do padrão mais comum de integração com
- * a Kiwify (assinatura HMAC-SHA1 na query string `?signature=`, payload com
- * `order_status`/`Customer`/`Product` em algum formato aproximado disso),
- * mas NINGUÉM confirmou o formato exato contra um envio de teste real da
- * conta do usuário. Antes de confiar nisso em produção: disparar "Testar
- * Webhook" no painel da Kiwify (ou uma compra de teste) e conferir os logs
- * do Vercel para essa rota — `console.log('kiwify_webhook_payload_bruto', ...)`
- * abaixo grava o corpo inteiro de propósito, para isso ser possível sem
- * adivinhar.
+ * Os campos abaixo continuam todos opcionais e em variações de grafia
+ * (`Customer` vs `customer`) porque a Kiwify documenta o payload de forma
+ * inconsistente entre os próprios eventos — mais seguro aceitar as
+ * variantes conhecidas do que assumir uma grafia fixa.
  */
+interface PayloadWebhookKiwify {
+  Customer?: { email?: string };
+  customer?: { email?: string };
+  Buyer?: { email?: string };
+  buyer?: { email?: string };
+  email?: string;
+  Product?: { product_name?: string; name?: string };
+  product?: { product_name?: string };
+  product_name?: string;
+  Commissions?: { charge_amount?: number };
+  charge_amount?: number;
+  amount?: number;
+  price?: number;
+  order_status?: string;
+  webhook_event_type?: string;
+  status?: string;
+  order_id?: string;
+  id?: string;
+}
 
 function assinaturaValida(payloadBruto: string, assinaturaRecebida: string | null): boolean {
   if (!webhookToken) return false;
@@ -37,7 +59,7 @@ function assinaturaValida(payloadBruto: string, assinaturaRecebida: string | nul
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-function extrairEmail(payload: any): string | null {
+function extrairEmail(payload: PayloadWebhookKiwify): string | null {
   return (
     payload?.Customer?.email ||
     payload?.customer?.email ||
@@ -54,7 +76,7 @@ function extrairEmail(payload: any): string | null {
  * não sabemos ainda o formato exato do identificador de produto que a
  * Kiwify manda no payload.
  */
-function identificarPlano(payload: any): PlanoId | null {
+function identificarPlano(payload: PayloadWebhookKiwify): PlanoId | null {
   const nomeProduto: string = (
     payload?.Product?.product_name ||
     payload?.product?.product_name ||
@@ -89,7 +111,7 @@ function identificarPlano(payload: any): PlanoId | null {
   return null;
 }
 
-function normalizarStatus(payload: any): string {
+function normalizarStatus(payload: PayloadWebhookKiwify): string {
   return String(
     payload?.order_status || payload?.webhook_event_type || payload?.status || ''
   ).toLowerCase();
@@ -133,9 +155,8 @@ function classificarStatus(status: string): AcaoDoWebhook {
  * idempotente), e duas compras diferentes nunca colidem. Sortear um id
  * aqui criaria uma linha nova a cada reentrega.
  */
-function idDoPedido(payload: unknown, payloadBruto: string): string {
-  const campos = payload as { order_id?: unknown; id?: unknown } | null | undefined;
-  const id = campos?.order_id ?? campos?.id;
+function idDoPedido(payload: PayloadWebhookKiwify, payloadBruto: string): string {
+  const id = payload.order_id ?? payload.id;
   if (typeof id === 'string' && id.trim()) return id.trim();
   return `sem-pedido-${crypto.createHash('sha1').update(payloadBruto).digest('hex').slice(0, 16)}`;
 }
@@ -161,15 +182,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Assinatura inválida.' }, { status: 400 });
   }
 
-  let payload: any;
+  let payload: PayloadWebhookKiwify;
   try {
     payload = JSON.parse(payloadBruto);
   } catch {
     return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 });
   }
-
-  // Gravado de propósito, para confirmar o formato real no primeiro envio.
-  console.log('kiwify_webhook_payload_bruto', payloadBruto);
 
   const status = normalizarStatus(payload);
   const email = extrairEmail(payload);
@@ -216,7 +234,7 @@ export async function POST(req: NextRequest) {
  * exatamente o que deixou compras se perderem em silêncio até 18/09.
  */
 async function aprovar(ctx: {
-  payload: unknown;
+  payload: PayloadWebhookKiwify;
   payloadBruto: string;
   email: string;
   userId: string | null;

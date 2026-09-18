@@ -10,7 +10,6 @@ import {
   Layers,
   Info,
   PenTool,
-  Lock,
 } from 'lucide-react';
 import { Correcao, Redacao } from '@/types';
 import confetti from 'canvas-confetti';

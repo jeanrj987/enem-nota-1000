@@ -5,14 +5,9 @@ import Link from 'next/link';
 import {
   TrendingUp,
   Search,
-  Filter,
-  Calendar,
-  Award,
   BookOpen,
-  ArrowUpRight,
   PenTool,
   ChevronRight,
-  Layers,
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -113,7 +108,9 @@ export default function HistoricoPage() {
 
               <select
                 value={filtroFaixa}
-                onChange={(e: any) => setFiltroFaixa(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setFiltroFaixa(e.target.value as 'todas' | '900+' | '800+' | '<800')
+                }
                 className="bg-folha/90 border border-regua rounded-xl px-3 py-1.5 text-xs text-tinta-suave focus:outline-none focus:border-azul"
               >
                 <option value="todas">Todas as notas</option>

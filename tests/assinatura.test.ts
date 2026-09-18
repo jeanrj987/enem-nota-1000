@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockState: {
   isSupabaseConfigured: boolean;
   usuario: { id: string } | null;
-  maybeSingleResult: { data: any; error: any };
+  maybeSingleResult: { data: { expira_em?: string } | null; error: { message: string } | null };
   ultimaChamada: { user_id?: string; status?: string; expiraAposIso?: string };
 } = {
   isSupabaseConfigured: true,

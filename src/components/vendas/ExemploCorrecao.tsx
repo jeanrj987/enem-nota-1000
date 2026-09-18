@@ -8,10 +8,17 @@ import { Quote } from 'lucide-react';
  * acreditasse. Quem nunca viu o produto não tinha como julgar se valia R$97
  * — e a objeção real de quem chega por anúncio não é preço, é desconfiança.
  *
- * Usa as MESMAS classes de marcação do produto (`highlight-*`,
- * `risco-corretor`, `bloco-pautado`, definidas em `globals.css`), e não uma
- * imitação: se o visual da correção mudar, esta demonstração muda junto. Uma
- * demonstração que envelhece separada do produto vira promessa falsa.
+ * Usa as MESMAS classes de marcação de erro do produto (`highlight-*`, em
+ * `globals.css`, as mesmas que `TextoDestacado` aplica na correção real), e
+ * não uma imitação: se o visual da marcação mudar, esta demonstração muda
+ * junto. Uma demonstração que envelhece separada do produto vira promessa
+ * falsa.
+ *
+ * O riscado do corretor e a superfície do texto são utilitários Tailwind
+ * aqui, e não as antigas `.risco-corretor`/`.bloco-pautado`: elas foram
+ * removidas no ADR 035 por serem resquício órfão da identidade "caderno",
+ * anterior ao tema dark. Trazê-las de volta só para esta tela reabriria a
+ * dívida que aquele ADR fechou.
  *
  * O conteúdo é um exemplo ilustrativo, escrito para a demonstração — não é a
  * redação de nenhum aluno real, e está rotulado como exemplo na tela.
@@ -75,7 +82,7 @@ export function ExemploCorrecao() {
           Seu texto, com as marcações
         </span>
 
-        <p className="bloco-pautado mt-3 text-[15px] leading-8 text-tinta">
+        <p className="mt-3 rounded-xl border border-regua bg-folha-2/40 p-5 text-[15px] leading-8 text-tinta">
           Portanto, é evidente que o poder público deve criar políticas que garantam o acesso à
           saúde, tendo em vista que muitos idosos{' '}
           <span className="highlight-concordancia">não tem</span> condições de arcar com os
@@ -90,7 +97,9 @@ export function ExemploCorrecao() {
             competencia="C1"
           >
             O sujeito é <strong className="text-tinta">muitos idosos</strong>, plural. O certo é{' '}
-            <span className="risco-corretor">não tem</span>{' '}
+            <span className="text-tinta-fraca line-through decoration-vermelho decoration-2">
+              não tem
+            </span>{' '}
             <strong className="text-tinta">não têm</strong>, com acento circunflexo — é ele que
             marca a terceira pessoa do plural.
           </ComentarioDoCorretor>

@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
-import { Newsreader, Karla, Caveat } from 'next/font/google';
+import { Newsreader, Karla } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { urlDoSite } from '@/lib/site';
 import { Medicao } from '@/components/analytics/Medicao';
 
-// Serifada para o enunciado (é assim que uma prova é impressa), humanista
-// para leitura corrida e manuscrita reservada às anotações do corretor. As
-// fontes sobreviveram à troca de identidade visual; só a paleta mudou.
+// Serifada para o enunciado (é assim que uma prova é impressa) e humanista
+// para leitura corrida. Sobreviveram à troca de identidade visual; só a
+// paleta mudou. A manuscrita (Caveat) foi removida em 18/09 junto com o
+// último utilitário CSS que a usava (.fonte-manuscrita, ver ADR 035).
 const newsreader = Newsreader({
   subsets: ['latin'],
   variable: '--font-newsreader',
@@ -16,11 +17,6 @@ const newsreader = Newsreader({
 const karla = Karla({
   subsets: ['latin'],
   variable: '--font-karla',
-});
-
-const caveat = Caveat({
-  subsets: ['latin'],
-  variable: '--font-caveat',
 });
 
 const TITULO = 'Nota 1000 | Correção de Redações do ENEM';
@@ -69,7 +65,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${newsreader.variable} ${karla.variable} ${caveat.variable} antialiased`}
+      className={`${newsreader.variable} ${karla.variable} antialiased`}
     >
       <body className="min-h-screen bg-papel text-tinta flex flex-col fonte-humanista selection:bg-azul selection:text-folha">
         <AuthProvider>{children}</AuthProvider>

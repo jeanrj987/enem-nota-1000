@@ -4,13 +4,9 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   PenTool,
-  Sparkles,
-  BookOpen,
   CheckCircle2,
-  HelpCircle,
   Lightbulb,
   Award,
-  Layers,
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';

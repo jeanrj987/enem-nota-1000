@@ -39,7 +39,9 @@ Os nomes viram utilitários do Tailwind automaticamente: `bg-papel`, `text-tinta
 | `--color-ambar` | `#f5c451` | Atenção (`-claro` `#362a10`) |
 | `--radius` | `0.875rem` | Cantos arredondados padrão |
 
-**Tipografia** (`next/font` em `layout.tsx`, expostas como classes): `Newsreader` → `.fonte-serifada`; `Karla` → `.fonte-humanista` (**padrão do `<body>`**, inclusive em `h1/h2/h3`); `Caveat` → `.fonte-manuscrita`.
+**Tipografia** (`next/font` em `layout.tsx`, expostas como classes): `Newsreader` → `.fonte-serifada`; `Karla` → `.fonte-humanista` (**padrão do `<body>`**, inclusive em `h1/h2/h3`).
+
+> [!warning] `Caveat` continua carregada em `layout.tsx` (`--font-caveat` no `<html>`) mas `.fonte-manuscrita`, a única classe que a consumia, foi removida por não ter nenhum uso (ver abaixo) — hoje é uma fonte baixada por todo visitante sem nenhum efeito visual. Decisão de remover o `next/font` do Caveat também, ou achar um uso real para ela, ficou fora do escopo desta limpeza — fica para quem mexer em tipografia de novo.
 
 ---
 
@@ -51,10 +53,6 @@ Os nomes viram utilitários do Tailwind automaticamente: `bg-papel`, `text-tinta
 - `.gradient-text` — `linear-gradient(90deg, #fff, #8eb7ff)` recortado no texto. Usado nos títulos da hero, do `Navbar` e do `Footer`.
 - `.fonte-serifada` — hoje só em `/privacidade`.
 - Scrollbar customizada (`::-webkit-scrollbar`) na paleta escura.
-
-### Definidos, porém sem nenhum uso no app
-> [!info] Sobraram da identidade "caderno" e nunca foram removidos. Antes de reutilizar um destes nomes, confirme se o efeito ainda faz sentido no tema escuro.
-`.margem-caderno`, `.bloco-pautado`, `.risco-corretor`, `.carimbo` e `.fonte-manuscrita` — zero ocorrências em `src/**/*.tsx`.
 
 ### Marcação de erros sobre o texto do aluno
 Todas compartilham `border-bottom: 2px solid` + fundo translúcido na cor da categoria (14% de opacidade, 28% no `:hover`).
@@ -91,9 +89,6 @@ Todas compartilham `border-bottom: 2px solid` + fundo translúcido na cor da cat
 
 ### Gráficos
 - **`GraficoEvolucao.tsx`** — `Recharts`: linha (evolução da nota 0–1000) e radar (distribuição entre C1–C5).
-
-### Primitivos ainda não adotados
-> [!warning] `src/components/ui/` (`Button`, `ButtonLink`, `Card`, `Badge`) foi criado junto com o tema dark, mas **nenhum arquivo do app importa esses componentes** — as telas continuam repetindo as classes na mão. Ou adote o kit ao mexer em cada tela, ou apague-o; mantê-lo sem uso só cria duas fontes de verdade para o mesmo botão.
 
 ---
 
