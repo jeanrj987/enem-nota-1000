@@ -161,6 +161,13 @@ updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 033: Cidade/Estado do cadastro viram seleção (IBGE), não texto livre
+- **Status**: Aprovado e Implementado.
+- **Contexto**: em `/completar-perfil`, o campo "Cidade e Estado" era um `<input type="text">` livre (placeholder "Ex: Fortaleza - CE"). Texto livre nesse campo gera dado sujo (abreviações, erros de digitação, formatos inconsistentes) sem nenhum ganho real — o valor não é usado para nada além de exibição/registro.
+- **Decisão**: virou dois `<select>` — Estado (lista fixa de 27 UFs, `src/lib/localidades.ts`) e Cidade (carregada sob demanda da API pública do IBGE, `buscarMunicipiosPorUf`, quando o estado é escolhido). Não há por que embutir as ~5570 cidades do Brasil no bundle — a busca é feita just-in-time, com timeout de 8s via `AbortController` e um botão de "tentar de novo" se a API do IBGE falhar (nunca falha silenciosamente). No submit, os dois valores são recompostos na mesma string `"Cidade - UF"` que já era salva em `perfis.cidade_estado` — sem migração de banco.
+- **Compatibilidade com cadastros antigos**: um `cidade_estado` salvo antes desta mudança só pré-popula os selects se bater exatamente no formato `"Cidade - UF"` com uma sigla de UF válida; caso contrário, a pessoa simplesmente escolhe de novo (campo já era obrigatório).
+- **Testes**: 155 (sem variação — é uma tela de formulário sem teste automatizado prévio, mesmo padrão de `RequerLogin`/`RequerAssinatura` antes do ADR 022; validado via `tsc --noEmit`, `eslint` e `npm run build`).
+
 ### ADR 032: Endereço canônico em `NEXT_PUBLIC_SITE_URL` + card de compartilhamento gerado em build
 - **Status**: Aprovado e Implementado.
 - **Contexto**: o domínio `www.nota1000enem.digital` (Hostinger → Vercel) já servia o site, mas **não existia nenhuma referência a ele no repositório**. Consequências: (1) o `layout.tsx` não tinha `metadataBase`, então link colado em WhatsApp/Instagram saía sem card de preview — caro para um produto vendido por link; (2) o endereço `*.vercel.app` respondia o mesmo conteúdo com status 200, abrindo caminho para o buscador indexar os dois e dividir a relevância.
@@ -267,6 +274,10 @@ updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.4.0] - 2026-09-18 (cidade/estado do cadastro viram seleção)
+- **Alterado**: `/completar-perfil` — o campo de texto livre "Cidade e Estado" virou dois selects: Estado (lista fixa) e Cidade (via API do IBGE, carregada ao escolher o estado). Ver ADR 033.
+- **Testes**: 155 (sem variação).
 
 ### [v3.3.0] - 2026-09-17 (domínio próprio no código; preview de link)
 - **Adicionado**: `NEXT_PUBLIC_SITE_URL` e `urlDoSite()` (`src/lib/site.ts`); `metadataBase`, link canônico, Open Graph e Twitter Card no `layout.tsx`. Ver ADR 032.
