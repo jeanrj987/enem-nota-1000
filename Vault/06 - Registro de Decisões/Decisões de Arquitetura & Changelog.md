@@ -164,7 +164,11 @@ updated: 2026-09-18 (nota sobre contagem de testes não confiável; teste de flu
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
-### ADR 038: Teste de fluxo real para os gates de acesso (Testing Library + jsdom)
+### ADR 039: Fonte Caveat removida — ficou órfã após o ADR 035
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 035 removeu `.fonte-manuscrita` (e os demais utilitários da identidade "caderno") de `globals.css` por não ter nenhuma ocorrência em `src/**/*.tsx`, mas deixou passar que esse era o único consumidor da variável `--font-caveat` — a fonte Google `Caveat`, carregada em `src/app/layout.tsx` e aplicada via `className` no `<html>`, continuou sendo baixada e declarada sem nenhum CSS a referenciar.
+- **Decisão**: removidos o import de `Caveat` de `next/font/google`, a constante `caveat` e sua entrada no `className` do `<html>` em `layout.tsx`. Restam `Newsreader` (serifada, enunciado) e `Karla` (humanista, leitura corrida).
+- **Testes**: 161 (sem variação — troca de fonte não tinha teste próprio nem afeta lógica).
 - **Status**: Aprovado e Implementado.
 - **Contexto**: o ADR 022 extraiu a decisão dos gates (`RequerLogin`/`RequerAssinatura`) para funções puras justamente porque o projeto não tinha jsdom/Testing Library — `gates.test.ts` cobre bem a regra de decisão, mas não garante que o componente de verdade (o `useEffect`, a chamada a `router.replace`, o que renderiza enquanto carrega) se comporta como o esperado. Item de dívida listado no relatório de operação de 17/09.
 - **Decisão**: adicionadas as dependências de dev `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (pacotes npm gratuitos, sem serviço/conta externa — diferente da decisão de infraestrutura do ADR 037). `vitest.config.ts` ganhou `setupFiles` (`tests/setup/jest-dom.ts`, estende `expect` com os matchers do jest-dom) e passou a incluir `*.test.tsx`. Testes de fluxo continuam em `node` por padrão (mais rápido, sem o custo de simular DOM); `tests/gates-fluxo.test.tsx` opta em `jsdom` só para si via o pragma `// @vitest-environment jsdom` no topo do arquivo.
@@ -317,6 +321,10 @@ updated: 2026-09-18 (nota sobre contagem de testes não confiável; teste de flu
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.5.0] - 2026-09-18 (fonte Caveat órfã removida)
+- **Removido**: fonte Google `Caveat` e a variável `--font-caveat` de `layout.tsx` — ficou sem nenhum consumidor depois que o ADR 035 removeu `.fonte-manuscrita`. Ver ADR 039.
+- **Testes**: 161 (`npx vitest run`, sem variação).
 
 ### [v3.4.0] - 2026-09-18 (cidade/estado do cadastro viram seleção)
 - **Alterado**: `/completar-perfil` **e** o formulário de cadastro em `/auth` — o campo de texto livre "Cidade e Estado" virou dois selects em ambas as telas: Estado (lista fixa) e Cidade (via API do IBGE, carregada ao escolher o estado). Ver ADR 033.
