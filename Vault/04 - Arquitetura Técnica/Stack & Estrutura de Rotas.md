@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-17 (landing única: a página de vendas virou a home)
+updated: 2026-09-18 (páginas de erro 404/runtime, ADR 036)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -43,6 +43,8 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 src/app/
 ├── layout.tsx                # Root Layout (tema dark V2, fontes Newsreader/Karla/Caveat)
 ├── globals.css               # Tokens do @theme, utilitários de superfície, highlights de erro
+├── not-found.tsx             # Fallback de rota inexistente (404) — Navbar/Footer + CTA para "/"
+├── error.tsx                 # Error boundary de runtime — Client Component minimalista, sem Navbar/Footer de propósito (ver comentário no arquivo)
 ├── page.tsx                  # Rota "/" (landing única = página de vendas, ADR 030)
 ├── vendas/
 │   └── page.tsx              # Rota "/vendas" — só um permanentRedirect("/") 308, mantido por links já divulgados

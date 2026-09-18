@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (remoção do kit de componentes ui/ e dos utilitários CSS órfãos)
+updated: 2026-09-18 (páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -160,6 +160,13 @@ updated: 2026-09-18 (remoção do kit de componentes ui/ e dos utilitários CSS 
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 036: Páginas próprias de 404 e de erro de runtime
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o app não tinha `not-found.tsx` nem `error.tsx` em `src/app/` — uma rota inexistente ou uma falha de runtime em produção caíam na tela padrão e genérica do Next.js, fora da identidade visual do produto.
+- **Decisão**: `src/app/not-found.tsx` reaproveita `Navbar`/`Footer` (é um Server Component comum, roda dentro do layout normal) com CTA para voltar à home. `src/app/error.tsx` é um Client Component (exigência do App Router para error boundaries) deliberadamente **sem** `Navbar`/`Footer`: um error boundary precisa ser a peça mais simples possível da árvore — se a causa da falha for algo que esses componentes também dependem (ex: `AuthContext`), reaproveitá-los aqui aumentaria a chance de o próprio fallback quebrar junto. `error.tsx` loga o erro recebido via `console.error` e oferece "Tentar de novo" (`reset()`) e "Voltar para a home".
+- **Verificado**: `npm run dev` + acesso a uma rota inexistente confirmou a página 404 customizada respondendo com status 404.
+- **Testes**: sem variação — páginas de fallback sem lógica testável no escopo atual.
 
 ### ADR 035: Utilitários CSS órfãos da identidade "caderno" removidos de `globals.css`
 - **Status**: Aprovado e Implementado.
