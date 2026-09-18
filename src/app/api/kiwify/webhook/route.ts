@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { PlanoId } from '@/lib/planos';
+import { PLANOS, PlanoId } from '@/lib/planos';
 import { ativarAssinatura, revogarAssinatura } from '@/lib/ativar-assinatura';
 import { buscarUserIdPorEmail } from '@/lib/perfil';
+import { registrarCompraOrfa } from '@/lib/compras-orfas';
+import { registrarCompraNoMeta } from '@/lib/analytics/compra';
 
 const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
+
+/** Margem ao casar o valor cobrado com o preço do plano — cobre centavos de
+ *  diferença por arredondamento ou desconto pequeno, sem confundir R$97 com
+ *  R$147. */
+const TOLERANCIA_VALOR_REAIS = 1;
 
 /**
  * ATENÇÃO — mapeamento de payload não confirmado contra um envio real.
@@ -70,8 +77,13 @@ function identificarPlano(payload: any): PlanoId | null {
   if (typeof valorCentavos === 'number') {
     // Aceita tanto reais quanto centavos, dependendo de como a Kiwify manda.
     const valorReais = valorCentavos > 1000 ? valorCentavos / 100 : valorCentavos;
-    if (Math.abs(valorReais - 97) < 1) return 'mensal';
-    if (Math.abs(valorReais - 147) < 1) return 'unico';
+    // Os preços vêm de `PLANOS`, não cravados aqui: eram dois números soltos
+    // que precisavam ser lembrados junto com o painel da Kiwify e com o
+    // valor mandado ao Meta.
+    const porValor = Object.values(PLANOS).find(
+      (plano) => Math.abs(valorReais - plano.precoReais) < TOLERANCIA_VALOR_REAIS
+    );
+    if (porValor) return porValor.id;
   }
 
   return null;
@@ -81,6 +93,51 @@ function normalizarStatus(payload: any): string {
   return String(
     payload?.order_status || payload?.webhook_event_type || payload?.status || ''
   ).toLowerCase();
+}
+
+/** Motivos aceitos por `revogarAssinatura`, mais a aprovação e o caso em que
+ *  o status não casou com nada que a gente conheça. */
+type AcaoDoWebhook =
+  | 'aprovacao'
+  | 'reembolsada'
+  | 'chargeback'
+  | 'cancelada'
+  | 'atrasada'
+  | 'desconhecida';
+
+/**
+ * ATENÇÃO — só "aprovacao" está confirmada contra um envio real da Kiwify.
+ * Os identificadores de reembolso, chargeback, cancelamento e atraso
+ * continuam sendo suposição: casam por trecho (`includes`) justamente para
+ * tolerar variações de grafia enquanto ninguém confirmou os nomes reais.
+ * Ver o cabeçalho deste arquivo para como confirmar.
+ */
+function classificarStatus(status: string): AcaoDoWebhook {
+  if (status.includes('paid') || status.includes('approved') || status.includes('aprovad')) {
+    return 'aprovacao';
+  }
+  if (status.includes('refund') || status.includes('reembols')) return 'reembolsada';
+  if (status.includes('chargeback')) return 'chargeback';
+  if (status.includes('cancel')) return 'cancelada';
+  if (status.includes('late') || status.includes('atras')) return 'atrasada';
+  return 'desconhecida';
+}
+
+/**
+ * Identificador da transação, usado como chave primária tanto em
+ * `assinaturas` quanto em `compras_orfas` — é o que torna a reentrega do
+ * mesmo webhook inofensiva.
+ *
+ * Quando a Kiwify não manda `order_id`, o hash do payload cru serve de
+ * substituto: reentrega do MESMO corpo produz a MESMA chave (continua
+ * idempotente), e duas compras diferentes nunca colidem. Sortear um id
+ * aqui criaria uma linha nova a cada reentrega.
+ */
+function idDoPedido(payload: unknown, payloadBruto: string): string {
+  const campos = payload as { order_id?: unknown; id?: unknown } | null | undefined;
+  const id = campos?.order_id ?? campos?.id;
+  if (typeof id === 'string' && id.trim()) return id.trim();
+  return `sem-pedido-${crypto.createHash('sha1').update(payloadBruto).digest('hex').slice(0, 16)}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -116,47 +173,89 @@ export async function POST(req: NextRequest) {
 
   const status = normalizarStatus(payload);
   const email = extrairEmail(payload);
-  const orderId: string | undefined = payload?.order_id || payload?.id;
+  const acao = classificarStatus(status);
 
   if (!email) {
     console.error('Webhook da Kiwify sem e-mail de comprador identificável:', payloadBruto);
     return NextResponse.json({ received: true });
   }
 
-  const userId = await buscarUserIdPorEmail(email);
-  if (!userId) {
-    // Não é erro nosso: a compra pode ter sido feita com um e-mail diferente
-    // do cadastro. Fica registrado no painel da Kiwify para ativação manual
-    // se o aluno reclamar de não ter recebido acesso.
-    console.error(`Webhook da Kiwify: nenhuma conta encontrada para o e-mail ${email}.`);
+  // Status que não reconhecemos não pode passar batido: os identificadores
+  // de cancelamento e atraso ainda são suposição nossa, nunca conferidos
+  // contra um envio real da Kiwify. Este log é o que permite descobrir o
+  // nome verdadeiro do evento sem precisar adivinhar de novo.
+  if (acao === 'desconhecida') {
+    console.error(
+      JSON.stringify({ evento: 'kiwify_status_desconhecido', status, payload_bruto: payloadBruto })
+    );
     return NextResponse.json({ received: true });
   }
 
-  const ehAprovacao = status.includes('paid') || status.includes('approved') || status.includes('aprovad');
-  const ehReembolso = status.includes('refund') || status.includes('reembols');
-  const ehChargeback = status.includes('chargeback');
-  const ehCancelamento = status.includes('cancel');
-  const ehAtraso = status.includes('late') || status.includes('atras');
+  const userId = await buscarUserIdPorEmail(email);
 
-  if (ehAprovacao) {
-    const planoId = identificarPlano(payload);
-    if (!planoId || !orderId) {
-      console.error('Webhook da Kiwify aprovado, mas plano ou order_id não identificados:', payloadBruto);
-      return NextResponse.json({ received: true });
-    }
-    const resultado = await ativarAssinatura({ sessionId: orderId, userId, planoId });
-    if (!resultado.sucesso) {
-      return NextResponse.json({ error: resultado.erro }, { status: 500 });
-    }
-  } else if (ehReembolso) {
-    await revogarAssinatura(userId, 'reembolsada');
-  } else if (ehChargeback) {
-    await revogarAssinatura(userId, 'chargeback');
-  } else if (ehCancelamento) {
-    await revogarAssinatura(userId, 'cancelada');
-  } else if (ehAtraso) {
-    await revogarAssinatura(userId, 'atrasada');
+  if (acao === 'aprovacao') {
+    return aprovar({ payload, payloadBruto, email, userId });
   }
 
+  if (!userId) {
+    // Revogação sem conta correspondente não deixa ninguém sem o que pagou
+    // — não há acesso ativo para tirar. Só registra e segue.
+    console.error(`Webhook da Kiwify (${status}): nenhuma conta para o e-mail ${email}.`);
+    return NextResponse.json({ received: true });
+  }
+
+  await revogarAssinatura(userId, acao);
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Compra aprovada: o único caminho em que o dinheiro já saiu da conta de
+ * alguém. Toda saída que não seja "acesso liberado" precisa terminar numa
+ * linha de `compras_orfas` — é a fila de quem pagou e está sem acesso.
+ * Nenhum desses casos pode acabar só num `console.error`, que foi
+ * exatamente o que deixou compras se perderem em silêncio até 18/09.
+ */
+async function aprovar(ctx: {
+  payload: unknown;
+  payloadBruto: string;
+  email: string;
+  userId: string | null;
+}): Promise<NextResponse> {
+  const planoId = identificarPlano(ctx.payload);
+  const orderId = idDoPedido(ctx.payload, ctx.payloadBruto);
+
+  if (ctx.userId && planoId) {
+    const resultado = await ativarAssinatura({ sessionId: orderId, userId: ctx.userId, planoId });
+    if (!resultado.sucesso) {
+      // 500 de propósito: a Kiwify reentrega em erro, e a reentrega é
+      // idempotente (`ativarAssinatura` usa o pedido como chave). Responder
+      // 200 aqui perderia a compra para sempre.
+      return NextResponse.json({ error: resultado.erro }, { status: 500 });
+    }
+
+    // Depois de liberar o acesso, nunca antes: o que importa para a pessoa é
+    // entrar no produto. `registrarCompraNoMeta` não lança, então uma falha
+    // de medição não derruba um webhook de pagamento aprovado — mas também
+    // não é ignorada, porque a Kiwify reentregaria e o `event_id` derivado do
+    // pedido faz o Meta deduplicar.
+    await registrarCompraNoMeta({
+      orderId,
+      userId: ctx.userId,
+      planoId,
+      email: ctx.email,
+    });
+
+    return NextResponse.json({ received: true });
+  }
+
+  // Sem conta (e-mail do checkout ≠ e-mail do cadastro) ou sem plano
+  // identificável: vai para a fila, com o payload cru, para a pessoa poder
+  // resgatar sozinha em /vincular-compra.
+  await registrarCompraOrfa({
+    orderId,
+    email: ctx.email,
+    planoId,
+    payload: ctx.payload,
+  });
   return NextResponse.json({ received: true });
 }

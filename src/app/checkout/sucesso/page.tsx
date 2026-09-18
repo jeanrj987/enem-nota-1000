@@ -84,6 +84,22 @@ function ConteudoSucesso() {
             {sessionId ? ` (referência ${sessionId.slice(0, 20)}...)` : ''}. Se você já pagou,
             recarregue esta página em instantes.
           </p>
+          {/* Recarregar não resolve o motivo mais comum de cair aqui: a
+              compra feita com um e-mail diferente do da conta nunca vai
+              aparecer, por mais que se espere — o webhook já passou e mandou
+              a compra para a fila de resgate. Sem esta saída, a pessoa fica
+              recarregando uma tela que não muda. */}
+          <div className="pt-1 space-y-2">
+            <p className="text-xs text-tinta-fraca">
+              Pagou com um e-mail diferente do da sua conta? Então não vai confirmar sozinho.
+            </p>
+            <Link
+              href="/vincular-compra"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-azul text-folha text-xs font-semibold shadow-md transition-all hover:brightness-110"
+            >
+              Liberar meu acesso agora
+            </Link>
+          </div>
         </>
       )}
     </div>

@@ -51,17 +51,31 @@ export async function buscarPerfil(userId: string): Promise<Perfil | null> {
  */
 export async function buscarUserIdPorEmail(email: string): Promise<string | null> {
   if (!supabaseAdmin) return null;
+  // `.limit(2)` e não `.maybeSingle()`: a busca é `ilike` (ignora caixa), e
+  // nada no banco impede `Maria@x.com` e `maria@x.com` como duas contas.
+  // `.maybeSingle()` trata 2 linhas como ERRO — o que devolvia `null` e
+  // mandava para a fila de compras órfãs uma compra cujo dono existe. Com
+  // duas, vence a conta mais antiga (a original; a segunda quase sempre é
+  // recadastro acidental) e a ambiguidade fica registrada.
   const { data, error } = await supabaseAdmin
     .from('perfis')
     .select('user_id')
     .ilike('email', email.trim())
-    .maybeSingle();
+    .order('created_at', { ascending: true })
+    .limit(2);
 
   if (error) {
     console.error('Erro ao buscar usuário por e-mail:', error);
     return null;
   }
-  return data?.user_id ?? null;
+  if (!data || data.length === 0) return null;
+  if (data.length > 1) {
+    console.error('Mais de um perfil com o mesmo e-mail (diferindo só na caixa):', {
+      email,
+      escolhido: data[0].user_id,
+    });
+  }
+  return data[0].user_id;
 }
 
 export async function salvarPerfil(userId: string, dados: DadosCadastroPerfil): Promise<{ sucesso: boolean; erro?: string }> {
