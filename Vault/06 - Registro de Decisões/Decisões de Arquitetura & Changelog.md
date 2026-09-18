@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
+updated: 2026-09-18 (rate limiting via Upstash Redis; páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -160,6 +160,15 @@ updated: 2026-09-18 (páginas de erro 404/runtime; remoção do kit ui/ e dos ut
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 037: Rate limiting movido para Upstash Redis (compartilhado entre instâncias)
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `checarRateLimit` guardava o contador num `Map` em memória, por processo. Em ambiente serverless (Vercel), cada instância fria tem o próprio `Map` vazio — o limite real sob múltiplas instâncias concorrentes é N vezes o configurado, N = número de instâncias, não o valor declarado. Limitação documentada desde a criação (`src/lib/rate-limit.ts`), nunca resolvida.
+- **Decisão**: o usuário criou uma conta Upstash (projeto `helpful-starling-284381`, plano free) e forneceu `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN`. `checarRateLimit` virou assíncrona: com as duas variáveis configuradas, o contador vive no Redis via `INCR` (primeira chamada da janela dispara `PEXPIRE`) — compartilhado de verdade entre instâncias. As 3 chamadas (`/api/corrigir`, `/api/upload`, `/api/corrigir/completar`) já estavam em handlers `async`, então virou só adicionar `await`.
+- **Fallback preservado, não removido**: sem as variáveis configuradas (dev local sem `.env.local` preenchido) ou se a chamada ao Redis falhar (rede, cota, serviço fora do ar), cai para o `Map` em memória local de antes — pior sob múltiplas instâncias, mas nunca derruba a rota por causa do rate limiter estar indisponível. Consistente com a regra do projeto de toda chamada externa ter fallback seguro.
+- **Verificado**: conexão real testada contra a instância Upstash (`INCR`/`PEXPIRE`/`PTTL` via script isolado, removido depois do teste) antes de considerar a integração funcionando.
+- **Pendente**: as mesmas duas variáveis precisam ser configuradas em **Vercel → Settings → Environment Variables** para valerem em produção — só foram adicionadas ao `.env.local` (dev) até aqui.
+- **Testes**: 155 (sem variação de contagem — `rate-limit.test.ts` só precisou de `await` nas chamadas, já que roda sem as variáveis do Upstash configuradas no ambiente de teste, exercitando o fallback em memória).
 
 ### ADR 036: Páginas próprias de 404 e de erro de runtime
 - **Status**: Aprovado e Implementado.

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
   const userId = userData.user.id;
 
-  const rate = checarRateLimit(`completar:${userId}`, LIMITE_REQUISICOES, JANELA_MS);
+  const rate = await checarRateLimit(`completar:${userId}`, LIMITE_REQUISICOES, JANELA_MS);
   if (!rate.permitido) {
     return NextResponse.json(
       { error: 'Muitas solicitações. Tente novamente em alguns minutos.' },

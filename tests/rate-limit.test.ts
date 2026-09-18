@@ -2,44 +2,44 @@ import { describe, it, expect } from 'vitest';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 
 describe('checarRateLimit', () => {
-  it('permite requisições até o limite', () => {
+  it('permite requisições até o limite', async () => {
     const id = 'teste-' + Math.random();
     for (let i = 0; i < 3; i++) {
-      const r = checarRateLimit(id, 3, 60_000);
+      const r = await checarRateLimit(id, 3, 60_000);
       expect(r.permitido).toBe(true);
     }
   });
 
-  it('bloqueia a partir da requisição além do limite', () => {
+  it('bloqueia a partir da requisição além do limite', async () => {
     const id = 'teste-' + Math.random();
-    checarRateLimit(id, 2, 60_000);
-    checarRateLimit(id, 2, 60_000);
-    const bloqueada = checarRateLimit(id, 2, 60_000);
+    await checarRateLimit(id, 2, 60_000);
+    await checarRateLimit(id, 2, 60_000);
+    const bloqueada = await checarRateLimit(id, 2, 60_000);
     expect(bloqueada.permitido).toBe(false);
     expect(bloqueada.restantes).toBe(0);
   });
 
-  it('reseta a contagem após a janela expirar', () => {
+  it('reseta a contagem após a janela expirar', async () => {
     const id = 'teste-' + Math.random();
-    checarRateLimit(id, 1, 10);
-    const bloqueada = checarRateLimit(id, 1, 10);
+    await checarRateLimit(id, 1, 10);
+    const bloqueada = await checarRateLimit(id, 1, 10);
     expect(bloqueada.permitido).toBe(false);
 
     return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const liberada = checarRateLimit(id, 1, 10);
+      setTimeout(async () => {
+        const liberada = await checarRateLimit(id, 1, 10);
         expect(liberada.permitido).toBe(true);
         resolve();
       }, 20);
     });
   });
 
-  it('mantém identificadores diferentes isolados entre si', () => {
+  it('mantém identificadores diferentes isolados entre si', async () => {
     const a = 'a-' + Math.random();
     const b = 'b-' + Math.random();
-    checarRateLimit(a, 1, 60_000);
-    const aBloqueada = checarRateLimit(a, 1, 60_000);
-    const bPermitida = checarRateLimit(b, 1, 60_000);
+    await checarRateLimit(a, 1, 60_000);
+    const aBloqueada = await checarRateLimit(a, 1, 60_000);
+    const bPermitida = await checarRateLimit(b, 1, 60_000);
     expect(aBloqueada.permitido).toBe(false);
     expect(bPermitida.permitido).toBe(true);
   });

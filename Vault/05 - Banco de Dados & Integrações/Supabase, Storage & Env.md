@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-17 (domínio próprio, NEXT_PUBLIC_SITE_URL e limpeza das variáveis do Stripe)
+updated: 2026-09-18 (rate limiting movido para Upstash Redis, ADR 037)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -128,6 +128,7 @@ O provider Google precisa ser habilitado manualmente (não é código, é config
 | `SUPABASE_SERVICE_ROLE_KEY` | Configurada | Usada só pelo webhook da Kiwify (`src/lib/supabase-admin.ts`) para gravar assinaturas, ignorando RLS. |
 | `KIWIFY_WEBHOOK_TOKEN` | Obrigatória | Assina o payload do webhook (HMAC-SHA1). É o token **gerado** pela Kiwify, visível em "Editar webhook" — não o valor de exemplo da tela de criação (ver ADR 028). |
 | `NEXT_PUBLIC_SITE_URL` | Obrigatória em produção | Endereço canônico do site (`https://www.nota1000enem.digital`). Alimenta `metadataBase`, link canônico e imagem de compartilhamento via `urlDoSite()` (`src/lib/site.ts`). Sem ela, cai em `VERCEL_PROJECT_PRODUCTION_URL` e o site se anuncia pelo endereço da Vercel. |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Recomendada em produção | Projeto `helpful-starling-284381` no Upstash (plano free). Rate limiting compartilhado entre instâncias serverless (`src/lib/rate-limit.ts`, ADR 037). Sem elas, cai para um contador em memória por instância. |
 
 ---
 
@@ -164,7 +165,7 @@ Chamadores (`Editor.tsx`, `dashboard/page.tsx`, `historico/page.tsx`, `correcao/
 
 ## 🚦 Rate Limiting & Teto de Tamanho (`src/lib/rate-limit.ts`)
 
-> [!warning] **Limitação conhecida**: contador em memória, por processo — não é compartilhado entre instâncias serverless frias. Suficiente para MVP/instância única; para limitar de forma consistente em produção com múltiplas instâncias, trocar por um store compartilhado (ex: Upstash Redis).
+> [!tip] **Compartilhado entre instâncias via Upstash Redis (ADR 037)**: com `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` configurados, o contador vive no Redis (padrão `INCR` + `PEXPIRE` de janela fixa), não mais por processo. Sem essas variáveis, ou se a chamada ao Redis falhar, cai para o Map em memória local — pior sob múltiplas instâncias concorrentes, mas nunca derruba a rota por causa do rate limiter.
 
 | Rota | Limite | Janela | Teto de tamanho |
 | :--- | :--- | :--- | :--- |

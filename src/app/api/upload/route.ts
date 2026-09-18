@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   // precisa criar contas, o que deixa rastro. O IP entra só como reserva
   // caso o identificador do usuário venha vazio.
   const ip = obterIpCliente(req);
-  const rate = checarRateLimit(
+  const rate = await checarRateLimit(
     `upload:${userData.user.id || ip}`,
     LIMITE_UPLOADS,
     JANELA_UPLOADS_MS
