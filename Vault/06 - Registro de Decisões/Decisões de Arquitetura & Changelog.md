@@ -183,6 +183,16 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 044: Correções gratuitas de 3 para 1, e o limite passa a ter uma fonte só
+- **Status**: Aprovado e Implementado.
+- **Contexto**: `LIMITE_CORRECOES_GRATUITAS` era 3. Cada correção gratuita é uma chamada paga de LLM (Gemini ou OpenAI), e três delas por conta são bancadas inteiramente por nós. O custo só é sustentável enquanto criar conta custa algo — e não custa: a confirmação de e-mail está desligada no Supabase (decisão registrada em `/auth`, para não colocar um passo a mais no funil), então conta com e-mail inventado é instantânea. O rate limit de `/api/corrigir` é **por IP** (5 a cada 10 min), o que atrasa mas não impede: quem trocar de rede multiplica a cota à vontade. Na prática, 3 correções por conta significava correções ilimitadas para quem tivesse paciência, pagas por nós.
+- **Decisão**: baixado para **1**. Uma correção já entrega a prova de valor que a landing promete — a pessoa manda a redação dela e vê quantos desvios o texto tem, que é o gancho da seção "O que é grátis e o que é pago" (ADR 043). O custo de abuso cai a um terço sem tirar nada de quem chega honesto. Decisão de produto do usuário, tomada na véspera de abrir tráfego pago.
+- **O problema estrutural que apareceu ao fazer a troca**: o número estava **duplicado**. `assinatura-servidor.ts` tinha o valor que a rota aplica, e `page.tsx` tinha uma cópia com um comentário pedindo que alguém lembrasse de sincronizar os dois. Isso é o tipo de acordo que se quebra em silêncio: a landing anuncia um limite e a rota aplica outro, e quem descobre é o aluno, no meio do uso. A duplicação existia por um motivo real — `assinatura-servidor.ts` importa `supabase-admin`, com a service role key, e a landing é componente de cliente: importar de lá levaria código de servidor para o bundle do navegador.
+- **Solução**: novo `src/lib/limites.ts`, sem dependência nenhuma, seguro para os dois lados. `assinatura-servidor.ts` reexporta de lá (quem já importava daquele caminho continua funcionando) e a landing importa direto. Uma fonte, dois consumidores.
+- **Concordância de número tratada no código, não na mão**: a expressão "N correções gratuitas" aparece em cinco lugares da landing. Com o limite em 1, texto cravado no plural viraria "1 correções gratuitas" — erro de português numa página que vende correção de redação é o pior lugar possível para ele existir. `textoCorrecoesGratuitas()` e `textoRedacoesGratuitas()` resolvem singular e plural, então mudar o limite de novo não exige reescrever copy.
+- **O teste que estava mentindo**: `correcao-gratuita.test.ts` mockava `LIMITE_CORRECOES_GRATUITAS: 3` e montava os cenários em cima do 3 cravado. Como o mock substituía o valor real, o teste continuaria verde mesmo depois de a rota passar a aplicar outro número — verificando um limite que não existe mais. Agora o limite não é mockado: os testes importam o valor real e derivam os cenários dele (`LIMITE_CORRECOES_GRATUITAS` e `- 1`), então seguem corretos para qualquer valor futuro.
+- **Testes**: 208 (sem variação de quantidade; 2 testes de `correcao-gratuita.test.ts` deixaram de depender do número cravado).
+
 ### ADR 043: Landing reestruturada em torno da prova — a correção gratuita deixou de ser invisível
 - **Status**: Aprovado e Implementado.
 - **Contexto**: a landing afirmava "análise detalhada", "erros destacados no texto" e "versão reescrita nota 1000", e pedia que se acreditasse. Não havia **uma única demonstração** do produto. Pior: o produto já dava 3 correções gratuitas (`LIMITE_CORRECOES_GRATUITAS`, `src/lib/assinatura-servidor.ts`) e `/nova-redacao` nunca exigiu assinatura (só `RequerLogin`) — mas a página não mencionava isso em lugar nenhum. A prova de valor mais forte do produto estava construída e escondida.
@@ -388,6 +398,15 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.8.0] - 2026-09-18 (correção gratuita de 3 para 1; validação de data; travas no banco)
+- **Alterado**: `LIMITE_CORRECOES_GRATUITAS` de 3 para **1**. Cada correção gratuita é uma chamada paga de LLM, e com a confirmação de e-mail desligada nada impede criar contas em série para multiplicar a cota. Ver ADR 044.
+- **Adicionado**: `src/lib/limites.ts` — o limite era duplicado entre `assinatura-servidor.ts` e `page.tsx`, com um comentário pedindo sincronização manual. Agora há uma fonte só, e helpers de concordância para a copy não virar "1 correções gratuitas".
+- **Corrigido**: o campo de data de nascimento aceitava o ano 98534. Nova `src/lib/data-nascimento.ts` com validação em três camadas (`min`/`max` no input, `onBlur` e no envio), aplicada em `/auth` e `/completar-perfil`. Recusa também data no futuro e datas que não existem (31/02, 29/02 em ano comum).
+- **Adicionado**: `supabase/schema-validacao-perfis.sql` — travas de integridade em `perfis` (data plausível, WhatsApp em E.164, tetos de tamanho, formato de e-mail). O banco é a única camada que quem chama a API pelo console não consegue pular.
+- **Corrigido**: a Política de Privacidade afirmava "não os entregamos a anunciantes", falso desde que Meta e Google entraram para medir anúncio; e o aviso de documento incompleto, prometido no código, nunca era renderizado.
+- **Adicionado**: identificação do controlador (PF) publicada, e o e-mail de contato virou fonte única — o rodapé apontava para um domínio que não é o do site.
+- **Testes**: 188 → 208.
 
 ### [v3.7.0] - 2026-09-18 (prova de valor na landing; medição de funil e anúncio; SEO)
 - **Alterado**: a landing parou de esconder a própria oferta. As 3 correções gratuitas, que já existiam no código e nunca eram mencionadas, viraram o CTA principal — e o botão passou a fazer o que promete (ia para a tabela de preços dizendo "corrigir minha redação"). Ver ADR 043.

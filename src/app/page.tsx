@@ -17,8 +17,8 @@
  *
  * REESTRUTURAÇÃO DE 18/09 — o que estava errado e o que mudou
  *
- * 1. **A página escondia a própria oferta.** O produto dá 3 correções
- *    gratuitas (`LIMITE_CORRECOES_GRATUITAS`, `assinatura-servidor.ts`) e
+ * 1. **A página escondia a própria oferta.** O produto sempre teve correção
+ *    gratuita (`LIMITE_CORRECOES_GRATUITAS`, hoje em `lib/limites.ts`) e
  *    `/nova-redacao` nunca exigiu assinatura — mas a landing não dizia isso
  *    em lugar nenhum. A prova de valor já estava construída e invisível.
  * 2. **O botão mentia.** Todo CTA dizia "CORRIGIR MINHA REDAÇÃO" e rolava
@@ -47,12 +47,15 @@ import { supabase } from '@/lib/supabase';
 import { lerAtribuicao } from '@/lib/analytics/atribuicao';
 import { rastrearInicioCheckout, rastrearVisitaVendas } from '@/lib/analytics/eventos-cliente';
 import { ExemploCorrecao } from '@/components/vendas/ExemploCorrecao';
+// Mesma fonte que `/api/corrigir` aplica. O número já foi duplicado aqui,
+// com um comentário pedindo sincronização manual — e é assim que a página
+// passa a anunciar um limite que a rota nega.
+import {
+  LIMITE_CORRECOES_GRATUITAS,
+  textoCorrecoesGratuitas,
+  textoRedacoesGratuitas,
+} from '@/lib/limites';
 import { CONTROLADOR } from '@/lib/controlador';
-
-/** Precisa bater com `LIMITE_CORRECOES_GRATUITAS` em `assinatura-servidor.ts`,
- *  que é o valor que o servidor de fato aplica. Divergir aqui promete na
- *  venda um número que a rota depois nega. */
-const CORRECOES_GRATUITAS = 3;
 
 const COMPETENCIAS = [
   { sigla: 'C1', titulo: 'Domínio da escrita', texto: 'Identifique desvios de gramática, pontuação, concordância, regência e outros aspectos da escrita formal.' },
@@ -63,7 +66,7 @@ const COMPETENCIAS = [
 ];
 
 const PASSOS = [
-  { titulo: 'Crie sua conta', texto: `Leva menos de um minuto e já libera suas ${CORRECOES_GRATUITAS} correções gratuitas. Não pedimos cartão.` },
+  { titulo: 'Crie sua conta', texto: `Leva menos de um minuto e já libera ${textoCorrecoesGratuitas()}. Não pedimos cartão.` },
   { titulo: 'Envie sua redação', texto: 'Digite no editor ou importe um arquivo em PDF, Word ou texto simples.' },
   { titulo: 'Veja quantos desvios tem', texto: 'Em segundos você descobre quantos pontos de atenção o seu texto tem — e se ele seria anulado.' },
   { titulo: 'Abra o diagnóstico', texto: 'Com um plano ativo, veja a nota de cada competência, cada desvio marcado no texto e o que fazer na próxima redação.' },
@@ -71,8 +74,10 @@ const PASSOS = [
 
 const FAQ = [
   {
-    q: `As ${CORRECOES_GRATUITAS} correções grátis são de verdade? Precisa de cartão?`,
-    a: `São de verdade e não pedimos cartão em momento nenhum. Você cria a conta, envia até ${CORRECOES_GRATUITAS} redações e o sistema corrige cada uma. O que você recebe sem pagar é o veredito: quantos desvios o texto tem e se ele seria anulado pelos critérios do INEP. O diagnóstico completo — nota por competência, cada desvio marcado no seu texto, versão reescrita e plano de estudo — é o que fica com o plano.`,
+    q: LIMITE_CORRECOES_GRATUITAS === 1
+      ? `A correção grátis é de verdade? Precisa de cartão?`
+      : `As ${LIMITE_CORRECOES_GRATUITAS} correções grátis são de verdade? Precisa de cartão?`,
+    a: `São de verdade e não pedimos cartão em momento nenhum. Você cria a conta, envia ${textoRedacoesGratuitas()} e o sistema a corrige. O que você recebe sem pagar é o veredito: quantos desvios o texto tem e se ele seria anulado pelos critérios do INEP. O diagnóstico completo — nota por competência, cada desvio marcado no seu texto, versão reescrita e plano de estudo — é o que fica com o plano.`,
   },
   {
     q: 'A avaliação segue os critérios reais do ENEM?',
@@ -92,7 +97,7 @@ const FAQ = [
   },
   {
     q: 'E se eu assinar e não gostar?',
-    a: 'Você pede o reembolso em até sete dias e recebe o valor integral de volta, sem precisar justificar. É por isso que as correções gratuitas vêm antes: a ideia é que você já saiba se o diagnóstico serve para você antes mesmo de pagar.',
+    a: 'Você pede o reembolso em até sete dias e recebe o valor integral de volta, sem precisar justificar. É por isso que a correção gratuita vem antes: a ideia é que você já saiba se o diagnóstico serve para você antes mesmo de pagar.',
   },
 ];
 
@@ -184,7 +189,7 @@ export default function PaginaInicial() {
 
             <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-tinta-suave">
               Envie sua redação agora e descubra em segundos quantos pontos de atenção ela tem, pelos
-              critérios oficiais do ENEM. As {CORRECOES_GRATUITAS} primeiras são gratuitas e não
+              critérios oficiais do ENEM. A primeira é gratuita e não
               pedimos cartão.
             </p>
 
@@ -350,7 +355,7 @@ export default function PaginaInicial() {
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">Oferta</span>
               <h2 className="mx-auto mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
-                Depois das gratuitas, escolha como continuar.
+                Depois da gratuita, escolha como continuar.
               </h2>
               <p className="mx-auto mt-3 max-w-md text-[15px] text-tinta-suave">
                 Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
@@ -473,7 +478,7 @@ export default function PaginaInicial() {
               CORRIGIR MINHA REDAÇÃO DE GRAÇA →
             </Link>
             <p className="mt-4 text-[12px] text-tinta-fraca">
-              {CORRECOES_GRATUITAS} correções gratuitas · sem cartão · leva menos de um minuto
+              {textoCorrecoesGratuitas()} · sem cartão · leva menos de um minuto
             </p>
           </div>
         </section>
@@ -526,7 +531,7 @@ function FronteiraGratisPago({ destino }: { destino: string }) {
             <span className="inline-flex items-center gap-2 rounded-full bg-verde-claro px-3 py-1 text-[11px] font-black uppercase tracking-wider text-verde">
               Grátis
             </span>
-            <h3 className="mt-4 text-lg font-bold">Suas {CORRECOES_GRATUITAS} primeiras redações</h3>
+            <h3 className="mt-4 text-lg font-bold">Sua primeira redação</h3>
             <ul className="mt-4 space-y-2.5 text-[13px] text-tinta-suave">
               {[
                 'Sua redação corrigida pelos critérios do INEP',

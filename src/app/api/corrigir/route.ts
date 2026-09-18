@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { corrigirRedacaoComDuplaCorrecao, corrigirRedacaoSimples } from '@/lib/openai';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import {
-  assinaturaAtivaDoUsuario,
-  contarCorrecoesDoUsuario,
-  LIMITE_CORRECOES_GRATUITAS,
-} from '@/lib/assinatura-servidor';
+import { assinaturaAtivaDoUsuario, contarCorrecoesDoUsuario } from '@/lib/assinatura-servidor';
+import { LIMITE_CORRECOES_GRATUITAS, textoCorrecoesGratuitas } from '@/lib/limites';
 import { salvarCorrecao } from '@/lib/salvar-correcao';
 import { gerarId } from '@/lib/ids';
 
@@ -85,7 +82,7 @@ export async function POST(req: NextRequest) {
       if (totalCorrecoes >= LIMITE_CORRECOES_GRATUITAS) {
         return NextResponse.json(
           {
-            error: `Você já usou suas ${LIMITE_CORRECOES_GRATUITAS} correções gratuitas. Assine um plano para continuar corrigindo redações.`,
+            error: `Você já usou ${textoCorrecoesGratuitas()}. Assine um plano para continuar corrigindo redações.`,
           },
           { status: 403 }
         );

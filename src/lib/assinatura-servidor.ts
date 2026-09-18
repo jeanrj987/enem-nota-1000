@@ -1,3 +1,4 @@
+import { LIMITE_CORRECOES_GRATUITAS } from '@/lib/limites';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -30,13 +31,14 @@ export async function assinaturaAtivaDoUsuario(userId: string): Promise<boolean>
 }
 
 /**
- * Teto absoluto de correções gratuitas por conta (não confundir com o rate
- * limit por IP em /api/corrigir, que é só uma janela deslizante e não impede
- * alguém de corrigir indefinidamente ao longo do tempo). Uma vez atingido,
- * a conta só corrige de novo assinando — é o que dá sustentação de custo ao
- * modelo freemium.
+ * Reexportado de `limites.ts`, onde o valor de fato mora.
+ *
+ * Mudou de lugar porque a landing precisa do mesmo número e não pode
+ * importar deste arquivo: aqui dentro vem `supabase-admin`, com a service
+ * role key, que não pode ir para o bundle do navegador. O reexport mantém
+ * funcionando quem já importava daqui.
  */
-export const LIMITE_CORRECOES_GRATUITAS = 3;
+export { LIMITE_CORRECOES_GRATUITAS };
 
 /**
  * Conta quantas redações essa conta já enviou no total (histórico completo,

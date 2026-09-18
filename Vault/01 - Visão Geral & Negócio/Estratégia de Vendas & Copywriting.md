@@ -43,11 +43,11 @@ graph TD
 
 ## 🆓 A oferta que estava escondida
 
-O produto dá **3 correções gratuitas** por conta (`LIMITE_CORRECOES_GRATUITAS`, `src/lib/assinatura-servidor.ts`) e `/nova-redacao` nunca exigiu assinatura — só `RequerLogin`. A landing não mencionava isso em lugar nenhum. A prova de valor mais forte do produto estava construída e invisível.
+O produto dá **1 correção gratuita** por conta (`LIMITE_CORRECOES_GRATUITAS`, `src/lib/limites.ts` — era 3 até 18/09, ver ADR 044) e `/nova-redacao` nunca exigiu assinatura — só `RequerLogin`. A landing não mencionava isso em lugar nenhum. A prova de valor mais forte do produto estava construída e invisível.
 
 > [!important] **A fronteira, dita antes do preço e não depois**
 
-| Grátis (3 primeiras redações) | Com plano |
+| Grátis (primeira redação) | Com plano |
 | :--- | :--- |
 | A redação corrigida pelos critérios do INEP | A nota de cada uma das 5 competências |
 | **Quantos desvios** o texto tem | Cada desvio marcado no texto, com o motivo |
@@ -64,7 +64,7 @@ O gratuito entrega o **veredito**, não o diagnóstico — é a RLS de `correcoe
 ### 1. Hero
 > **"Sua redação tem desvios que você não está enxergando"**
 >
-> *"Envie sua redação agora e descubra em segundos quantos pontos de atenção ela tem, pelos critérios oficiais do ENEM. As 3 primeiras são gratuitas e não pedimos cartão."*
+> *"Envie sua redação agora e descubra em segundos quantos pontos de atenção ela tem, pelos critérios oficiais do ENEM. A primeira é gratuita e não pedimos cartão."*
 >
 > CTA: **CORRIGIR MINHA REDAÇÃO DE GRAÇA →** · link secundário: *"Antes, ver um exemplo de correção"*
 >
@@ -112,7 +112,7 @@ Preços vêm de `PLANOS.precoReais` (`src/lib/planos.ts`) — fonte única, lida
 - **Linha de resgate** logo abaixo: *"Já comprou e o acesso não liberou? Destrave sua compra aqui"* → `/vincular-compra` (ADR 040).
 
 ### 8. FAQ (objeções reais, nesta ordem)
-1. *As 3 correções grátis são de verdade? Precisa de cartão?* — **primeira de propósito**: é a objeção de quem chega por anúncio.
+1. *A correção grátis é de verdade? Precisa de cartão?* — **primeira de propósito**: é a objeção de quem chega por anúncio.
 2. *A avaliação segue os critérios reais do ENEM?*
 3. *Quanto tempo leva?*
 4. *Como recebo o acesso após a compra?* — cita `/vincular-compra`.

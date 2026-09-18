@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NextRequest } from 'next/server';
 import type { Correcao } from '@/types';
+import { LIMITE_CORRECOES_GRATUITAS } from '@/lib/limites';
 
 const estado = {
   assinante: false,
@@ -51,8 +52,11 @@ vi.mock('@/lib/supabase-admin', () => ({
 vi.mock('@/lib/assinatura-servidor', () => ({
   assinaturaAtivaDoUsuario: async () => estado.assinante,
   contarCorrecoesDoUsuario: async () => estado.totalCorrecoes,
-  LIMITE_CORRECOES_GRATUITAS: 3,
 }));
+
+// O limite NAO e mockado: os testes usam o valor real, de `lib/limites.ts`,
+// e derivam os cenarios dele. Fixar 3 aqui, como era antes, fazia o teste
+// continuar verde medindo um numero que a rota ja nao aplicava mais.
 
 vi.mock('@/lib/openai', () => ({
   corrigirRedacaoComDuplaCorrecao: async () => {
@@ -129,17 +133,17 @@ describe('/api/corrigir — quantas correções rodam depende de quem paga', () 
 
   it('sem assinatura, ao atingir o teto de correções gratuitas, bloqueia com 403 e não chama a IA', async () => {
     estado.assinante = false;
-    estado.totalCorrecoes = 3; // == LIMITE_CORRECOES_GRATUITAS
+    estado.totalCorrecoes = LIMITE_CORRECOES_GRATUITAS;
     const res = await POST(requisicao(TEXTO));
     const body = await res.json();
     expect(res.status).toBe(403);
-    expect(body.error).toMatch(/correções gratuitas/i);
+    expect(body.error).toMatch(/correç(ão|ões) gratuita/i);
     expect(estado.chamadas).toEqual([]);
   });
 
   it('sem assinatura, abaixo do teto, corrige normalmente', async () => {
     estado.assinante = false;
-    estado.totalCorrecoes = 2; // < LIMITE_CORRECOES_GRATUITAS
+    estado.totalCorrecoes = LIMITE_CORRECOES_GRATUITAS - 1;
     await POST(requisicao(TEXTO));
     expect(estado.chamadas).toEqual(['simples']);
   });
