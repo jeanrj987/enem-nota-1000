@@ -69,7 +69,7 @@ O gratuito entrega o **veredito**, não o diagnóstico — é a RLS de `correcoe
 >
 > CTA: **CORRIGIR MINHA REDAÇÃO DE GRAÇA →** · link secundário: *"Antes, ver um exemplo de correção"*
 >
-> Selos: ✓ Sem cartão · ✓ Resultado em segundos · ✓ Critérios oficiais do INEP
+> Selos: ✓ Critérios oficiais do INEP · ✓ Todo erro apontado existe no seu texto · ✓ Sem cartão
 >
 > Rodapé do hero: *"Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado."*
 
@@ -110,7 +110,7 @@ A dupla correção leva selo **"Com plano"**: a correção gratuita roda uma pas
 Fecha com um parágrafo que **limita a própria promessa**: nada disso torna a correção infalível, e nenhuma nota aqui é a nota oficial do INEP. Dizer isso na própria seção de rigor é o que a mantém crível.
 
 ### 5. Como funciona (4 passos)
-1. **Crie sua conta** — menos de um minuto, libera as 3 gratuitas, não pedimos cartão.
+1. **Crie sua conta** — menos de um minuto, libera a correção gratuita, não pedimos cartão.
 2. **Envie sua redação** — editor ou arquivo PDF/Word/TXT.
 3. **Veja quantos desvios tem** — em segundos, e se seria anulada.
 4. **Abra o diagnóstico** — com plano ativo: nota por competência, desvios marcados, o que fazer na próxima.
@@ -119,7 +119,7 @@ Fecha com um parágrafo que **limita a própria promessa**: nada disso torna a c
 Cada uma vale até 200 pontos. O enquadramento é de estudo, não de recurso: *"saber qual delas está te segurando é o que decide onde vale a pena gastar seu tempo"*.
 
 ### 7. Oferta / Preço (`#planos`)
-> **"Depois das gratuitas, escolha como continuar."**
+> **"Depois da gratuita, escolha como continuar."**
 
 | Plano | Preço | Acesso | Observação |
 | :--- | :--- | :--- | :--- |
