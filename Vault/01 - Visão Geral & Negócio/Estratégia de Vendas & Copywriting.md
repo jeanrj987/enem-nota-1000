@@ -6,7 +6,7 @@ tags:
   - marketing
   - landing-page
   - oferta
-updated: 2026-09-18 (reestruturação em torno da prova de valor — ADR 043)
+updated: 2026-09-18 (prova de valor, ênfase em rigor da correção e correção gratuita de 3 para 1)
 ---
 
 # 📑 Estrutura de Copywriting & Landing de Vendas (`/`)
@@ -28,7 +28,8 @@ graph TD
     A[Hero: sua redação tem desvios que você não vê] --> B[Problema: nota sem diagnóstico não ensina]
     B --> C[A virada: você precisa do porquê]
     C --> D[A PROVA: veja uma correção de verdade]
-    D --> E[Como funciona em 4 passos]
+    D --> D2[POR QUE CONFIAR: como a correção é feita]
+    D2 --> E[Como funciona em 4 passos]
     E --> F[As 5 competências]
     F --> G[O que é grátis e o que é pago]
     G --> H[Planos + garantia de 7 dias]
@@ -88,6 +89,25 @@ Mostra nota geral (840/1000), as 5 competências com barra, um trecho de texto c
 > [!info] **Usa as MESMAS classes do produto** (`highlight-concordancia`, `highlight-coesao`, de `globals.css` — as mesmas que `TextoDestacado` aplica na correção real), não uma imitação. O riscado do corretor e a superfície do texto são utilitários Tailwind, e não as antigas `.risco-corretor`/`.bloco-pautado`, removidas no ADR 035. Se o visual da correção mudar, a demonstração muda junto — demonstração que envelhece separada do produto vira promessa falsa.
 >
 > O conteúdo é **ilustrativo**, escrito para a demonstração e rotulado como exemplo na tela. Não é redação de aluno real.
+
+### 4b. POR QUE CONFIAR (`#rigor`)
+`src/components/vendas/RigorDaCorrecao.tsx`. Vem logo depois da prova, de propósito: a pessoa acabou de ver o resultado, e a pergunta seguinte é se dá para acreditar nele.
+
+**Por que esta seção existe**: concorrentes como coRedação e SPES anunciam correção gratuita ilimitada. Competir por "quanto de graça" é disputa perdida — o que dá para defender é **como** a correção é feita.
+
+> [!danger] **Regra desta seção: nada de superlativo comparativo**
+> Nenhuma frase pode dizer "o mais preciso" ou "melhor que os outros". Ninguém mediu isso contra a concorrência, e afirmar seria inventar. Cada um dos quatro pilares descreve um **mecanismo que existe no código e pode ser conferido**:
+
+| Afirmação na página | Onde está no código |
+| :--- | :--- |
+| Duas correções independentes, e uma terceira se divergirem mais de 100 pontos | `reconciliarCorrecoes` e `LIMIAR_DIVERGENCIA` (`src/lib/reconciliacao.ts`) |
+| Erro cujo trecho não existe no texto é descartado | `validarCorrecaoIA` (`src/lib/correcao-schema.ts`) |
+| Os 5 elementos da C5 conferidos contra a nota | `ElementosC5Schema` + regra de consistência de C5 |
+| Divergência de anulação resolvida a favor do aluno | ramo `a.anulada !== b.anulada` de `reconciliarCorrecoes` |
+
+A dupla correção leva selo **"Com plano"**: a correção gratuita roda uma passagem só (`corrigirRedacaoSimples`). Omitir isso criaria a expectativa de receber de graça algo que a rota não entrega — a mesma quebra de promessa que o ADR 043 tirou da página.
+
+Fecha com um parágrafo que **limita a própria promessa**: nada disso torna a correção infalível, e nenhuma nota aqui é a nota oficial do INEP. Dizer isso na própria seção de rigor é o que a mantém crível.
 
 ### 5. Como funciona (4 passos)
 1. **Crie sua conta** — menos de um minuto, libera as 3 gratuitas, não pedimos cartão.

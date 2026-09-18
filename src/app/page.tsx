@@ -47,6 +47,7 @@ import { supabase } from '@/lib/supabase';
 import { lerAtribuicao } from '@/lib/analytics/atribuicao';
 import { rastrearInicioCheckout, rastrearVisitaVendas } from '@/lib/analytics/eventos-cliente';
 import { ExemploCorrecao } from '@/components/vendas/ExemploCorrecao';
+import { RigorDaCorrecao } from '@/components/vendas/RigorDaCorrecao';
 // Mesma fonte que `/api/corrigir` aplica. O número já foi duplicado aqui,
 // com um comentário pedindo sincronização manual — e é assim que a página
 // passa a anunciar um limite que a rota nega.
@@ -150,7 +151,7 @@ export default function PaginaInicial() {
           </span>
           <div className="hidden md:flex items-center gap-7 text-sm text-tinta-suave">
             <a href="#exemplo" className="hover:text-tinta transition-colors">Ver um exemplo</a>
-            <a href="#como" className="hover:text-tinta transition-colors">Como funciona</a>
+            <a href="#rigor" className="hover:text-tinta transition-colors">Por que confiar</a>
             <a href="#planos" className="hover:text-tinta transition-colors">Planos</a>
             <a href="#faq" className="hover:text-tinta transition-colors">Dúvidas</a>
           </div>
@@ -209,9 +210,9 @@ export default function PaginaInicial() {
             </div>
 
             <div className="mt-7 flex flex-wrap gap-4 text-[13px] text-tinta-suave">
-              <span>✓ Sem cartão</span>
-              <span>✓ Resultado em segundos</span>
               <span>✓ Critérios oficiais do INEP</span>
+              <span>✓ Todo erro apontado existe no seu texto</span>
+              <span>✓ Sem cartão</span>
             </div>
             <p className="mt-4 max-w-xl text-[12px] text-tinta-fraca">
               Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado.
@@ -302,6 +303,11 @@ export default function PaginaInicial() {
           </div>
         </section>
 
+        {/* Por que confiar — vem logo depois da prova de proposito: a pessoa
+            acabou de ver o resultado, e a pergunta seguinte e se da para
+            acreditar nele. */}
+        <RigorDaCorrecao />
+
         {/* Como funciona */}
         <section id="como" className="border-y border-regua bg-folha-2/60 py-24">
           <div className="mx-auto max-w-6xl px-6 text-center">
@@ -368,6 +374,7 @@ export default function PaginaInicial() {
                 destaque
                 descricao="Para quem vai treinar redação toda semana até a prova."
                 beneficios={[
+                  'Dupla correção independente, como na prova real',
                   'Correções ilimitadas',
                   'Nota nas 5 competências',
                   'Desvios marcados no seu texto',
@@ -382,6 +389,7 @@ export default function PaginaInicial() {
                 plano={PLANOS.unico}
                 descricao="Para quem quer uma reta final concentrada, sem recorrência."
                 beneficios={[
+                  'Dupla correção independente, como na prova real',
                   'Correções ilimitadas por 30 dias',
                   'Nota nas 5 competências',
                   'Desvios marcados no seu texto',
