@@ -25,7 +25,7 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 | :--- | :--- | :--- |
 | **Framework Web** | Next.js 16 (App Router) | Roteamento, API Serverless, SSR/SSG |
 | **Linguagem** | TypeScript 5 | Tipagem estática rigorosa em 100% dos arquivos |
-| **Estilização** | Tailwind CSS v4 + Vanilla CSS | Design System, Dark Mode, Glassmorphism |
+| **Estilização** | Tailwind CSS v4 + Vanilla CSS | Tokens semânticos no `@theme`, identidade "V2 dark" (ADR 031) |
 | **Ícones** | Lucide React | Biblioteca moderna de ícones vetoriais |
 | **Gráficos** | Recharts | Gráficos de evolução histórica e radar de competências |
 | **IA & LLMs** | `@google/genai` + `openai` | Modelos Gemini 3.6 Flash e GPT-4o-mini |
@@ -41,8 +41,8 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 
 ```text
 src/app/
-├── layout.tsx                # Root Layout (Dark Mode, Fontes Outfit & Inter)
-├── globals.css               # Variáveis CSS, Glassmorphism, Highlights de Erro
+├── layout.tsx                # Root Layout (tema dark V2, fontes Newsreader/Karla/Caveat)
+├── globals.css               # Tokens do @theme, utilitários de superfície, highlights de erro
 ├── page.tsx                  # Rota "/" (landing única = página de vendas, ADR 030)
 ├── vendas/
 │   └── page.tsx              # Rota "/vendas" — só um permanentRedirect("/") 308, mantido por links já divulgados

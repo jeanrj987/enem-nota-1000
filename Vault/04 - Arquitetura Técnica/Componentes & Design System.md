@@ -5,79 +5,105 @@ tags:
   - design-system
   - ui
   - tailwindcss
-  - glassmorphism
-updated: 2026-09-05 (identidade "placar" na página de vendas)
+  - tema-dark
+updated: 2026-09-17 (reescrita a partir do globals.css real — identidade "V2 dark")
 ---
 
 # 🎨 Design System & Componentes Reutilizáveis
 
-> [!warning] **Duas identidades convivem hoje**
-> A área logada ainda usa a estética original (dark mode com glassmorphism e gradientes). A rota `/vendas` foi redesenhada com a identidade **"placar"** (ver abaixo) porque a antiga tinha "cara de IA" — o kit padrão de gradiente azul→roxo, glass, orbes desfocados e cards idênticos com ícone colorido. A propagação da nova identidade para o resto do sistema está pendente.
+> [!important] **Identidade única: "V2 dark"**
+> Desde 17/09 (ADR 031) o projeto inteiro usa uma só identidade: fundo escuro profundo, **azul como acento principal** e superfícies chapadas com borda sutil. Não há mais tema por rota. As identidades anteriores — "placar" e "caderno & caneta vermelha" — estão registradas no fim desta nota como histórico e preservadas em `design-alternativas/`.
+
+> [!warning] **Dois nomes de classe mentem sobre o que fazem**
+> `.glass-panel` e `.glass-card` são herança da fase glassmorphism e **não têm mais `backdrop-filter` nem transparência** — hoje são superfícies sólidas (`--color-folha` / `--color-folha-2`) com borda e cantos arredondados. Os nomes ficaram para não exigir reescrever todo o app. O mesmo vale para `--color-papel`/`--color-tinta`, nomes do tema claro cujos valores hoje são escuros.
 
 ---
 
-## 🏆 Identidade "Placar" (`/vendas`)
+## 💎 Tokens (`@theme` em `src/app/globals.css`)
 
-Escolhida entre quatro direções propostas, com foco em conversão para o público de 16 a 19 anos: **a nota é o herói da página**. O topo é um placar `540 → 920`, e as cinco competências viram um painel de estatísticas com barras — transforma "melhore sua redação" em algo mensurável.
+Os nomes viram utilitários do Tailwind automaticamente: `bg-papel`, `text-tinta`, `border-regua`, `bg-folha-2`…
 
-**Paleta** (`.tema-placar` em `globals.css`): fundo `#0B1B2B` (azul-marinho, não o preto-azulado genérico), superfícies `#0F2438`/`#16304A`, linhas `#23415E`, texto `#F2F7FB`, texto suave `#93A8BC`, cinza "antes" `#4A6178` e **um único acento**: verde-limão `#C6F24E`, reservado ao estado "depois"/vitória e aos CTAs.
-
-**Tipografia**: `Anton` (`.fonte-placar`) só nas notas e títulos — condensada pesada, lê como placar esportivo; `Barlow` (`.fonte-ui`) no restante da interface.
-
-**Regras da identidade**: superfícies chapadas, cantos retos, zero gradiente, zero `backdrop-blur`, zero orbe desfocado. Números sempre com `tabular-nums`.
-
-> [!tip] **Honestidade na copy visual**
-> O placar `540 → 920` e as barras de competência levam uma nota explícita de que são **faixas ilustrativas** de como o sistema pontua, não o resultado de um aluno real. Sem isso seria um depoimento fabricado — mesmo problema do cronômetro falso removido na v1.4.0 (ver ADR 005 e o changelog).
-
-### Direção alternativa preservada
-A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada `Newsreader`, correções em vermelho de corretor, anotações manuscritas em `Caveat`) foi construída e descartada nesta rodada, aguardando avaliação de sócio. Os utilitários `.tema-papel`, `.margem-caderno`, `.bloco-pautado`, `.risco-corretor` e `.carimbo` continuam em `globals.css` para essa retomada.
-
----
-
-## 💎 Tokens de Design & Utilitários CSS (`src/app/globals.css`)
-
-### Classes de Glassmorphism:
-- `.glass-panel`: Fundo translúcido `rgba(15, 23, 42, 0.75)` com `backdrop-filter: blur(12px)` e borda sutil `rgba(255, 255, 255, 0.08)`.
-- `.glass-card`: Fundo `rgba(30, 41, 59, 0.6)` para cards internos.
-- `.gradient-text`: Gradiente de texto `linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #ec4899 100%)`.
-
-### Classes de Destaque Visual de Erros na Redação:
-| Classe CSS | Tipo de Erro | Cor Visual / Sublinhado |
+| Token | Valor | Uso |
 | :--- | :--- | :--- |
-| `.highlight-gramatica` | Gramática, ortografia, pontuação | Vermelho translúcido com borda inferior vermelha `#ef4444` |
-| `.highlight-coesao` | Conectivos e transições | Âmbar translúcido `#f59e0b` |
-| `.highlight-vocabulario`| Adequação vocabular | Azul `#3b82f6` |
-| `.highlight-concordancia`| Concordância e regência | Roxo `#a855f7` |
-| `.highlight-outro` | Outros desvios de estrutura | Verde-azulado `#14b8a6` |
+| `--color-papel` | `#070b14` | Fundo da página |
+| `--color-folha` | `#101827` | Superfície elevada: cartões, painéis |
+| `--color-folha-2` | `#131e30` | Superfície recuada: campos, faixas |
+| `--color-tinta` | `#f8fafc` | Texto principal |
+| `--color-tinta-suave` | `#b8c4d6` | Texto secundário |
+| `--color-tinta-fraca` | `#94a3b8` | Legendas, metadados |
+| `--color-pauta` | `#16233a` | Linha da pauta / divisores sutis |
+| `--color-regua` | `#223047` | Bordas |
+| `--color-azul` | `#4f8cff` | **Acento principal e CTA** (`--color-azul-claro`: `#16233a`) |
+| `--color-vermelho` | `#ff647c` | Erro/alerta — **não é mais cor de marca** (`-escuro` `#d9455e`, `-claro` `#3a1620`) |
+| `--color-verde` | `#31d49a` | Acerto, confirmação (`-claro` `#103023`) |
+| `--color-ambar` | `#f5c451` | Atenção (`-claro` `#362a10`) |
+| `--radius` | `0.875rem` | Cantos arredondados padrão |
+
+**Tipografia** (`next/font` em `layout.tsx`, expostas como classes): `Newsreader` → `.fonte-serifada`; `Karla` → `.fonte-humanista` (**padrão do `<body>`**, inclusive em `h1/h2/h3`); `Caveat` → `.fonte-manuscrita`.
+
+---
+
+## 🧱 Utilitários CSS (`src/app/globals.css`)
+
+### Em uso
+- `.glass-panel` — superfície elevada: `--color-folha`, borda `--color-regua`, `border-radius: var(--radius)`, sombra `0 12px 35px rgba(0,0,0,.25)`.
+- `.glass-card` — superfície recuada: `--color-folha-2` + borda, sem sombra.
+- `.gradient-text` — `linear-gradient(90deg, #fff, #8eb7ff)` recortado no texto. Usado nos títulos da hero, do `Navbar` e do `Footer`.
+- `.fonte-serifada` — hoje só em `/privacidade`.
+- Scrollbar customizada (`::-webkit-scrollbar`) na paleta escura.
+
+### Definidos, porém sem nenhum uso no app
+> [!info] Sobraram da identidade "caderno" e nunca foram removidos. Antes de reutilizar um destes nomes, confirme se o efeito ainda faz sentido no tema escuro.
+`.margem-caderno`, `.bloco-pautado`, `.risco-corretor`, `.carimbo` e `.fonte-manuscrita` — zero ocorrências em `src/**/*.tsx`.
+
+### Marcação de erros sobre o texto do aluno
+Todas compartilham `border-bottom: 2px solid` + fundo translúcido na cor da categoria (14% de opacidade, 28% no `:hover`).
+
+| Classe CSS | Tipo de erro | Cor |
+| :--- | :--- | :--- |
+| `.highlight-gramatica` | Gramática, ortografia, pontuação | Vermelho `--color-vermelho` |
+| `.highlight-coesao` | Conectivos e transições | Âmbar `--color-ambar` |
+| `.highlight-vocabulario` | Adequação vocabular | Azul `--color-azul` |
+| `.highlight-concordancia` | Concordância e regência | Verde `--color-verde` |
+| `.highlight-outro` | Outros desvios de estrutura | Cinza `--color-tinta-fraca` |
 
 ---
 
 ## 🧩 Biblioteca de Componentes (`src/components/`)
 
-### 1. `Navbar.tsx`
-- Barra de navegação superior responsiva (Desktop e Mobile Drawer) com efeito sticky e vidro fosco.
-- Links: Início (`/`), Dashboard, Nova Redação e Histórico, mais "Entrar"/"Sair" e o CTA "Escrever Redação". **Não tem item de planos/oferta** — foi removido a pedido do usuário. Desde o ADR 030, "Início" leva à landing de vendas, que é a home; por isso a própria landing tem um link "Minha conta" de volta ao app.
+### Casca do app
+- **`Navbar.tsx`** — barra sticky responsiva (desktop + drawer mobile). Links: Início (`/`), Dashboard, Nova Redação, Histórico; mais "Entrar"/"Sair" e o CTA "Escrever Redação". **Não tem item de planos/oferta** — removido a pedido do usuário.
+- **`Footer.tsx`** — rodapé institucional; "Planos e preços" aponta para `/#planos`.
+- ⚠️ A landing `/` **não usa** `Navbar`/`Footer`: tem header e footer próprios (ADR 030).
 
-### 2. `Footer.tsx`
-- Rodapé institucional com colunas para Competências do ENEM, Recursos da Plataforma e links de acesso direto.
+### Portões de acesso
+- **`RequerLogin.tsx`** — exige login + perfil completo, **não** exige assinatura.
+- **`RequerAssinatura.tsx`** — exige login + perfil completo + assinatura ativa; sem assinatura, manda para `/`.
+- **`CorrecaoBloqueada.tsx`** — o paywall borrado da correção; CTA "Ver planos" → `/#planos`.
+- A decisão de cada portão vive em `src/lib/gates.ts`, como função pura testável (ADR 024).
 
-### 3. `CorrecaoView.tsx` (235 linhas, era 567)
-- Orquestra abas e banner de nota/anulação/reconciliação; composto por `src/components/correcao/`:
-  - `AbaAnalise.tsx`, `AbaReescrita.tsx`, `AbaPlano.tsx` — as 3 abas (Análise & Erros / Reescrita 1000 / Plano Pedagógico).
-  - `CompetenciaCard.tsx`, `TextoDestacado.tsx` — cards de competência e marcação de erros no texto.
-- Exportação em PDF extraída para `src/lib/pdf-export.ts` (`exportarCorrecaoParaPDF`).
-- Disparo de confete automático quando nota ≥900.
+### Correção
+- **`CorrecaoView.tsx`** — orquestra abas e banner de nota/anulação/reconciliação. Composto por `src/components/correcao/`: `AbaAnalise.tsx`, `AbaReescrita.tsx`, `AbaPlano.tsx`, `CompetenciaCard.tsx`, `TextoDestacado.tsx`.
+- Exportação em PDF fica em `src/lib/pdf-export.ts` (`exportarCorrecaoParaPDF`); confete automático com nota ≥900.
 
-### 4. `Editor.tsx` (239 linhas, era 468)
-- Orquestra estado e submissão; composto por `src/components/editor/`:
-  - `SeletorTema.tsx` — seleção de tema oficial/customizado + título.
-  - `AreaProducaoTextual.tsx` — upload, conectivos rápidos, textarea, contadores.
-  - `ModalCarregamento.tsx` — overlay de progresso durante a correção (dupla correção pode levar 20-50s).
+### Editor
+- **`Editor.tsx`** — orquestra estado e submissão. Composto por `src/components/editor/`: `SeletorTema.tsx`, `AreaProducaoTextual.tsx` (upload, conectivos, contadores) e `ModalCarregamento.tsx` (a dupla correção leva 20–50s).
 
-### 5. `GraficoEvolucao.tsx`
-- Componente baseado em `Recharts`:
-  - Gráfico de Linha (Evolução cronológica da nota de 0 a 1000).
-  - Gráfico de Radar (Distribuição dos pontos entre as competências C1, C2, C3, C4 e C5).
+### Gráficos
+- **`GraficoEvolucao.tsx`** — `Recharts`: linha (evolução da nota 0–1000) e radar (distribuição entre C1–C5).
+
+### Primitivos ainda não adotados
+> [!warning] `src/components/ui/` (`Button`, `ButtonLink`, `Card`, `Badge`) foi criado junto com o tema dark, mas **nenhum arquivo do app importa esses componentes** — as telas continuam repetindo as classes na mão. Ou adote o kit ao mexer em cada tela, ou apague-o; mantê-lo sem uso só cria duas fontes de verdade para o mesmo botão.
+
+---
+
+## 🕰️ Identidades anteriores (histórico)
+
+> [!info] Registro para leitura de commits antigos e das notas de decisão. **Nada aqui está em vigor.**
+
+- **"Placar"** (até 07/09, só em `/vendas`) — azul-marinho `#0B1B2B` com acento verde-limão `#C6F24E`, `Anton` + `Barlow`, superfícies chapadas e cantos retos. Preservado em `design-alternativas/vendas-placar.tsx` + `.css`.
+- **"Caderno & caneta vermelha"** (07/09 a 17/09, projeto inteiro, ADR 014) — papel `#F7F4ED`, tinta `#1C1917`, vermelho de corretor `#C0392B` como acento, azul de caneta `#29487D`. Preservado em `design-alternativas/vendas-caderno-e-caneta-vermelha.tsx` + `vendas-caderno.css`. Deixou para trás os utilitários órfãos listados acima.
+- **Glassmorphism original** (até 07/09) — `rgba` translúcido com `backdrop-filter: blur()` e `gradient-text` azul→roxo→rosa. Sobrou só nos **nomes** `.glass-panel`/`.glass-card`/`.gradient-text`.
 
 ---
 
@@ -85,3 +111,4 @@ A direção **"caderno & caneta vermelha"** (fundo de papel `#F7F4ED`, serifada 
 - [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|Estrutura de Rotas]]
 - [[01 - Visão Geral & Negócio/Estratégia de Vendas & Copywriting|Landing de Vendas (`/`)]]
 - [[02 - Metodologia ENEM/Competências Detalhadas C1 a C5|Marcações de Erros no Texto]]
+- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 031 (tema dark V2), ADR 014 (caderno), ADR 030 (landing única)]]

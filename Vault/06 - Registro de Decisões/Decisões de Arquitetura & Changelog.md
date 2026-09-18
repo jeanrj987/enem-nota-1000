@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-17 (landing única: a página de vendas virou a home)
+updated: 2026-09-17 (landing única + registro retroativo do tema dark V2)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -161,9 +161,18 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 031: Identidade visual "V2 dark" para o projeto inteiro (registro retroativo)
+- **Status**: Aprovado e Implementado em 17/09 (commit `405043b`), **documentado só em 17/09 à noite** — a mudança de identidade foi para o código sem ADR nem entrada de changelog, e a nota [[04 - Arquitetura Técnica/Componentes & Design System]] ficou descrevendo o design anterior por meio dia. Este registro fecha a lacuna.
+- **Contexto**: o ADR 014 havia unificado tudo na identidade "caderno & caneta vermelha" (tema claro, papel `#F7F4ED`, vermelho de corretor como acento). O usuário produziu uma landing de referência (`nota-1000-ai-v2.html`) em tema escuro e decidiu levar essa direção para o produto inteiro.
+- **Decisão**: paleta escura com **azul `#4f8cff` como acento principal e cor de marca**; o vermelho recua para o que é genuinamente erro/alerta. Fundo `#070b14`, superfícies `#101827`/`#131e30`, bordas `#223047`. Fontes mantidas do ADR 014 (Newsreader/Karla/Caveat) — só a paleta mudou.
+- **Nomes semânticos preservados de propósito**: `--color-papel`, `--color-tinta`, `--color-folha` e as classes `.glass-panel`/`.glass-card` continuam com os nomes das identidades anteriores, só com valores novos — trocar os nomes exigiria reescrever todas as telas. **O efeito colateral é que os nomes mentem**: `.glass-panel` não tem mais vidro nenhum (superfície sólida, sem `backdrop-filter`), e `papel`/`tinta` hoje são escuro/claro. Documentado em destaque na nota de design system.
+- **Marca**: "Nota 1000 AI" virou "Nota 1000", e as menções descritivas a "IA"/"Inteligência Artificial" saíram dos textos visíveis (títulos, metadata, rodapé, PDF exportado, mensagens de erro, página de privacidade).
+- **Dívida criada e ainda em aberto**: (1) `src/components/ui/` (`Button`, `ButtonLink`, `Card`, `Badge`) foi criado nesta rodada mas **nenhuma tela importa esses componentes** — ou o kit é adotado, ou deve ser apagado, para não haver duas fontes de verdade do mesmo botão; (2) os utilitários `.margem-caderno`, `.bloco-pautado`, `.risco-corretor`, `.carimbo` e `.fonte-manuscrita` sobraram do caderno e não têm nenhum uso em `src/**/*.tsx`.
+- **Testes**: sem variação — mudança de CSS e de texto visível, sem lógica alterada.
+
 ### ADR 030: Landing única — a página de vendas virou a home e `/` deixou de ter uma landing institucional concorrente
 - **Status**: Aprovado e Implementado.
-- **Contexto**: o usuário relatou que o site "muda por completo" depois de criar uma conta. Não era bug de deploy nem de cache: existiam **duas portas de entrada com identidades visuais diferentes**. `/` renderizava uma `LandingPage` institucional (headline "Alcance a Nota 1000 na Redação do ENEM", `Navbar` + `Footer` do app, menu Início/Dashboard/Nova Redação/Histórico) e `/vendas` renderizava a página de vendas com shell próprio (header "NOTA 1000" com âncoras, footer próprio, headline "Descubra exatamente por que sua redação não está chegando aos 900+"). Quem criava conta e clicava em qualquer CTA da home caía no gate de assinatura (`RequerAssinatura`, ADR 023) e era despejado em `/vendas` — atravessando o funil inteiro de uma identidade para a outra sem nunca voltar à primeira.
+- **Contexto**: o usuário relatou que o site "muda por completo" depois de criar uma conta. Não era bug de deploy nem de cache: existiam **duas portas de entrada com identidades visuais diferentes**. `/` renderizava uma `LandingPage` institucional (headline "Alcance a Nota 1000 na Redação do ENEM", `Navbar` + `Footer` do app, menu Início/Dashboard/Nova Redação/Histórico) e `/vendas` renderizava a página de vendas com shell próprio (header "NOTA 1000" com âncoras, footer próprio, headline "Descubra exatamente por que sua redação não está chegando aos 900+"). Quem criava conta e clicava em qualquer CTA da home caía no gate de assinatura (`RequerAssinatura`, ADR 010) e era despejado em `/vendas` — atravessando o funil inteiro de uma identidade para a outra sem nunca voltar à primeira.
 - **Decisão**: manter **uma landing só, a que vende**. O conteúdo de `/vendas` passou a ser `src/app/page.tsx` (componente `PaginaInicial`); a `LandingPage` institucional foi descartada. `decidirGateAssinatura` agora redireciona para `/` em vez de `/vendas`.
 - **`/vendas` continua existindo, como redirect 308**: a rota virou um Server Component de uma linha (`permanentRedirect('/')`). O link já foi divulgado e pode estar em anúncio, bio e mensagem antiga — 308 preserva o método e informa ao buscador que o endereço canônico é a raiz. Verificado com `next start`: `GET /vendas` → `308` com `location: /`.
 - **Por que não o contrário (manter `Navbar`/`Footer` na página de vendas)**: o menu do app só oferece destinos que exigem assinatura — visitante deslogado que clicasse em "Dashboard" seria devolvido para a própria landing. Um shell próprio, sem navegação para dentro do produto, é o que faz sentido para quem ainda não comprou.
@@ -274,6 +283,12 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 - **Removido**: toda a integração com o Stripe (`/api/checkout`, `/api/checkout/verificar`, `/api/stripe/webhook`, `scripts/stripe-setup.ts`, dependência `stripe`).
 - **⚠️ Pendente de verificação**: o formato do payload do webhook da Kiwify ainda não foi confirmado contra um envio real — ver aviso no ADR 028 antes de considerar o fluxo de pagamento confiável em produção.
 - **Testes**: 149 → 153.
+
+### [v2.13.0] - 2026-09-17 (tema dark V2; fim da marca "AI") — *registrado retroativamente*
+- **Alterado**: o projeto inteiro passou da identidade clara "caderno & caneta vermelha" para a paleta **dark da landing V2**, com azul `#4f8cff` como acento principal no lugar do vermelho. Ver ADR 031.
+- **Alterado**: marca renomeada de "Nota 1000 AI" para "Nota 1000"; menções a "IA" removidas dos textos visíveis ao usuário.
+- **Adicionado**: `src/components/ui/` (`Button`, `ButtonLink`, `Card`, `Badge`) — criado, mas ainda sem nenhum uso no app.
+- **Testes**: sem variação.
 
 ### [v2.12.1] - 2026-09-17 (gateway definido: Kiwify, não Kirvano)
 - **Corrigido**: comentários em `planos.ts` e `stripe-setup.ts` que citavam "Kirvano" foram atualizados para "Kiwify" — decisão final do usuário no mesmo dia, depois de cogitar rodar nas duas plataformas. Nenhuma integração de gateway foi implementada ainda. Ver ADR 027.

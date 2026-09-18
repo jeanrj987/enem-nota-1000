@@ -38,7 +38,7 @@ updated: 2026-09-05 (correção gratuita com resultado borrado + cadastro obriga
 ### 💻 04. Arquitetura Técnica & Frontend
 - [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|Stack Tecnológica, Estrutura de Diretórios & Mapeamento de Rotas]]
 - [[04 - Arquitetura Técnica/APIs, Modelos & Tipagem|Rotas de API (/api/corrigir, /api/upload) & Tipos TypeScript]]
-- [[04 - Arquitetura Técnica/Componentes & Design System|Design System, Componentes Reutilizáveis & Glassmorphism]]
+- [[04 - Arquitetura Técnica/Componentes & Design System|Design System ("V2 dark"), Tokens & Componentes Reutilizáveis]]
 
 ### 🗄️ 05. Banco de Dados, Armazenamento & Variáveis
 - [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|Supabase (PostgreSQL), Storage, LocalStorage & Variáveis de Ambiente]]
