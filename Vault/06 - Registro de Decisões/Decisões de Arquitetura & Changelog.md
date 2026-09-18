@@ -16,6 +16,25 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 > [!warning] **Contagem de testes: confie em `npx vitest run`, não na aritmética do log**
 > Entradas antigas às vezes fazem "X → Y" assumindo que o Y da entrada anterior é o X correto desta — nem sempre é (ver achado documentado no ADR 029, P2 item 9 do relatório de 17/09). Para saber o número real de testes a qualquer momento, rode a suíte; não some deltas do changelog.
 
+> [!question]- **JEAN — conferir e apagar este bloco** (aberto em 18/09, no merge dos ADRs 040–043)
+> Trabalhamos no mesmo dia e os dois lados mexeram neste arquivo. Duas coisas aconteceram, e a segunda é sobre um ADR seu.
+>
+> **1. O seu ADR 038 tinha sumido — foi restaurado.**
+> Você escreveu o ADR 038 (teste de fluxo dos gates) completo no commit `c87657a`. O commit seguinte, `28f430b` (remoção da fonte Caveat), substituiu a **linha de título** do 038 pelo título do 039 em vez de inserir um bloco novo acima. O corpo do 038 ficou órfão, colado sob o título do 039, e assim foi para o `origin/main`.
+> A perda apareceu porque `src/lib/gates.ts:12` cita "ADR 038", e esse ADR não existia mais.
+> **O que fiz**: repus só a linha `### ADR 038: ...`. Nenhuma palavra do seu texto foi reescrita — o corpo restaurado é byte a byte idêntico ao que está em `c87657a`. **Confirme** com:
+> ```bash
+> diff <(git show c87657a:"Vault/06 - Registro de Decisões/Decisões de Arquitetura & Changelog.md" | sed -n "/^### ADR 038/,/^- \*\*Testes\*\*: 155 → 161/p") \
+>      <(sed -n "/^### ADR 038/,/^- \*\*Testes\*\*: 155 → 161/p" "Vault/06 - Registro de Decisões/Decisões de Arquitetura & Changelog.md")
+> ```
+>
+> **2. Os números colidiram — os renumerados foram os meus, não os seus.**
+> Nós dois partimos do 033. Você registrou 033–039; eu, 033–036. Como os seus já estavam em `origin/main` e os meus ainda eram locais, **os meus viraram 040–043** e os seus não foram tocados. As versões seguiram a mesma regra: as minhas `v3.4.0`/`v3.5.0` viraram `v3.6.0`/`v3.7.0`.
+>
+> **3. Para não repetir**: o protocolo está na seção **§5 Trabalho em Paralelo** de [[00 - Regras de Manutenção do Vault]], com os comandos de verificação. O resumo é: consultar `origin/main` antes de escolher o número, e **inserir bloco novo, nunca sobrescrever o título do ADR de cima**.
+>
+> **Se concordar, apague este bloco.** Se discordar de algo, me chama que eu desfaço.
+
 ---
 
 ## 📜 Registros de Decisão de Arquitetura (ADRs)
@@ -215,6 +234,8 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 - **Contexto**: o ADR 035 removeu `.fonte-manuscrita` (e os demais utilitários da identidade "caderno") de `globals.css` por não ter nenhuma ocorrência em `src/**/*.tsx`, mas deixou passar que esse era o único consumidor da variável `--font-caveat` — a fonte Google `Caveat`, carregada em `src/app/layout.tsx` e aplicada via `className` no `<html>`, continuou sendo baixada e declarada sem nenhum CSS a referenciar.
 - **Decisão**: removidos o import de `Caveat` de `next/font/google`, a constante `caveat` e sua entrada no `className` do `<html>` em `layout.tsx`. Restam `Newsreader` (serifada, enunciado) e `Karla` (humanista, leitura corrida).
 - **Testes**: 161 (sem variação — troca de fonte não tinha teste próprio nem afeta lógica).
+
+### ADR 038: Teste de fluxo real para os gates de acesso (Testing Library + jsdom)
 - **Status**: Aprovado e Implementado.
 - **Contexto**: o ADR 022 extraiu a decisão dos gates (`RequerLogin`/`RequerAssinatura`) para funções puras justamente porque o projeto não tinha jsdom/Testing Library — `gates.test.ts` cobre bem a regra de decisão, mas não garante que o componente de verdade (o `useEffect`, a chamada a `router.replace`, o que renderiza enquanto carrega) se comporta como o esperado. Item de dívida listado no relatório de operação de 17/09.
 - **Decisão**: adicionadas as dependências de dev `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (pacotes npm gratuitos, sem serviço/conta externa — diferente da decisão de infraestrutura do ADR 037). `vitest.config.ts` ganhou `setupFiles` (`tests/setup/jest-dom.ts`, estende `expect` com os matchers do jest-dom) e passou a incluir `*.test.tsx`. Testes de fluxo continuam em `node` por padrão (mais rápido, sem o custo de simular DOM); `tests/gates-fluxo.test.tsx` opta em `jsdom` só para si via o pragma `// @vitest-environment jsdom` no topo do arquivo.
