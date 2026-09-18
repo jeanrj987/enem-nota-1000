@@ -5,10 +5,11 @@ import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
  * Decisão de acesso extraída de `RequerLogin`/`RequerAssinatura` como função
  * pura, sem depender de React nem de chamadas de rede: recebe o estado já
  * resolvido (usuário, perfil, assinatura) e devolve o que a tela deve fazer.
- * Existe só para tornar a regra testável sem precisar renderizar componente
- * nem simular Supabase — o projeto não usa jsdom/Testing Library, e este é o
- * mesmo padrão de "lógica em lib, componente só chama" usado no resto do
- * código (ex.: `reconciliacao.ts`, `whatsapp.ts`).
+ * Testável sem renderizar componente nem simular Supabase — mesmo padrão de
+ * "lógica em lib, componente só chama" usado no resto do código (ex.:
+ * `reconciliacao.ts`, `whatsapp.ts`). O componente renderizando de verdade
+ * (redirecionamento real via jsdom/Testing Library) é coberto à parte em
+ * `tests/gates-fluxo.test.tsx` (ADR 038).
  */
 export type DecisaoGate = { tipo: 'liberado' } | { tipo: 'redirecionar'; url: string };
 

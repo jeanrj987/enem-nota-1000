@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (rate limiting via Upstash Redis; páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
+updated: 2026-09-18 (teste de fluxo dos gates com Testing Library; rate limiting via Upstash Redis; páginas de erro 404/runtime; remoção do kit ui/ e dos utilitários CSS órfãos)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -160,6 +160,14 @@ updated: 2026-09-18 (rate limiting via Upstash Redis; páginas de erro 404/runti
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 038: Teste de fluxo real para os gates de acesso (Testing Library + jsdom)
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 022 extraiu a decisão dos gates (`RequerLogin`/`RequerAssinatura`) para funções puras justamente porque o projeto não tinha jsdom/Testing Library — `gates.test.ts` cobre bem a regra de decisão, mas não garante que o componente de verdade (o `useEffect`, a chamada a `router.replace`, o que renderiza enquanto carrega) se comporta como o esperado. Item de dívida listado no relatório de operação de 17/09.
+- **Decisão**: adicionadas as dependências de dev `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (pacotes npm gratuitos, sem serviço/conta externa — diferente da decisão de infraestrutura do ADR 037). `vitest.config.ts` ganhou `setupFiles` (`tests/setup/jest-dom.ts`, estende `expect` com os matchers do jest-dom) e passou a incluir `*.test.tsx`. Testes de fluxo continuam em `node` por padrão (mais rápido, sem o custo de simular DOM); `tests/gates-fluxo.test.tsx` opta em `jsdom` só para si via o pragma `// @vitest-environment jsdom` no topo do arquivo.
+- **O que o teste novo cobre que `gates.test.ts` não cobre**: `RequerLogin` e `RequerAssinatura` renderizados de verdade com React, `useAuth`/`next/navigation`/`buscarPerfil`/`temAcessoAtivo` mockados — confirma que `router.replace()` é chamado com a URL exata esperada (ou não é chamado, quando libera) e que os filhos só aparecem no DOM quando o gate realmente libera.
+- **Detalhe descoberto ao escrever o teste**: `urlDeLogin` omite o `?redirect=` quando o destino já é o padrão daquele gate (`/nova-redacao` para `RequerLogin`, indiretamente `/dashboard` para `RequerAssinatura` via `destinoPadrao` local) — os testes usam pathnames diferentes do padrão (`/correcao/abc123`, `/dashboard`) para exercitar o caso em que a query realmente precisa ser preservada.
+- **Testes**: 155 → 161 (6 novos em `tests/gates-fluxo.test.tsx`).
 
 ### ADR 037: Rate limiting movido para Upstash Redis (compartilhado entre instâncias)
 - **Status**: Aprovado e Implementado.
