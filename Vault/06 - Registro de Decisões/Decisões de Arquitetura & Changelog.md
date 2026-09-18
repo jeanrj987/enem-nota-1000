@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (remoção do kit de componentes ui/ não adotado)
+updated: 2026-09-18 (remoção do kit de componentes ui/ e dos utilitários CSS órfãos)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -160,6 +160,14 @@ updated: 2026-09-18 (remoção do kit de componentes ui/ não adotado)
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 035: Utilitários CSS órfãos da identidade "caderno" removidos de `globals.css`
+- **Status**: Aprovado e Implementado.
+- **Contexto**: segundo item da dívida do ADR 031 — `.margem-caderno`, `.bloco-pautado`, `.risco-corretor`, `.carimbo` e `.fonte-manuscrita` sobraram da identidade visual anterior ("caderno & caneta vermelha") sem nenhuma ocorrência em `src/**/*.tsx`.
+- **Decisão**: as 5 classes (e a variável `--font-manuscrita`, que só alimentava `.fonte-manuscrita`) foram removidas de `src/app/globals.css`. Elas já estão preservadas em `design-alternativas/vendas-caderno.css`, a fonte que o próprio `design-alternativas/README.md` instrui colar de volta em `globals.css` caso a direção "caderno" seja restaurada — nada foi perdido.
+- **`--color-pauta` foi mantida**: apesar de alimentar `.bloco-pautado` (removida), a variável também vira o utilitário `bg-pauta` do Tailwind, ativamente usado em `AbaReescrita.tsx`, `CorrecaoBloqueada.tsx`, `CorrecaoView.tsx` e `AreaProducaoTextual.tsx`.
+- **Efeito colateral não resolvido**: a fonte `Caveat` continua carregada em `layout.tsx` (`--font-caveat`) mas, sem `.fonte-manuscrita`, não tem mais nenhum consumidor — é uma fonte baixada por todo visitante sem efeito visual algum. Decidir se remove o `next/font` do Caveat ou acha um uso real para ela ficou fora do escopo desta limpeza.
+- **Testes**: sem variação — CSS puro, sem lógica testável.
 
 ### ADR 034: `src/components/ui/` apagado — a dívida do ADR 031 foi resolvida pelo lado de apagar
 - **Status**: Aprovado e Implementado.
