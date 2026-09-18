@@ -47,6 +47,7 @@ import { supabase } from '@/lib/supabase';
 import { lerAtribuicao } from '@/lib/analytics/atribuicao';
 import { rastrearInicioCheckout, rastrearVisitaVendas } from '@/lib/analytics/eventos-cliente';
 import { ExemploCorrecao } from '@/components/vendas/ExemploCorrecao';
+import { CONTROLADOR } from '@/lib/controlador';
 
 /** Precisa bater com `LIMITE_CORRECOES_GRATUITAS` em `assinatura-servidor.ts`,
  *  que é o valor que o servidor de fato aplica. Divergir aqui promete na
@@ -484,7 +485,13 @@ export default function PaginaInicial() {
           {/* `flex-wrap` porque no celular os dois itens não cabem lado a
               lado e o rodapé estourava a largura. */}
           <div className="flex flex-wrap items-center gap-4">
-            <span>suporte@avaliadornota1000.com</span>
+            {/* Lê de `CONTROLADOR`, não cravado aqui: este rodapé trazia um
+                e-mail num domínio que nem é o do site, sobra de um nome
+                antigo do produto. Uma fonte só evita a política de
+                privacidade e o rodapé apontarem para caixas diferentes. */}
+            <a href={`mailto:${CONTROLADOR.emailContato}`} className="hover:text-tinta-suave transition-colors">
+              {CONTROLADOR.emailContato}
+            </a>
             <Link href="/privacidade" className="hover:text-tinta-suave transition-colors">
               Política de Privacidade
             </Link>

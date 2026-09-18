@@ -22,8 +22,17 @@ export type TipoControlador = 'PF' | 'PJ';
 export const CONTROLADOR = {
   tipo: 'PF' as TipoControlador,
 
-  /** Nome completo (PF) ou razão social (PJ). */
-  nome: '',
+  /**
+   * Nome completo (PF) ou razão social (PJ).
+   *
+   * É o Jean, e não o outro sócio, porque a conta da Kiwify está no CPF
+   * dele: ele já é o vendedor de registro e quem recebe o pagamento.
+   * Nomear pessoa diferente aqui criaria um descompasso entre quem vende e
+   * quem responde pelos dados. A LGPD admite controladores conjuntos, mas
+   * isso agrega complexidade sem ganho nenhum para uma operação deste
+   * tamanho.
+   */
+  nome: 'Jean Carlos Roesler de Jesus',
 
   /**
    * CNPJ, apenas quando `tipo === 'PJ'`. Em PF fica vazio.
@@ -41,9 +50,22 @@ export const CONTROLADOR = {
    * página é pública. Cidade/estado já serve para localizar o controlador,
    * e o contato de verdade acontece pelo e-mail.
    */
-  endereco: '',
+  endereco: 'Sorriso - MT',
 
-  emailContato: '',
+  /**
+   * Canal oficial do titular para exercer os direitos da LGPD, e a única
+   * fonte de verdade do e-mail de contato — o rodapé da landing lê daqui.
+   *
+   * Antes, o rodapé trazia `suporte@avaliadornota1000.com` cravado no JSX:
+   * um endereço num domínio que não é o do site (`nota1000enem.digital`),
+   * sobra da época em que o produto se chamava "Avaliador Nota 1000 AI".
+   * Ou seja, a única forma de falar com o suporte apontava para uma caixa
+   * que provavelmente nunca existiu.
+   *
+   * ATENÇÃO ao grafar: é `nota100enem` (um zero a menos que a marca), não
+   * `nota1000enem`. Errar isso mata o canal em silêncio.
+   */
+  emailContato: 'nota100enem@outlook.com',
 
   /**
    * Encarregado pelo tratamento de dados (DPO), Art. 41 da LGPD.
