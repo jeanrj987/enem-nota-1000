@@ -6,7 +6,7 @@ tags:
   - vestibulando
   - sisu
   - psicologia-vendas
-updated: 2026-09-01
+updated: 2026-09-18 (faixa etária real 17–30+ e os dois perfis dentro dela)
 ---
 
 # 🧠 Persona & Dores Críticas dos Vestibulandos
@@ -18,13 +18,28 @@ updated: 2026-09-01
 
 ## 🎯 Perfil da Persona
 
+> [!important] **Faixa etária corrigida em 18/09 pelo dono do produto**
+> A nota dizia "17 a 22 anos". A faixa real é **17 a 30+**, e ela contém **dois perfis distintos**, não um. A correção veio na conversa em que a segmentação do Meta Ads começou a ser montada — segmentar por 17–22 deixaria de fora metade do público pagante.
+
 | Atributo | Detalhe |
 | :--- | :--- |
-| **Nome Fictício** | Lucas / Mariana (17 a 22 anos) |
+| **Faixa etária** | 17 a 30+ |
 | **Objetivo Principal** | Conquistar vaga em Universidade Pública (SISU / ProUni / FIES) em cursos como Medicina, Direito, Odontologia ou Engenharias. |
 | **Nível Atual na Redação** | Estagnado entre 600 e 760 pontos há mais de 6 meses. |
-| **Rotina** | Estuda o dia todo em cursinho ou escola, sente-se sobrecarregado e com pouco tempo para treinar redação. |
 | **Sentimento Dominante** | Ansiedade pelo tempo passando, insegurança sobre o que a banca espera e frustração com correções lentas e genéricas. |
+
+### Os dois perfis dentro da mesma faixa
+
+| | **A — Ainda na escola** | **B — Já saiu da escola** |
+| :--- | :--- | :--- |
+| **Idade típica** | 17 a 19 | 20 a 30+ |
+| **Situação** | Último ou penúltimo ano do ensino médio, ou cursinho | Terminou a escola e quer ingressar na faculdade |
+| **Rotina** | Estuda o dia todo em cursinho ou escola; sobrecarregado, pouco tempo para treinar redação | *Não levantado.* Provavelmente concilia com trabalho, mas isso é suposição — **não tratar como fato até confirmar** |
+| **Quem paga** | Pode ser o pai/mãe — é a origem mais provável da compra com e-mail diferente do cadastro (ADR 040) | Provavelmente ela mesma |
+
+> [!warning] **O que ainda não foi levantado sobre o perfil B**
+> Rotina, renda, há quanto tempo saiu da escola e o que o faz voltar a estudar. A dor "cursinho demora 15 dias para corrigir" é claramente do perfil A — **quem já saiu da escola pode nem ter cursinho**, e nesse caso a dor dele é outra: não ter nenhuma correção, e não ter uma correção lenta.
+> Isso importa para o anúncio: criativo escrito para o perfil A pode não falar com o B. Vale perguntar a quem já comprou.
 
 ---
 
