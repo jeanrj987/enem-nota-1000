@@ -92,9 +92,6 @@ Todas compartilham `border-bottom: 2px solid` + fundo translúcido na cor da cat
 ### Gráficos
 - **`GraficoEvolucao.tsx`** — `Recharts`: linha (evolução da nota 0–1000) e radar (distribuição entre C1–C5).
 
-### Primitivos ainda não adotados
-> [!warning] `src/components/ui/` (`Button`, `ButtonLink`, `Card`, `Badge`) foi criado junto com o tema dark, mas **nenhum arquivo do app importa esses componentes** — as telas continuam repetindo as classes na mão. Ou adote o kit ao mexer em cada tela, ou apague-o; mantê-lo sem uso só cria duas fontes de verdade para o mesmo botão.
-
 ---
 
 ## 🕰️ Identidades anteriores (histórico)

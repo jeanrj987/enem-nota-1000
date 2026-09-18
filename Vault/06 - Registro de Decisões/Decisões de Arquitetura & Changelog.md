@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-17 (domínio canônico e card de compartilhamento)
+updated: 2026-09-18 (remoção do kit de componentes ui/ não adotado)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -160,6 +160,12 @@ updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 034: `src/components/ui/` apagado — a dívida do ADR 031 foi resolvida pelo lado de apagar
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o ADR 031 registrou `Button`, `ButtonLink`, `Card` e `Badge` como dívida em aberto — criados junto com o tema dark, sem nenhuma tela importando nenhum dos quatro. Adotar o kit exigiria refatorar botões/cards já existentes em várias telas (nova-redacao, dashboard, historico, auth etc.); o usuário optou por apagar em vez de adotar, para fechar a dívida sem abrir uma tarefa de escopo bem maior.
+- **Decisão**: `src/components/ui/` removido por inteiro. Se um design system de verdade for necessário no futuro, nasce já pensado para uso real nas telas existentes, não como primitivo especulativo.
+- **Testes**: sem variação — os componentes não tinham nenhum caminho de código os exercitando.
 
 ### ADR 033: Cidade/Estado do cadastro viram seleção (IBGE), não texto livre
 - **Status**: Aprovado e Implementado.
