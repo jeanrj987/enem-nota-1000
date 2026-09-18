@@ -6,90 +6,144 @@ tags:
   - marketing
   - landing-page
   - oferta
-updated: 2026-09-17 (a página de vendas virou a home)
+updated: 2026-09-18 (reestruturação em torno da prova de valor — ADR 043)
 ---
 
 # 📑 Estrutura de Copywriting & Landing de Vendas (`/`)
 
+> [!warning] **Esta nota estava descrevendo uma página que não existia mais**
+> Até 18/09 ela registrava 3 planos (R$29,90 / R$89 / R$147), checkout no Stripe e um fluxo "sem conta/login". Nada disso vale: os planos viraram 2 no ADR 026, o gateway virou Kiwify no ADR 028, e o login real existe desde o ADR 011. Reescrita para bater com `src/app/page.tsx`.
+
 > [!tip] **Diretriz de Comunicação**
-> A landing de vendas — que desde o ADR 030 é a própria home, `/` — adota um tom sóbrio, humano, transparente e focado em clareza, eliminando clichês de infoproduto e mantendo foco no benefício real para o vestibulando.
-
-> [!warning] **Não é mais independente do produto — acesso é bloqueado até pagar**
-> Até 2026-09-05, os botões de `/vendas` levavam direto para `/nova-redacao` sem nenhuma verificação, tornando a página apenas decorativa. Isso foi corrigido: os 3 planos agora criam uma sessão real do Stripe Checkout, e `/nova-redacao`, `/dashboard`, `/historico` e `/correcao/[id]` verificam assinatura ativa antes de renderizar (componente `RequerAssinatura`), redirecionando para `/vendas` quando não há pagamento confirmado. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 010]] e [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|Supabase, Storage & Env]].
-
-> [!info] **A landing virou a home em 2026-09-17**
-> A rota `/vendas` deixou de ter conteúdo próprio: virou um redirect 308 para `/`, que agora é esta página. Havia duas landings concorrentes, com identidades visuais diferentes, e o usuário recém-cadastrado saltava de uma para a outra dentro do funil. Ver [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 030]].
+> Copy sóbria. Nenhuma promessa de nota garantida, nenhum depoimento inventado, nenhum número de alunos que não exista. A prova vem de **mostrar o produto**, não de afirmar que ele é bom.
 
 ---
 
-## 🏗️ Estrutura Obrigatória da Página de Vendas
+## 🎯 O argumento da página, do topo ao rodapé
+
+A ordem das seções **é** o argumento. Cada uma responde a objeção que a anterior levanta:
 
 ```mermaid
 graph TD
-    A[1. Headline: Benefício Central] --> B[2. Subtítulo: Expansão de Valor]
-    B --> C[3. Problema / Conexão Empática]
-    C --> D[4. Apresentação da Solução & 5 Benefícios]
-    D --> E[5. Prova de Valor & Rigor INEP]
-    E --> F[6. Como Funciona em 4 Passos]
-    F --> G[7. Oferta, Planos & Garantia 7 Dias]
-    G --> H[8. Chamada para Ação CTA]
-    H --> I[9. FAQ de Objeções Reais]
-    I --> J[10. Rodapé Minimalista]
+    A[Hero: sua redação tem desvios que você não vê] --> B[Problema: nota sem diagnóstico não ensina]
+    B --> C[A virada: você precisa do porquê]
+    C --> D[A PROVA: veja uma correção de verdade]
+    D --> E[Como funciona em 4 passos]
+    E --> F[As 5 competências]
+    F --> G[O que é grátis e o que é pago]
+    G --> H[Planos + garantia de 7 dias]
+    H --> I[FAQ de objeções reais]
+    I --> J[CTA final = MESMA ação do hero]
 ```
+
+> [!danger] **A incoerência que foi corrigida no ADR 043**
+> Todo CTA dizia **"CORRIGIR MINHA REDAÇÃO"** e chamava `scrollToPricing()`. Quem clicava pedindo para corrigir recebia uma tabela de preços — a quebra de promessa acontecia no primeiro clique, antes de qualquer argumento ter sido feito. Hoje o botão faz o que diz: leva para a correção gratuita.
 
 ---
 
-## 📝 Texto Completo por Seção
+## 🆓 A oferta que estava escondida
 
-### 1. Headline (Título Principal)
-> **"Garanta mais de 900 pontos na redação do ENEM com correções imediatas."**
+O produto dá **3 correções gratuitas** por conta (`LIMITE_CORRECOES_GRATUITAS`, `src/lib/assinatura-servidor.ts`) e `/nova-redacao` nunca exigiu assinatura — só `RequerLogin`. A landing não mencionava isso em lugar nenhum. A prova de valor mais forte do produto estava construída e invisível.
 
-### 2. Subtítulo
-> *"Receba avaliações detalhadas pelas 5 competências oficiais em segundos, com marcação exata dos erros e versão reescrita sugerida para o seu tema."*
+> [!important] **A fronteira, dita antes do preço e não depois**
 
-### 3. Problema / Conexão
-> Praticar redação com frequência é o único caminho para alcançar uma nota competitiva no ENEM. No entanto, o modelo tradicional de correção cria barreiras que atrasam a sua evolução.  
-> Na maioria dos cursinhos e plataformas, o estudante envia um texto e precisa esperar de 10 a 20 dias para receber o retorno. Quando a folha é devolvida, a linha de raciocínio daquele tema já foi esquecida, e os comentários costumam ser vagos: anotações como "melhore a coesão" ou "repertório insuficiente", sem indicar como reescrever.  
-> Sem um feedback imediato e transparente sobre cada uma das 5 competências, o estudante continua repetindo os mesmos desvios gramaticais e falhas na proposta de intervenção sem perceber.
+| Grátis (3 primeiras redações) | Com plano |
+| :--- | :--- |
+| A redação corrigida pelos critérios do INEP | A nota de cada uma das 5 competências |
+| **Quantos desvios** o texto tem | Cada desvio marcado no texto, com o motivo |
+| Alerta se a redação seria anulada | Versão reescrita |
+| Sem pedir cartão | Plano de ação para a próxima redação |
+| | Gráfico de evolução entre redações |
 
-### 4. Apresentação da Solução
-> O Avaliador Nota 1000 foi estruturado para fornecer o suporte técnico e pedagógico que você precisa para escrever com segurança:
-> 1. **Correção em menos de 10 segundos**: Envie sua redação e receba o diagnóstico completo na hora, permitindo corrigir o texto e produzir uma nova versão no mesmo dia.
-> 2. **Critérios oficiais do INEP (C1 a C5)**: Avaliação detalhada com notas de 0 a 200 pontos em cada competência.
-> 3. **Marcação de erros linha por linha**: Cada desvio de concordância, pontuação, regência ou conectivo é destacado no texto com a justificativa e a reescrita sugerida.
-> 4. **Auditoria completa da Competência 5**: Checagem rigorosa dos 5 elementos da proposta de intervenção (Agente, Ação, Meio, Efeito e Detalhamento).
-> 5. **Versão reescrita no padrão nota 1000**: O sistema reconstrói os seus próprios argumentos em um modelo exemplar de nota máxima.
+O gratuito entrega o **veredito**, não o diagnóstico — é a RLS de `correcoes` que segura o resto (ADR 013). Dizer isso na página é decisão deliberada: omitir a fronteira até depois do pagamento gera sensação de engano, e reembolso/chargeback custam mais caro do que a venda que a omissão traria.
 
-### 5. Prova de Valor e Confiança
-> - Avaliação 100% orientada pelas diretrizes públicas do Manual de Corretores do INEP.
-> - Diagnóstico transparente com demonstração linha por linha e identificação de regras gramaticais e de coesão.
+---
 
-### 6. Como Funciona (Fluxo Real)
-1. **Passo 1 — Escolha seu plano**: Selecione o período de acesso ideal para o seu cronograma de estudos.
-2. **Passo 2 — Pagamento no Stripe Checkout**: Redirecionado para a página segura do Stripe; ao confirmar, o webhook libera o acesso automaticamente no mesmo navegador (sem conta/login — ver limitação de auth em [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog]]).
-3. **Passo 3 — Envie sua redação**: Digite direto no editor ou faça upload do seu arquivo em PDF, Word ou texto.
-4. **Passo 4 — Receba o relatório**: Veja a nota, as marcações de erro e a versão nota 1000 em menos de 10 segundos.
+## 📝 Texto por seção (o que está no ar)
 
-### 7. Oferta / Preço
-- **Plano Anual (Até o ENEM)**: 12x de R$ 14,90 (ou R$ 147,00 à vista) — Acesso ilimitado e completo.
-- **Plano Semestral**: R$ 89,00 à vista — 6 meses de acesso.
-- **Plano Mensal**: R$ 29,90 / mês — Renovação mensal, cancele quando quiser.
-- **Garantia de 7 dias**: Teste por 7 dias; se não atender às expectativas, reembolso de 100% sem burocracia.
+### 1. Hero
+> **"Sua redação tem desvios que você não está enxergando"**
+>
+> *"Envie sua redação agora e descubra em segundos quantos pontos de atenção ela tem, pelos critérios oficiais do ENEM. As 3 primeiras são gratuitas e não pedimos cartão."*
+>
+> CTA: **CORRIGIR MINHA REDAÇÃO DE GRAÇA →** · link secundário: *"Antes, ver um exemplo de correção"*
+>
+> Selos: ✓ Sem cartão · ✓ Resultado em segundos · ✓ Critérios oficiais do INEP
+>
+> Rodapé do hero: *"Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado."*
 
-### 8. Chamada para Ação (CTA)
-> Botão: **"Garantir Acesso ao Avaliador"** (Posicionado após a oferta e no fechamento da página).
+### 2. O problema
+Quatro cartões com a dor real da persona: recebe nota sem entender o motivo, repete os mesmos erros, não sabe qual competência a segura, espera demais por correção.
 
-### 9. Perguntas Frequentes (FAQ)
-- *A avaliação segue os critérios reais do ENEM?*
-- *Quanto tempo leva para a redação ser corrigida?*
-- *Como recebo o acesso após a compra?*
-- *Posso enviar redações em arquivo ou apenas digitando?*
+### 3. A virada
+> **"Nota sem diagnóstico não ensina."** → *"É isso que o Nota 1000 entrega."* → *"E você não precisa acreditar na nossa palavra — role e veja uma correção de verdade."*
+
+Essa última linha é a ponte para a prova. Sem ela, a seção é só mais uma afirmação.
+
+### 4. A PROVA (`#exemplo`)
+`src/components/vendas/ExemploCorrecao.tsx` — a seção que a página não tinha.
+
+Mostra nota geral (840/1000), as 5 competências com barra, um trecho de texto com dois desvios **marcados** (concordância verbal e coesão), o comentário do corretor ao lado de cada um, e o bloco "Seu próximo passo".
+
+> [!info] **Usa as MESMAS classes do produto** (`highlight-concordancia`, `highlight-coesao`, `risco-corretor`, `bloco-pautado`, de `globals.css`), não uma imitação. Se o visual da correção mudar, a demonstração muda junto — demonstração que envelhece separada do produto vira promessa falsa.
+>
+> O conteúdo é **ilustrativo**, escrito para a demonstração e rotulado como exemplo na tela. Não é redação de aluno real.
+
+### 5. Como funciona (4 passos)
+1. **Crie sua conta** — menos de um minuto, libera as 3 gratuitas, não pedimos cartão.
+2. **Envie sua redação** — editor ou arquivo PDF/Word/TXT.
+3. **Veja quantos desvios tem** — em segundos, e se seria anulada.
+4. **Abra o diagnóstico** — com plano ativo: nota por competência, desvios marcados, o que fazer na próxima.
+
+### 6. As 5 competências
+Cada uma vale até 200 pontos. O enquadramento é de estudo, não de recurso: *"saber qual delas está te segurando é o que decide onde vale a pena gastar seu tempo"*.
+
+### 7. Oferta / Preço (`#planos`)
+> **"Depois das gratuitas, escolha como continuar."**
+
+| Plano | Preço | Acesso | Observação |
+| :--- | :--- | :--- | :--- |
+| **Plano Mensal** (mais escolhido) | R$ 97/mês | 30 dias, renova | Assinatura recorrente na Kiwify |
+| **Acesso 30 dias** | R$ 147 | 30 dias, não renova | Pagamento único |
+
+Preços vêm de `PLANOS.precoReais` (`src/lib/planos.ts`) — fonte única, lida também pelo webhook e pelo valor mandado ao Meta. **Precisa bater com o painel da Kiwify**; divergência não dá erro em lugar nenhum, só quebra a identificação de plano e o ROAS, em silêncio.
+
+- **Garantia de 7 dias**, reembolso integral sem justificativa.
+- **Linha de resgate** logo abaixo: *"Já comprou e o acesso não liberou? Destrave sua compra aqui"* → `/vincular-compra` (ADR 040).
+
+### 8. FAQ (objeções reais, nesta ordem)
+1. *As 3 correções grátis são de verdade? Precisa de cartão?* — **primeira de propósito**: é a objeção de quem chega por anúncio.
+2. *A avaliação segue os critérios reais do ENEM?*
+3. *Quanto tempo leva?*
+4. *Como recebo o acesso após a compra?* — cita `/vincular-compra`.
+5. *Posso enviar em arquivo?*
+6. *E se eu assinar e não gostar?*
+
+### 9. CTA final
+**A mesma ação do hero**, de propósito — a página fecha a promessa que abriu.
+> *"Envie a redação que você escreveu essa semana e descubra quantos desvios ela tem. Se o diagnóstico te ajudar, aí sim a gente conversa sobre plano."*
 
 ### 10. Rodapé
-> Sóbrio, contendo informações de contato do suporte, garantia de 7 dias e identificação do produto.
+Identificação do produto, link para a Política de Privacidade e contato do suporte.
+
+---
+
+## 📊 O que a página mede
+
+| Momento | Evento Meta | Evento GA4 |
+| :--- | :--- | :--- |
+| Carregou a landing | `ViewContent` | `view_item` |
+| Criou conta | `CompleteRegistration` | `sign_up` |
+| Enviou redação | `Lead` | `generate_lead` |
+| Clicou para pagar | `InitiateCheckout` | `begin_checkout` |
+| Pagamento confirmado | `Purchase` (**servidor**) | — |
+
+A compra sai pelo servidor porque o checkout roda no domínio da Kiwify e o pixel do navegador nunca vê a venda. Ver ADR 042 e [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|a tabela `atribuicao_anuncio`]].
 
 ---
 
 ## 🔗 Links Relacionados
-- [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|A landing `/` no Next.js]]
-- [[02 - Metodologia ENEM/Matriz Oficial do INEP|Matriz de Avaliação do INEP]]
+- [[01 - Visão Geral & Negócio/Persona & Dores dos Vestibulandos|Persona: para quem esta copy fala]]
+- [[04 - Arquitetura Técnica/Stack & Estrutura de Rotas|A landing no mapa de rotas]]
+- [[06 - Registro de Decisões/Decisões de Arquitetura & Changelog|ADR 026 (2 planos), 028 (Kiwify), 033 (resgate), 035 (medição), 036 (prova de valor)]]
+- [[00 - Índice Principal|Retornar ao Índice Principal]]

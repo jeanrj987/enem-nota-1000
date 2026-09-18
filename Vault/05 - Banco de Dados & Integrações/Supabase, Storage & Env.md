@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-17 (domínio próprio, NEXT_PUBLIC_SITE_URL e limpeza das variáveis do Stripe)
+updated: 2026-09-18 (compras_orfas, atribuicao_anuncio e variáveis de medição)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -77,6 +77,94 @@ create policy "usuario le suas assinaturas" on public.assinaturas
 
 ---
 
+## 🚨 Compras Órfãs (`supabase/schema-compras-orfas.sql`)
+
+> [!warning] **Cada linha aqui é alguém que pagou e está sem acesso agora.** É uma fila de trabalho, não um log.
+
+O checkout da Kiwify é um link fixo com **campo de e-mail editável** (ver ADR 028). Quem cria conta com um e-mail e paga com outro — o do cartão, o do pai ou da mãe, ou o mesmo com erro de digitação — cai num webhook que não encontra `user_id` nenhum. Até 18/09 esse caso só gerava um `console.error` e um `200 OK` para a Kiwify: dinheiro cobrado, acesso não liberado, nenhum alerta. Ver ADR 040.
+
+```sql
+create table public.compras_orfas (
+  id text primary key,                 -- order_id da Kiwify: chave natural, idempotente por reentrega
+  email text not null,                 -- e-mail usado na COMPRA (não existe em `perfis`, é esse o ponto)
+  plano_id text,                       -- null quando nem o plano deu para identificar: exige resgate manual
+  status text not null default 'pendente',  -- 'pendente' | 'vinculada' | 'descartada'
+  payload jsonb not null,              -- webhook cru, para reativar sem depender da Kiwify reenviar
+  user_id uuid references auth.users (id) on delete set null,
+  vinculada_em timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.compras_orfas enable row level security;
+-- NENHUMA policy, de propósito: RLS sem policy nega tudo.
+```
+
+> [!danger] **Por que nenhuma policy**
+> A tabela contém o e-mail de compra de terceiros. Uma policy de leitura para `authenticated` a transformaria numa **lista de e-mails de quem comprou**, consultável por qualquer conta criada de graça. Todo acesso passa pela service role, em rota de servidor que exige login e confere a posse do pedido.
+
+### Consulta da fila (uso diário)
+
+```sql
+-- Quem pagou e ainda não tem acesso, mais antigo primeiro
+select id, email, plano_id, created_at
+from public.compras_orfas
+where status = 'pendente'
+order by created_at;
+```
+
+### Resgate (`/vincular-compra` → `/api/vincular-compra`)
+
+`vincularCompraOrfa` (`src/lib/compras-orfas.ts`) exige **`orderId` e `email` batendo na mesma linha**. O `orderId` é a prova de posse: chega no e-mail de confirmação da Kiwify e não é adivinhável. Sem essa exigência, bastaria uma conta grátis e um chute de e-mail para roubar acesso pago.
+
+| Situação | Resultado | Resposta HTTP |
+| :--- | :--- | :--- |
+| Pedido + e-mail conferem, plano conhecido | `vinculada` (ativa a assinatura) | 200 |
+| Pedido não existe **ou** e-mail não bate | `nao_encontrada` (resposta **idêntica** nos dois casos, para não confirmar quais pedidos existem) | 404 |
+| Já resgatada | `ja_vinculada` | 409 |
+| Plano não identificado no webhook | `exige_resgate_manual` (não chuta plano — prazo errado é reclamação justa) | 409 |
+
+Rate limit de **5 tentativas por hora por usuário** (`src/app/api/vincular-compra/route.ts`): a rota libera acesso pago mediante acerto de um código, então força bruta precisa ser inviável.
+
+> [!info] **Ordem das escritas importa**: a ativação vem **antes** de marcar a linha como `vinculada`. Se o update falhar, a pessoa já tem acesso e a compra continua na fila (alguém confere de novo). O inverso apagaria da fila uma compra que ficou sem acesso.
+
+---
+
+## 📊 Atribuição de Anúncio (`supabase/schema-atribuicao.sql`)
+
+> [!warning] **Sem esta tabela, toda venda vinda de anúncio aparece como orgânica.**
+
+O checkout da Kiwify roda em `pay.kiwify.com.br`. Quando o pagamento é aprovado, quem fica sabendo é o nosso webhook — e ele só recebe e-mail e id do pedido. Nada do navegador chega junto: nem o `_fbc` (que carrega o `fbclid`, ou seja, **qual clique de anúncio** trouxe aquela pessoa), nem o `_fbp`. Guardamos no último instante em que ainda existem: o clique no botão de assinar. Ver ADR 042.
+
+```sql
+create table public.atribuicao_anuncio (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  fbc text,            -- cookie _fbc: fb.1.<timestamp>.<fbclid>
+  fbp text,            -- cookie _fbp: identificador do navegador
+  user_agent text,     -- exigido pelo Meta para casar o evento de servidor
+  atualizado_em timestamptz not null default now()
+);
+
+alter table public.atribuicao_anuncio enable row level security;
+-- NENHUMA policy: só a service role lê e escreve.
+```
+
+Uma linha por usuário, sobrescrita a cada novo checkout: se a pessoa voltou por um anúncio novo e comprou, é o clique **novo** que deve levar o crédito.
+
+### Fluxo completo da conversão
+
+| Onde | O que acontece |
+| :--- | :--- |
+| Chegada com `?fbclid=` | `capturarAtribuicao()` grava o cookie `_fbc` por código nosso, sem depender do Pixel ter carregado a tempo |
+| Clique em "Assinar" | `/api/atribuicao` grava `_fbc`/`_fbp`/`user_agent` nesta tabela, e só então o navegador sai para a Kiwify |
+| Webhook de pagamento | `registrarCompraNoMeta` lê a linha e manda `Purchase` à Conversions API com a atribuição junto |
+
+> [!danger] **Não ligar o pixel do Meta dentro do painel da Kiwify**
+> Se a Kiwify disparar o próprio `Purchase`, ele virá sem o nosso `event_id` e o Meta não terá como deduplicar — a mesma venda conta duas vezes, e o custo por aquisição aparece pela metade do real. A compra deve ser reportada só pela nossa Conversions API.
+
+> [!info] **Deduplicação**: o `event_id` é `compra_<order_id>`, derivado e não sorteado. Reentrega de webhook, reprocessamento ou uma compra destravada em `/vincular-compra` chegam com o mesmo id e contam uma conversão só.
+
+---
+
 ## 🧾 Perfil Obrigatório no Cadastro (`supabase/schema-perfis.sql`)
 
 > [!tip] **Coleta obrigatória para contato/vendas (WhatsApp, X1, outros produtos)**
@@ -127,7 +215,13 @@ O provider Google precisa ser habilitado manualmente (não é código, é config
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Configurada | Chave anônima pública do Supabase. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Configurada | Usada só pelo webhook da Kiwify (`src/lib/supabase-admin.ts`) para gravar assinaturas, ignorando RLS. |
 | `KIWIFY_WEBHOOK_TOKEN` | Obrigatória | Assina o payload do webhook (HMAC-SHA1). É o token **gerado** pela Kiwify, visível em "Editar webhook" — não o valor de exemplo da tela de criação (ver ADR 028). |
-| `NEXT_PUBLIC_SITE_URL` | Obrigatória em produção | Endereço canônico do site (`https://www.nota1000enem.digital`). Alimenta `metadataBase`, link canônico e imagem de compartilhamento via `urlDoSite()` (`src/lib/site.ts`). Sem ela, cai em `VERCEL_PROJECT_PRODUCTION_URL` e o site se anuncia pelo endereço da Vercel. |
+| `NEXT_PUBLIC_SITE_URL` | Obrigatória em produção | Endereço canônico do site (`https://www.nota1000enem.digital`). Alimenta `metadataBase`, link canônico, `robots.txt`, `sitemap.xml` e a imagem de compartilhamento via `urlDoSite()` (`src/lib/site.ts`). Sem ela, cai em `VERCEL_PROJECT_PRODUCTION_URL` e o site se anuncia pelo endereço da Vercel. |
+| `NEXT_PUBLIC_META_PIXEL_ID` | Opcional (medição) | Pixel do Meta no navegador. Sem ela, `Medicao` não renderiza nada. |
+| `META_CAPI_ACCESS_TOKEN` | Opcional (medição) | **Segredo.** Token da Conversions API — é o que permite reportar a COMPRA pelo servidor. Sem ela, nenhuma venda chega ao Meta, porque o checkout roda no domínio da Kiwify. Nunca prefixar com `NEXT_PUBLIC`. |
+| `META_PIXEL_ID` | Opcional | Pixel usado pelo servidor. Se vazia, cai no `NEXT_PUBLIC_META_PIXEL_ID`. |
+| `META_CAPI_TEST_EVENT_CODE` | Opcional | Código de "Testar eventos". Enquanto preenchida, os eventos **não contam como conversão real**. Esvaziar em produção. |
+| `META_GRAPH_API_VERSION` | Opcional | Versão da Graph API (padrão `v23.0`). O Meta aposenta versões a cada ~2 anos e uma versão vencida faz a chamada falhar inteira. |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Opcional (medição) | GA4, formato `G-XXXXXXXXXX`. |
 
 ---
 
@@ -170,8 +264,11 @@ Chamadores (`Editor.tsx`, `dashboard/page.tsx`, `historico/page.tsx`, `correcao/
 | :--- | :--- | :--- | :--- |
 | `POST /api/corrigir` | 5 requisições/IP | 10 min | 8000 caracteres de texto |
 | `POST /api/upload` | 15 requisições/IP | 10 min | 10MB por arquivo |
+| `POST /api/vincular-compra` | 5 tentativas/usuário | 60 min | — |
 
-Ambas retornam `429` com header `Retry-After` quando o limite é excedido; `/api/corrigir` retorna `413` para texto acima do teto, `/api/upload` retorna `413` para arquivo acima do teto.
+As duas primeiras retornam `429` com header `Retry-After` quando o limite é excedido; `/api/corrigir` retorna `413` para texto acima do teto, `/api/upload` retorna `413` para arquivo acima do teto.
+
+O limite de `/api/vincular-compra` é apertado por um motivo diferente dos outros dois: não é custo de processamento, é **força bruta**. A rota libera acesso pago a quem acertar um código de pedido — 5 tentativas por hora torna a busca cega inviável sem atrapalhar quem só está conferindo se digitou certo.
 
 ---
 

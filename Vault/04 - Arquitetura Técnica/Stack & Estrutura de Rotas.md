@@ -6,7 +6,7 @@ tags:
   - rotas
   - arquitetura
   - frontend
-updated: 2026-09-17 (landing única: a página de vendas virou a home)
+updated: 2026-09-18 (vincular-compra, robots/sitemap, medição e landing reestruturada)
 ---
 
 > [!warning] **Requisito de runtime**
@@ -32,8 +32,10 @@ updated: 2026-09-17 (landing única: a página de vendas virou a home)
 | **Parsing de Arquivos** | `mammoth`, `pdf-parse` | Extração de texto de DOCX, PDF e TXT |
 | **Geração de PDF** | `jspdf` | Exportação de relatórios de correção em PDF |
 | **Gamificação** | `canvas-confetti` | Disparo de confete em notas 900+ |
-| **Banco de Dados** | Supabase (`@supabase/supabase-js`) | Persistência de redações e assinaturas (sem Auth real ainda) |
-| **Cobrança** | `stripe` | Checkout Sessions dos 3 planos de acesso |
+| **Banco de Dados** | Supabase (`@supabase/supabase-js`) | Persistência de redações, assinaturas, perfis e compras órfãs; Auth real (e-mail/senha + Google) desde o ADR 011 |
+| **Validação** | `zod` | Validação estrita de payload nas rotas de `src/app/api/*` |
+| **Medição** | Meta Pixel + Conversions API, GA4 | Funil e atribuição de anúncio; a **compra sai pelo servidor**, porque o checkout roda no domínio da Kiwify (ADR 042) |
+| **Cobrança** | Kiwify (link de checkout fixo + webhook) | 2 planos de acesso; a dependência `stripe` foi removida no ADR 028 |
 
 ---
 
@@ -57,7 +59,11 @@ src/app/
 ├── historico/
 │   └── page.tsx              # Rota "/historico" (Evolução & Gráficos Recharts) — atrás de RequerAssinatura
 ├── checkout/sucesso/
-│   └── page.tsx              # Rota "/checkout/sucesso" (confirmação pós-pagamento do Stripe)
+│   └── page.tsx              # Rota "/checkout/sucesso" (confirmação pós-pagamento; no estado "ainda confirmando" oferece /vincular-compra — ADR 040)
+├── robots.ts                 # Gera /robots.txt em build — ADR 041
+├── sitemap.ts                # Gera /sitemap.xml em build (só / e /privacidade) — ADR 041
+├── vincular-compra/
+│   └── page.tsx              # Rota "/vincular-compra" (resgate de compra paga com e-mail diferente do cadastro — ADR 040)
 ├── auth/
 │   ├── page.tsx              # Rota "/auth" (Login / Cadastro real via Supabase Auth: e-mail/senha + Google)
 │   └── callback/
@@ -67,8 +73,12 @@ src/app/
     │   └── route.ts          # Endpoint POST /api/corrigir
     ├── upload/
     │   └── route.ts          # Endpoint POST /api/upload
+    ├── atribuicao/
+    │   └── route.ts          # Endpoint POST /api/atribuicao (guarda _fbc/_fbp antes do checkout — ADR 042)
+    ├── vincular-compra/
+    │   └── route.ts          # Endpoint POST /api/vincular-compra (resgate de compra órfã; exige login + código do pedido, 5 tentativas/hora — ADR 040)
     └── kiwify/webhook/
-        └── route.ts          # Endpoint POST /api/kiwify/webhook (ativa/revoga assinatura no Supabase — ADR 028; as rotas do Stripe foram apagadas)
+        └── route.ts          # Endpoint POST /api/kiwify/webhook (ativa/revoga assinatura no Supabase — ADR 028; compra aprovada sem conta vai para compras_orfas — ADR 040)
 ```
 
 ---
@@ -77,8 +87,12 @@ src/app/
 
 ### 1. Landing única / Página de Vendas (`/`)
 - **Desde o ADR 030 existe uma landing só.** Antes, `/` era uma landing institucional e `/vendas` era a página de conversão, cada uma com o seu próprio visual — quem criava conta atravessava o funil de uma para a outra e via o site "mudar por completo" no meio do caminho.
-- Página de conversão com hero, blocos de problema/virada, como funciona, as 5 competências, benefícios, os 2 planos (checkout por link fixo da Kiwify, ver ADR 028), garantia de 7 dias, FAQ e CTA final.
-- **Shell próprio**: não usa `Navbar`/`Footer` do app, porque o menu interno só leva a destinos que exigem assinatura. O header tem âncoras (`#como`, `#competencias`, `#planos`, `#faq`) e um link que alterna entre "Entrar" e "Minha conta" conforme `useAuth`.
+- **Reestruturada em 18/09 em torno da prova (ADR 043).** A ordem das seções é o argumento: hero → problema → virada → **a prova** (`ExemploCorrecao`) → como funciona → 5 competências → **o que é grátis e o que é pago** → planos → garantia → FAQ → CTA final.
+- **O CTA principal é a correção gratuita, não o preço.** Antes, todo botão dizia "CORRIGIR MINHA REDAÇÃO" e rolava para a tabela de planos. Hoje leva a `/nova-redacao` (via `/auth` quando deslogado), que é a ação prometida. O CTA do topo e o do rodapé são a mesma ação, de propósito.
+- **Seção "A prova"**: `src/components/vendas/ExemploCorrecao.tsx` monta uma correção de exemplo com as **mesmas classes do produto** (`highlight-*`, `risco-corretor`, `bloco-pautado`), para a demonstração não envelhecer separada do que é entregue.
+- **Seção "O que é grátis e o que é pago"** vem antes do preço: o gratuito entrega a correção e **quantos desvios** o texto tem; o diagnóstico completo é do plano (RLS de `correcoes`, ADR 013).
+- **Shell próprio**: não usa `Navbar`/`Footer` do app, porque o menu interno só leva a destinos que exigem assinatura. O header tem âncoras (`#exemplo`, `#como`, `#planos`, `#faq`) e um link que alterna entre "Entrar" e "Minha conta" conforme `useAuth`.
+- **Medição**: dispara `ViewContent` ao montar e `InitiateCheckout` no clique de assinar, e guarda a atribuição do anúncio (`_fbc`/`_fbp`) via `/api/atribuicao` antes de redirecionar para a Kiwify. Ver ADR 042.
 - Caminhos de entrada: acesso direto, o item "Início" do `Navbar` na área logada, os CTAs de paywall (`Footer.tsx` e `CorrecaoBloqueada.tsx`, que apontam para `/#planos`) e o redirecionamento automático de `RequerAssinatura` quando alguém sem assinatura ativa tenta abrir `/dashboard` ou `/historico`.
 
 ### 2. Redirect de `/vendas`
@@ -92,6 +106,11 @@ src/app/
 
 ### 5. Histórico & Evolução (`/historico`)
 - Gráficos em linha da evolução das notas, gráfico de radar mostrando qual competência é o ponto forte e qual necessita de reforço.
+
+### 6. Resgate de Compra (`/vincular-compra`)
+- **Para quem pagou e não recebeu acesso** porque o e-mail do checkout da Kiwify (campo editável) não é o do cadastro. Exige login e pede dois dados: o **e-mail usado na compra** e o **código do pedido**.
+- O código do pedido não é burocracia — é a prova de posse. Sem ele, qualquer conta criada de graça reivindicaria a compra alheia chutando e-mails. Ver ADR 040 e [[05 - Banco de Dados & Integrações/Supabase, Storage & Env|a tabela `compras_orfas`]].
+- Só é alcançável por dois caminhos, ambos onde a pessoa de fato aparece: o estado "ainda confirmando" de `/checkout/sucesso` e uma linha abaixo da garantia, na seção de planos da home. Não está no `Navbar` — é uma saída de exceção, não um item de menu.
 
 ---
 
