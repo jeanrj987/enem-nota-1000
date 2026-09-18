@@ -24,6 +24,11 @@ import { rastrearCadastro } from '@/lib/analytics/eventos-cliente';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { destinoSeguro, guardarDestino } from '@/lib/redirecionamento';
 import { formatarWhatsapp, normalizarWhatsapp, validarWhatsapp } from '@/lib/whatsapp';
+import {
+  dataNascimentoMaxima,
+  dataNascimentoMinima,
+  validarDataNascimento,
+} from '@/lib/data-nascimento';
 import { UFS_BRASIL, buscarMunicipiosPorUf } from '@/lib/localidades';
 
 function AuthPageConteudo() {
@@ -40,6 +45,7 @@ function AuthPageConteudo() {
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [erroWhatsapp, setErroWhatsapp] = useState<string | null>(null);
+  const [erroDataNascimento, setErroDataNascimento] = useState<string | null>(null);
   const [uf, setUf] = useState('');
   const [cidade, setCidade] = useState('');
   const [municipios, setMunicipios] = useState<string[]>([]);
@@ -106,6 +112,17 @@ function AuthPageConteudo() {
       if (problemaWhatsapp) {
         setErroWhatsapp(problemaWhatsapp);
         setMessage({ type: 'error', text: problemaWhatsapp });
+        return;
+      }
+
+      // Checado de novo aqui, e não só no `onBlur` do campo: quem cola a
+      // data ou usa o seletor e envia direto nunca dispara o blur. O `max`
+      // do input barra o futuro no seletor, mas não impede um ano digitado
+      // à mão — foi assim que um ano de cinco dígitos passou.
+      const problemaData = validarDataNascimento(dataNascimento);
+      if (problemaData) {
+        setErroDataNascimento(problemaData);
+        setMessage({ type: 'error', text: problemaData });
         return;
       }
 
@@ -364,11 +381,20 @@ function AuthPageConteudo() {
                       <input
                         type="date"
                         required
+                        min={dataNascimentoMinima()}
+                        max={dataNascimentoMaxima()}
                         value={dataNascimento}
                         onChange={(e) => setDataNascimento(e.target.value)}
-                        className="w-full bg-folha/90 border border-regua/80 rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul"
+                        onBlur={() => setErroDataNascimento(validarDataNascimento(dataNascimento))}
+                        aria-invalid={erroDataNascimento ? true : undefined}
+                        className={`w-full bg-folha/90 border rounded-xl pl-10 pr-4 py-2.5 text-xs text-tinta placeholder-tinta-fraca focus:outline-none focus:border-azul ${
+                          erroDataNascimento ? 'border-vermelho' : 'border-regua/80'
+                        }`}
                       />
                     </div>
+                    {erroDataNascimento && (
+                      <p className="text-[11px] text-vermelho">{erroDataNascimento}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
