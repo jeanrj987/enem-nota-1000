@@ -3,6 +3,7 @@ import { Newsreader, Karla, Caveat } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { urlDoSite } from '@/lib/site';
+import { Medicao } from '@/components/analytics/Medicao';
 
 // Serifada para o enunciado (é assim que uma prova é impressa), humanista
 // para leitura corrida e manuscrita reservada às anotações do corretor. As
@@ -72,6 +73,10 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-papel text-tinta flex flex-col fonte-humanista selection:bg-azul selection:text-folha">
         <AuthProvider>{children}</AuthProvider>
+        {/* Depois do conteúdo e com `afterInteractive`: medição não pode
+            atrasar a pintura da landing. Sem as variáveis configuradas, não
+            renderiza nada. */}
+        <Medicao />
       </body>
     </html>
   );

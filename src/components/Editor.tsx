@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { SeletorTema } from './editor/SeletorTema';
 import { AreaProducaoTextual } from './editor/AreaProducaoTextual';
 import { ModalCarregamento } from './editor/ModalCarregamento';
+import { rastrearPrimeiraCorrecao } from '@/lib/analytics/eventos-cliente';
 
 interface EditorProps {
   initialText?: string;
@@ -160,6 +161,13 @@ export function Editor({
       // A rota já persistiu a redação e a correção com service role — o
       // cliente não grava nada e, sem assinatura, sequer recebe o diagnóstico.
       clearInterval(interval);
+
+      // Redação enviada é a etapa do funil que mostra intenção real: quem
+      // chega aqui experimentou o produto. É o melhor sinal que o Meta pode
+      // receber antes da compra, e o que permite comparar "quantos criaram
+      // conta" com "quantos de fato usaram".
+      rastrearPrimeiraCorrecao();
+
       router.push(`/correcao/${data.redacaoId}`);
     } catch (err: any) {
       clearInterval(interval);

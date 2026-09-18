@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...menos o exemplo. Ele existe justamente para ser compartilhado: é o
+# único lugar que documenta quais variáveis o projeto espera e o que
+# acontece sem elas. Ignorá-lo fazia cada dev descobrir isso por conta
+# própria — e variável de medição faltando não dá erro, só para de medir.
+# Não contém segredo: todos os valores ficam em branco.
+!.env.example
 
 # vercel
 .vercel

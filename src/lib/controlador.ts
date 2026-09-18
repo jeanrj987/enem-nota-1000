@@ -28,7 +28,7 @@ export const CONTROLADOR = {
  * consentimento, e é ela que permite dizer, depois, sobre QUAL texto a
  * pessoa concordou.
  */
-export const VERSAO_DOCUMENTOS_LEGAIS = '2026-09-08';
+export const VERSAO_DOCUMENTOS_LEGAIS = '2026-09-18';
 
 export function dadosDoControladorCompletos(): boolean {
   return Object.values(CONTROLADOR).every((v) => v.trim() !== '');
@@ -60,15 +60,31 @@ export const SUBPROCESSADORES = [
     pais: 'Estados Unidos',
   },
   {
-    nome: 'Stripe',
+    // Era "Stripe" até 18/09. O Stripe foi removido do projeto no ADR 028 e
+    // substituído pela Kiwify — a política declarava um subprocessador que
+    // não existe mais e omitia o que de fato recebe os dados de cobrança.
+    nome: 'Kiwify',
     finalidade: 'Processamento de pagamento',
     dados: 'E-mail e dados de cobrança (o cartão nunca passa por nós)',
-    pais: 'Estados Unidos',
+    pais: 'Brasil',
   },
   {
     nome: 'Vercel',
     finalidade: 'Hospedagem da aplicação',
     dados: 'Registros de acesso, incluindo endereço IP',
+    pais: 'Estados Unidos',
+  },
+  {
+    nome: 'Meta (Facebook/Instagram)',
+    finalidade: 'Medição de anúncios e atribuição de campanha',
+    dados:
+      'Identificadores de navegador e de clique em anúncio (cookies _fbp e _fbc), endereço IP e e-mail criptografado (SHA-256) nas confirmações de compra',
+    pais: 'Estados Unidos',
+  },
+  {
+    nome: 'Google (Analytics)',
+    finalidade: 'Medição de uso do site',
+    dados: 'Identificador de navegador, páginas visitadas e endereço IP',
     pais: 'Estados Unidos',
   },
 ] as const;

@@ -20,6 +20,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { cadastrarComEmail, entrarComEmail, entrarComGoogle } from '@/lib/auth';
+import { rastrearCadastro } from '@/lib/analytics/eventos-cliente';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { destinoSeguro, guardarDestino } from '@/lib/redirecionamento';
 import { formatarWhatsapp, normalizarWhatsapp, validarWhatsapp } from '@/lib/whatsapp';
@@ -90,6 +91,10 @@ function AuthPageConteudo() {
       // religada algum dia, a pessoa fica aqui lendo a instrução em vez de
       // ser jogada deslogada na página seguinte e ricocheteada de volta.
       if (data.session) {
+        // Conta criada é o "lead" real deste funil — é a etapa entre visitar
+        // a landing e comprar. Sem ela medida, não dá para saber se o anúncio
+        // traz gente errada ou se o cadastro é que está travando.
+        rastrearCadastro('email');
         setMessage({ type: 'success', text: 'Conta criada! Redirecionando...' });
         setTimeout(() => router.push(destino), 800);
         return;
