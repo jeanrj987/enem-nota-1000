@@ -14,15 +14,44 @@
  * Shell próprio (header e footer aqui dentro, sem `Navbar`/`Footer`) é
  * intencional: visitante deslogado não tem o que fazer com um menu de
  * Dashboard/Histórico que só vai devolvê-lo para cá.
+ *
+ * REESTRUTURAÇÃO DE 18/09 — o que estava errado e o que mudou
+ *
+ * 1. **A página escondia a própria oferta.** O produto dá 3 correções
+ *    gratuitas (`LIMITE_CORRECOES_GRATUITAS`, `assinatura-servidor.ts`) e
+ *    `/nova-redacao` nunca exigiu assinatura — mas a landing não dizia isso
+ *    em lugar nenhum. A prova de valor já estava construída e invisível.
+ * 2. **O botão mentia.** Todo CTA dizia "CORRIGIR MINHA REDAÇÃO" e rolava
+ *    para a tabela de preços. Quem clicava pedindo para corrigir recebia um
+ *    pedido de pagamento: a quebra de promessa acontecia no primeiro clique.
+ * 3. **Não havia nenhuma prova.** A página afirmava "análise detalhada",
+ *    "erros destacados", "versão reescrita" — e pedia fé. Agora mostra uma
+ *    correção de exemplo montada com as mesmas classes do produto real
+ *    (`ExemploCorrecao`).
+ * 4. **A fronteira grátis/pago era omitida**, o que gera reembolso e
+ *    reclamação. Agora está declarada antes do preço, não depois.
+ *
+ * O fio condutor, do topo ao rodapé: nota sem diagnóstico não ensina → veja
+ * o diagnóstico → confira de graça na sua própria redação → assine se valer.
+ * O CTA do topo e o do fim são a MESMA ação, de propósito.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Check, ChevronDown, Loader2, Lock, Sparkles } from 'lucide-react';
 import { PLANOS, PlanoId } from '@/lib/planos';
 import { useAuth } from '@/contexts/AuthContext';
 import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
+import { supabase } from '@/lib/supabase';
+import { lerAtribuicao } from '@/lib/analytics/atribuicao';
+import { rastrearInicioCheckout, rastrearVisitaVendas } from '@/lib/analytics/eventos-cliente';
+import { ExemploCorrecao } from '@/components/vendas/ExemploCorrecao';
+
+/** Precisa bater com `LIMITE_CORRECOES_GRATUITAS` em `assinatura-servidor.ts`,
+ *  que é o valor que o servidor de fato aplica. Divergir aqui promete na
+ *  venda um número que a rota depois nega. */
+const CORRECOES_GRATUITAS = 3;
 
 const COMPETENCIAS = [
   { sigla: 'C1', titulo: 'Domínio da escrita', texto: 'Identifique desvios de gramática, pontuação, concordância, regência e outros aspectos da escrita formal.' },
@@ -33,20 +62,17 @@ const COMPETENCIAS = [
 ];
 
 const PASSOS = [
+  { titulo: 'Crie sua conta', texto: `Leva menos de um minuto e já libera suas ${CORRECOES_GRATUITAS} correções gratuitas. Não pedimos cartão.` },
   { titulo: 'Envie sua redação', texto: 'Digite no editor ou importe um arquivo em PDF, Word ou texto simples.' },
-  { titulo: 'O sistema analisa', texto: 'A correção avalia os critérios oficiais do INEP para as cinco competências.' },
-  { titulo: 'Entenda sua nota', texto: 'Veja a pontuação estimada e a distribuição por competência.' },
-  { titulo: 'Saiba como melhorar', texto: 'Receba pontos de atenção e uma versão reescrita para orientar seu próximo texto.' },
-];
-
-const BENEFICIOS = [
-  { icon: '🎯', titulo: 'Saiba onde focar', texto: 'Pare de estudar tudo ao mesmo tempo e identifique pontos prioritários.' },
-  { icon: '⚡', titulo: 'Tenha feedback rápido', texto: 'Transforme mais práticas em ciclos de correção e aprendizado.' },
-  { icon: '📈', titulo: 'Acompanhe sua evolução', texto: 'Compare suas correções e visualize seu progresso.' },
-  { icon: '🧠', titulo: 'Aprenda com seus erros', texto: 'Use cada redação como informação para melhorar a próxima.' },
+  { titulo: 'Veja quantos desvios tem', texto: 'Em segundos você descobre quantos pontos de atenção o seu texto tem — e se ele seria anulado.' },
+  { titulo: 'Abra o diagnóstico', texto: 'Com um plano ativo, veja a nota de cada competência, cada desvio marcado no texto e o que fazer na próxima redação.' },
 ];
 
 const FAQ = [
+  {
+    q: `As ${CORRECOES_GRATUITAS} correções grátis são de verdade? Precisa de cartão?`,
+    a: `São de verdade e não pedimos cartão em momento nenhum. Você cria a conta, envia até ${CORRECOES_GRATUITAS} redações e o sistema corrige cada uma. O que você recebe sem pagar é o veredito: quantos desvios o texto tem e se ele seria anulado pelos critérios do INEP. O diagnóstico completo — nota por competência, cada desvio marcado no seu texto, versão reescrita e plano de estudo — é o que fica com o plano.`,
+  },
   {
     q: 'A avaliação segue os critérios reais do ENEM?',
     a: 'Sim. A avaliação é orientada pela matriz oficial do INEP, atribuindo notas de 0 a 200 pontos em cada uma das cinco competências e verificando a presença dos cinco elementos da proposta de intervenção.',
@@ -57,11 +83,15 @@ const FAQ = [
   },
   {
     q: 'Como recebo o acesso após a compra?',
-    a: 'A liberação é automática e imediata. Basta criar sua conta antes de pagar — assim que o pagamento é confirmado, o acesso já aparece na sua própria conta, sem precisar esperar e-mail.',
+    a: 'A liberação é automática e imediata. Crie sua conta antes de pagar e use o mesmo e-mail no checkout — assim que o pagamento é confirmado, o acesso aparece na sua conta. Se você pagou com outro e-mail e o acesso não liberou, dá para destravar sozinho em "Destrave sua compra", logo abaixo dos planos.',
   },
   {
     q: 'Posso enviar redações em arquivo ou apenas digitando?',
     a: 'Você pode escrever diretamente no editor da plataforma ou importar arquivos nos formatos PDF, Word (.docx) ou bloco de notas (.txt), desde que tenham texto real e legível — fotos ou digitalizações de redação manuscrita não são aceitas, para garantir a melhor precisão da nota.',
+  },
+  {
+    q: 'E se eu assinar e não gostar?',
+    a: 'Você pede o reembolso em até sete dias e recebe o valor integral de volta, sem precisar justificar. É por isso que as correções gratuitas vêm antes: a ideia é que você já saiba se o diagnóstico serve para você antes mesmo de pagar.',
   },
 ];
 
@@ -71,27 +101,36 @@ export default function PaginaInicial() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
 
-  const scrollToPricing = () => {
-    document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Marca a visita à página de vendas para o Meta e o GA4. É o denominador do
+  // funil: sem ele não existe taxa de conversão, só contagem de vendas.
+  useEffect(() => {
+    rastrearVisitaVendas();
+  }, []);
 
-  // O checkout da Kiwify é um link fixo (não uma sessão criada dinamicamente
-  // pela nossa API, como era no Stripe), então não há como carimbar o
-  // user_id nele. Pré-preencher o e-mail da conta logada é o que reduz a
-  // chance de a compra chegar no webhook com um e-mail que não bate com
-  // nenhuma conta — mas depende de a aluna/aluno não trocar o e-mail na
-  // hora de pagar.
-  const iniciarCheckout = (planoId: PlanoId) => {
+  /** Destino do CTA principal: a correção gratuita. Quem não tem conta passa
+   *  pelo login levando o destino junto, para não se perder no caminho. */
+  const destinoCorrecaoGratuita = usuario ? DESTINO_PADRAO : urlDeLogin(DESTINO_PADRAO);
+
+  /**
+   * O checkout da Kiwify é um link fixo (não uma sessão criada dinamicamente
+   * pela nossa API, como era no Stripe), então não há como carimbar o
+   * user_id nele. Pré-preencher o e-mail da conta logada é o que reduz a
+   * chance de a compra chegar no webhook com um e-mail que não bate com
+   * nenhuma conta — mas depende de a aluna/aluno não trocar o e-mail na
+   * hora de pagar. Quando troca, o resgate é em `/vincular-compra`.
+   */
+  const iniciarCheckout = async (planoId: PlanoId) => {
     if (!usuario) {
       router.push(urlDeLogin('/'));
       return;
     }
 
     setPlanoCarregando(planoId);
+    rastrearInicioCheckout({ planoId, valor: PLANOS[planoId].precoReais });
+    await guardarAtribuicao();
+
     const url = new URL(PLANOS[planoId].checkoutUrl);
-    if (usuario.email) {
-      url.searchParams.set('email', usuario.email);
-    }
+    if (usuario.email) url.searchParams.set('email', usuario.email);
     window.location.href = url.toString();
   };
 
@@ -104,8 +143,8 @@ export default function PaginaInicial() {
             NOTA <span className="text-azul">1000</span>
           </span>
           <div className="hidden md:flex items-center gap-7 text-sm text-tinta-suave">
+            <a href="#exemplo" className="hover:text-tinta transition-colors">Ver um exemplo</a>
             <a href="#como" className="hover:text-tinta transition-colors">Como funciona</a>
-            <a href="#competencias" className="hover:text-tinta transition-colors">Competências</a>
             <a href="#planos" className="hover:text-tinta transition-colors">Planos</a>
             <a href="#faq" className="hover:text-tinta transition-colors">Dúvidas</a>
           </div>
@@ -118,18 +157,18 @@ export default function PaginaInicial() {
             >
               {usuario ? 'Minha conta' : 'Entrar'}
             </Link>
-            <button
-              onClick={scrollToPricing}
+            <Link
+              href={destinoCorrecaoGratuita}
               className="cursor-pointer rounded-xl bg-tinta px-4 py-2.5 text-sm font-bold text-papel hover:brightness-110 transition"
             >
-              Corrigir minha redação
-            </button>
+              Corrigir de graça
+            </Link>
           </div>
         </div>
       </header>
 
       <main>
-        {/* Hero */}
+        {/* Hero — a promessa e a ação são a mesma coisa. */}
         <section className="relative overflow-hidden py-20 sm:py-28">
           <div className="pointer-events-none absolute -right-40 -top-32 h-[500px] w-[600px] rounded-full bg-azul/15 blur-[100px]" />
           <div className="relative mx-auto max-w-6xl px-6">
@@ -138,33 +177,39 @@ export default function PaginaInicial() {
             </span>
 
             <h1 className="mt-5 max-w-3xl text-[2.4rem] font-black leading-[1.05] tracking-tight sm:text-6xl">
-              Descubra exatamente por que sua redação{' '}
-              <span className="gradient-text">não está chegando aos 900+</span>
+              Sua redação tem desvios que você{' '}
+              <span className="gradient-text">não está enxergando</span>
             </h1>
 
             <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-tinta-suave">
-              Corrija sua redação com uma análise detalhada baseada nos critérios de avaliação do
-              ENEM, veja onde está perdendo pontos e receba orientações práticas para melhorar seu
-              próximo texto.
+              Envie sua redação agora e descubra em segundos quantos pontos de atenção ela tem, pelos
+              critérios oficiais do ENEM. As {CORRECOES_GRATUITAS} primeiras são gratuitas e não
+              pedimos cartão.
             </p>
 
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <button
-                onClick={scrollToPricing}
+              <Link
+                href={destinoCorrecaoGratuita}
                 className="cursor-pointer rounded-xl bg-azul px-7 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
               >
-                CORRIGIR MINHA REDAÇÃO →
-              </button>
-              <span className="text-[13px] text-tinta-fraca">
-                Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado.
-              </span>
+                CORRIGIR MINHA REDAÇÃO DE GRAÇA →
+              </Link>
+              <a
+                href="#exemplo"
+                className="text-[13px] font-semibold text-tinta-suave underline decoration-regua underline-offset-4 transition hover:text-tinta"
+              >
+                Antes, ver um exemplo de correção
+              </a>
             </div>
 
             <div className="mt-7 flex flex-wrap gap-4 text-[13px] text-tinta-suave">
-              <span>✓ 5 competências</span>
-              <span>✓ Correção detalhada</span>
-              <span>✓ Resultado rápido</span>
+              <span>✓ Sem cartão</span>
+              <span>✓ Resultado em segundos</span>
+              <span>✓ Critérios oficiais do INEP</span>
             </div>
+            <p className="mt-4 max-w-xl text-[12px] text-tinta-fraca">
+              Sem promessa de nota garantida. O objetivo é transformar cada redação em aprendizado.
+            </p>
           </div>
         </section>
 
@@ -206,7 +251,7 @@ export default function PaginaInicial() {
           </div>
         </section>
 
-        {/* A virada */}
+        {/* A virada — a ponte entre o problema e a prova. */}
         <section className="border-y border-regua bg-folha-2/60 py-24 text-center">
           <div className="mx-auto max-w-2xl px-6">
             <span className="text-[11px] font-black uppercase tracking-widest text-azul">A virada</span>
@@ -214,12 +259,45 @@ export default function PaginaInicial() {
             <p className="mt-4 text-[15px] text-tinta-suave">
               Você precisa entender <strong className="text-tinta">onde perdeu pontos, por que perdeu e como melhorar.</strong>
             </p>
-            <h2 className="mt-6 text-2xl font-black tracking-tight text-azul">É isso que o Nota 1000 faz.</h2>
+            <h2 className="mt-6 text-2xl font-black tracking-tight text-azul">É isso que o Nota 1000 entrega.</h2>
+            <p className="mt-4 text-[14px] text-tinta-fraca">
+              E você não precisa acreditar na nossa palavra — role e veja uma correção de verdade.
+            </p>
+          </div>
+        </section>
+
+        {/* A PROVA. É a seção que a página não tinha. */}
+        <section id="exemplo" className="py-24">
+          <div className="mx-auto max-w-4xl px-6">
+            <div className="text-center">
+              <span className="text-[11px] font-black uppercase tracking-widest text-azul">A prova</span>
+              <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+                É assim que a sua correção chega.
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-[15px] text-tinta-suave">
+                Não é um resumo nem uma nota solta. Cada desvio fica marcado no seu texto, com o
+                motivo ao lado e o que fazer na próxima redação.
+              </p>
+            </div>
+
+            <div className="mt-12">
+              <ExemploCorrecao />
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link
+                href={destinoCorrecaoGratuita}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-azul px-7 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
+              >
+                <Sparkles className="h-4 w-4" />
+                Quero ver isso na minha redação
+              </Link>
+            </div>
           </div>
         </section>
 
         {/* Como funciona */}
-        <section id="como" className="py-24">
+        <section id="como" className="border-y border-regua bg-folha-2/60 py-24">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-azul">Como funciona</span>
             <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
@@ -239,12 +317,16 @@ export default function PaginaInicial() {
         </section>
 
         {/* As competências */}
-        <section id="competencias" className="border-y border-regua bg-folha-2/60 py-24">
+        <section id="competencias" className="py-24">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-azul">As 5 competências</span>
             <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
               Sua redação é avaliada por cinco competências.
             </h2>
+            <p className="mx-auto mt-4 max-w-xl text-[15px] text-tinta-suave">
+              Cada uma vale até 200 pontos. Saber qual delas está te segurando é o que decide onde
+              vale a pena gastar seu tempo de estudo.
+            </p>
 
             <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
               {COMPETENCIAS.map((c) => (
@@ -258,25 +340,8 @@ export default function PaginaInicial() {
           </div>
         </section>
 
-        {/* Benefícios */}
-        <section className="py-24">
-          <div className="mx-auto max-w-6xl px-6 text-center">
-            <span className="text-[11px] font-black uppercase tracking-widest text-azul">Benefícios</span>
-            <h2 className="mx-auto mt-3 text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
-              Estude redação com mais clareza.
-            </h2>
-
-            <div className="mt-12 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              {BENEFICIOS.map((b) => (
-                <div key={b.titulo} className="glass-card p-6 text-left">
-                  <div className="text-2xl">{b.icon}</div>
-                  <h3 className="mt-4 text-[17px] font-bold">{b.titulo}</h3>
-                  <p className="mt-1.5 text-[13px] text-tinta-fraca">{b.texto}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* A fronteira grátis/pago, declarada ANTES do preço. */}
+        <FronteiraGratisPago destino={destinoCorrecaoGratuita} />
 
         {/* Planos */}
         <section id="planos" className="border-y border-regua bg-folha-2/60 py-24">
@@ -284,7 +349,7 @@ export default function PaginaInicial() {
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">Oferta</span>
               <h2 className="mx-auto mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
-                Escolha como você quer treinar sua redação.
+                Depois das gratuitas, escolha como continuar.
               </h2>
               <p className="mx-auto mt-3 max-w-md text-[15px] text-tinta-suave">
                 Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
@@ -292,78 +357,35 @@ export default function PaginaInicial() {
             </div>
 
             <div className="mt-12 grid gap-5 md:grid-cols-2">
-              {/* Mensal — destaque */}
-              <div className="price relative flex flex-col justify-between rounded-2xl border-2 border-azul bg-folha p-7 shadow-[0_0_0_1px_rgba(79,140,255,0.15),0_25px_60px_rgba(0,0,0,0.25)]">
-                <span className="absolute right-5 top-5 rounded-full bg-azul-claro px-2.5 py-1 text-[10px] font-black text-azul">
-                  MAIS ESCOLHIDO
-                </span>
-                <div>
-                  <h3 className="text-lg font-bold">Mensal</h3>
-                  <p className="mt-1 text-[13px] text-tinta-fraca">Renova todo mês, cancele quando quiser.</p>
-                  <p className="mt-5 text-4xl font-black tracking-tight">R$ 97,00</p>
-                  <p className="text-[12px] text-tinta-fraca">por mês, assinatura recorrente</p>
-
-                  <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Correções ilimitadas todo mês
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Avaliação pelas cinco competências
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Versão reescrita nota 1000
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Marcação de erros no texto
-                    </li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => iniciarCheckout('mensal')}
-                  disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center rounded-xl bg-azul px-5 py-3.5 text-[13px] font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110 disabled:opacity-50"
-                >
-                  {planoCarregando === 'mensal' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Assinar mensal'}
-                </button>
-              </div>
-
-              {/* Único — 30 dias */}
-              <div className="flex flex-col justify-between rounded-2xl border border-regua bg-folha p-7">
-                <div>
-                  <h3 className="text-lg font-bold">Acesso 30 dias</h3>
-                  <p className="mt-1 text-[13px] text-tinta-fraca">Pagamento único, sem renovar sozinho.</p>
-                  <p className="mt-5 text-4xl font-black tracking-tight">R$ 147,00</p>
-                  <p className="text-[12px] text-tinta-fraca">pagamento único, 30 dias de acesso</p>
-
-                  <ul className="mt-6 space-y-2.5 border-t border-regua pt-5 text-[13px] text-tinta-suave">
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Correções ilimitadas por 30 dias
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Versão reescrita nota 1000
-                    </li>
-                    <li className="flex gap-2">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-azul" />
-                      Matriz das cinco competências
-                    </li>
-                  </ul>
-                </div>
-
-                <button
-                  onClick={() => iniciarCheckout('unico')}
-                  disabled={planoCarregando !== null}
-                  className="mt-7 flex cursor-pointer items-center justify-center rounded-xl border border-regua bg-folha-2 px-5 py-3.5 text-[13px] font-bold text-tinta transition hover:border-azul disabled:opacity-50"
-                >
-                  {planoCarregando === 'unico' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Comprar acesso de 30 dias'}
-                </button>
-              </div>
+              <CartaoDePlano
+                plano={PLANOS.mensal}
+                destaque
+                descricao="Para quem vai treinar redação toda semana até a prova."
+                beneficios={[
+                  'Correções ilimitadas',
+                  'Nota nas 5 competências',
+                  'Desvios marcados no seu texto',
+                  'Versão reescrita e plano de ação',
+                  'Renova sozinho, cancele quando quiser',
+                ]}
+                carregando={planoCarregando === 'mensal'}
+                bloqueado={planoCarregando !== null}
+                aoClicar={() => iniciarCheckout('mensal')}
+              />
+              <CartaoDePlano
+                plano={PLANOS.unico}
+                descricao="Para quem quer uma reta final concentrada, sem recorrência."
+                beneficios={[
+                  'Correções ilimitadas por 30 dias',
+                  'Nota nas 5 competências',
+                  'Desvios marcados no seu texto',
+                  'Versão reescrita e plano de ação',
+                  'Pagamento único, não renova',
+                ]}
+                carregando={planoCarregando === 'unico'}
+                bloqueado={planoCarregando !== null}
+                aoClicar={() => iniciarCheckout('unico')}
+              />
             </div>
 
             {/* Garantia */}
@@ -378,6 +400,19 @@ export default function PaginaInicial() {
                 </p>
               </div>
             </div>
+
+            {/* Quem pagou com um e-mail diferente do cadastro não tem acesso
+                liberado pelo webhook, e o caminho natural de quem está nessa
+                situação é voltar para a página de preço achando que a compra
+                não passou. Esta linha é a porta de saída antes de comprar de
+                novo ou pedir reembolso. */}
+            <p className="mt-5 text-center text-[13px] text-tinta-fraca">
+              Já comprou e o acesso não liberou?{' '}
+              <Link href="/vincular-compra" className="font-semibold text-azul hover:underline">
+                Destrave sua compra aqui
+              </Link>
+              .
+            </p>
           </div>
         </section>
 
@@ -396,6 +431,7 @@ export default function PaginaInicial() {
                 <div key={item.q} className="rounded-xl border border-regua bg-folha">
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    aria-expanded={openFaq === idx}
                     className="flex w-full cursor-pointer items-center justify-between gap-6 px-5 py-4 text-left"
                   >
                     <span className="text-[14px] font-bold">{item.q}</span>
@@ -414,7 +450,8 @@ export default function PaginaInicial() {
           </div>
         </section>
 
-        {/* CTA final */}
+        {/* CTA final — a MESMA ação do topo. A página começa e termina com a
+            mesma promessa, que é o que faz ela fechar. */}
         <section className="relative overflow-hidden py-28 text-center">
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="h-[500px] w-[700px] rounded-full bg-azul/10 blur-[100px]" />
@@ -425,15 +462,18 @@ export default function PaginaInicial() {
               Pare de escrever redações no escuro.
             </h2>
             <p className="mt-4 text-[15px] text-tinta-suave">
-              Envie sua redação, descubra onde está perdendo pontos e saiba o que melhorar no próximo
-              texto.
+              Envie a redação que você escreveu essa semana e descubra quantos desvios ela tem. Se o
+              diagnóstico te ajudar, aí sim a gente conversa sobre plano.
             </p>
-            <button
-              onClick={scrollToPricing}
-              className="mt-8 cursor-pointer rounded-xl bg-azul px-8 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
+            <Link
+              href={destinoCorrecaoGratuita}
+              className="mt-8 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-azul px-8 py-3.5 text-sm font-bold text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] transition hover:brightness-110"
             >
-              CORRIGIR MINHA PRIMEIRA REDAÇÃO →
-            </button>
+              CORRIGIR MINHA REDAÇÃO DE GRAÇA →
+            </Link>
+            <p className="mt-4 text-[12px] text-tinta-fraca">
+              {CORRECOES_GRATUITAS} correções gratuitas · sem cartão · leva menos de um minuto
+            </p>
           </div>
         </section>
       </main>
@@ -441,9 +481,196 @@ export default function PaginaInicial() {
       <footer className="border-t border-regua py-10">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-3 px-6 text-[12px] text-tinta-fraca sm:flex-row">
           <span className="font-bold text-tinta-suave">Nota 1000 · Avaliador de redação do ENEM</span>
-          <span>suporte@avaliadornota1000.com</span>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/privacidade" className="hover:text-tinta-suave transition-colors">
+              Política de Privacidade
+            </Link>
+            <span>suporte@avaliadornota1000.com</span>
+          </div>
         </div>
       </footer>
     </div>
   );
+}
+
+/**
+ * Diz exatamente o que a pessoa leva sem pagar e o que fica com o plano.
+ *
+ * Vem ANTES da tabela de preço de propósito. Omitir essa fronteira até
+ * depois do pagamento é o que gera a sensação de ter sido enganado — e
+ * reembolso, chargeback e reclamação custam mais caro do que a venda que a
+ * omissão traria.
+ */
+function FronteiraGratisPago({ destino }: { destino: string }) {
+  return (
+    <section className="border-y border-regua bg-folha-2/60 py-24">
+      <div className="mx-auto max-w-4xl px-6">
+        <div className="text-center">
+          <span className="text-[11px] font-black uppercase tracking-widest text-azul">Sem letra miúda</span>
+          <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
+            O que é grátis e o que é pago.
+          </h2>
+        </div>
+
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
+          <div className="rounded-2xl border border-regua bg-folha p-7">
+            <span className="inline-flex items-center gap-2 rounded-full bg-verde-claro px-3 py-1 text-[11px] font-black uppercase tracking-wider text-verde">
+              Grátis
+            </span>
+            <h3 className="mt-4 text-lg font-bold">Suas {CORRECOES_GRATUITAS} primeiras redações</h3>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-tinta-suave">
+              {[
+                'Sua redação corrigida pelos critérios do INEP',
+                'Quantos desvios o texto tem',
+                'Se a redação seria anulada, e o alerta na hora',
+                'Sem pedir cartão de crédito',
+              ].map((item) => (
+                <li key={item} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-verde" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href={destino}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-regua bg-folha-2 px-5 py-3 text-[13px] font-bold text-tinta transition hover:border-azul"
+            >
+              Começar de graça
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-azul/40 bg-folha p-7">
+            <span className="inline-flex items-center gap-2 rounded-full bg-azul-claro px-3 py-1 text-[11px] font-black uppercase tracking-wider text-azul">
+              <Lock className="h-3 w-3" />
+              Com plano
+            </span>
+            <h3 className="mt-4 text-lg font-bold">O diagnóstico completo</h3>
+            <ul className="mt-4 space-y-2.5 text-[13px] text-tinta-suave">
+              {[
+                'A nota de cada uma das 5 competências',
+                'Cada desvio marcado no seu texto, com o motivo',
+                'Versão reescrita do seu texto',
+                'Plano de ação para a próxima redação',
+                'Gráfico de evolução entre as suas redações',
+              ].map((item) => (
+                <li key={item} className="flex gap-2.5">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-azul" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#planos"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-azul px-5 py-3 text-[13px] font-bold text-white transition hover:brightness-110"
+            >
+              Ver os planos
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CartaoDePlano({
+  plano,
+  descricao,
+  beneficios,
+  destaque = false,
+  carregando,
+  bloqueado,
+  aoClicar,
+}: {
+  plano: (typeof PLANOS)[PlanoId];
+  descricao: string;
+  beneficios: string[];
+  destaque?: boolean;
+  carregando: boolean;
+  bloqueado: boolean;
+  aoClicar: () => void;
+}) {
+  return (
+    <div
+      className={`price relative flex flex-col justify-between rounded-2xl bg-folha p-7 ${
+        destaque
+          ? 'border-2 border-azul shadow-[0_0_0_1px_rgba(79,140,255,0.15),0_25px_60px_rgba(0,0,0,0.25)]'
+          : 'border border-regua'
+      }`}
+    >
+      {destaque && (
+        <span className="absolute right-5 top-5 rounded-full bg-azul-claro px-2.5 py-1 text-[10px] font-black text-azul">
+          MAIS ESCOLHIDO
+        </span>
+      )}
+
+      <div>
+        <h3 className="text-lg font-bold">{plano.nome}</h3>
+        <p className="mt-1 text-[13px] text-tinta-fraca">{descricao}</p>
+
+        <div className="mt-5 flex items-baseline gap-1.5">
+          <span className="text-[15px] font-bold text-tinta-fraca">R$</span>
+          <span className="text-5xl font-black tabular-nums tracking-tight">{plano.precoReais}</span>
+          <span className="text-[13px] text-tinta-fraca">
+            {plano.recorrente ? '/mês' : `· ${plano.diasDeAcesso} dias`}
+          </span>
+        </div>
+
+        <ul className="mt-6 space-y-2.5 text-[13px] text-tinta-suave">
+          {beneficios.map((b) => (
+            <li key={b} className="flex gap-2.5">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-azul" />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <button
+        onClick={aoClicar}
+        disabled={bloqueado}
+        className={`mt-7 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+          destaque
+            ? 'bg-azul text-white shadow-[0_12px_35px_rgba(79,140,255,0.25)] hover:brightness-110'
+            : 'border border-regua bg-folha-2 text-tinta hover:border-azul'
+        }`}
+      >
+        {carregando ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <span>Assinar {plano.nome}</span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * Manda ao servidor os identificadores de atribuição do Meta (`_fbc`/`_fbp`)
+ * antes de a pessoa sair para a Kiwify.
+ *
+ * Este é o último instante em que esses cookies existem para nós: o checkout
+ * roda em outro domínio e o webhook de pagamento só recebe e-mail e id do
+ * pedido. Sem guardar aqui, a venda chega ao Meta sem saber de qual anúncio
+ * veio, e o custo por aquisição da campanha fica errado.
+ *
+ * Falha nunca bloqueia o checkout — perder a atribuição é ruim, perder a
+ * venda é pior.
+ */
+async function guardarAtribuicao(): Promise<void> {
+  try {
+    const { fbc, fbp } = lerAtribuicao();
+    if (!fbc && !fbp) return;
+
+    const { data: sessao } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
+    const token = sessao.session?.access_token;
+    if (!token) return;
+
+    await fetch('/api/atribuicao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fbc, fbp }),
+    });
+  } catch (erro) {
+    console.warn('Não foi possível guardar a atribuição antes do checkout:', erro);
+  }
 }
