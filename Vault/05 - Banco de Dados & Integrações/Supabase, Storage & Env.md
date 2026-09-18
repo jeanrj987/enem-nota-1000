@@ -6,7 +6,7 @@ tags:
   - storage
   - env
   - seguranca
-updated: 2026-09-05 (perfil obrigatório no cadastro + correção gratuita com resultado borrado)
+updated: 2026-09-17 (domínio próprio, NEXT_PUBLIC_SITE_URL e limpeza das variáveis do Stripe)
 ---
 
 # 🗄️ Supabase, Storage & Variáveis de Ambiente
@@ -125,10 +125,27 @@ O provider Google precisa ser habilitado manualmente (não é código, é config
 | `OPENAI_API_KEY` | Opcional (Fallback) | Chave da OpenAI para o modelo `gpt-4o-mini`. |
 | `NEXT_PUBLIC_SUPABASE_URL` | Configurada | `https://jzsudeviiosbhgkeljaf.supabase.co` — pode ser derivada do claim `ref` do JWT da anon key. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Configurada | Chave anônima pública do Supabase. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Configurada | Usada só pelo webhook do Stripe (`src/lib/supabase-admin.ts`) para gravar assinaturas, ignorando RLS. |
-| `STRIPE_SECRET_KEY` | Configurada (modo teste) | Cria sessões de checkout e produtos/preços (`npm run stripe:setup`). |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Configurada (modo teste) | Chave pública do Stripe (não usada diretamente ainda — Checkout hospedado dispensa Stripe.js no cliente). |
-| `STRIPE_WEBHOOK_SECRET` | Configurada (endpoint de teste local) | Verifica a assinatura HMAC dos eventos do Stripe em `/api/stripe/webhook`. **Ao publicar em produção, criar um endpoint novo no dashboard do Stripe apontando para a URL real e usar o secret dele** — o valor atual foi gerado para um endpoint de teste (`https://example.com/...`) usado só para assinar payloads localmente, nunca recebe eventos reais. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Configurada | Usada só pelo webhook da Kiwify (`src/lib/supabase-admin.ts`) para gravar assinaturas, ignorando RLS. |
+| `KIWIFY_WEBHOOK_TOKEN` | Obrigatória | Assina o payload do webhook (HMAC-SHA1). É o token **gerado** pela Kiwify, visível em "Editar webhook" — não o valor de exemplo da tela de criação (ver ADR 028). |
+| `NEXT_PUBLIC_SITE_URL` | Obrigatória em produção | Endereço canônico do site (`https://www.nota1000enem.digital`). Alimenta `metadataBase`, link canônico e imagem de compartilhamento via `urlDoSite()` (`src/lib/site.ts`). Sem ela, cai em `VERCEL_PROJECT_PRODUCTION_URL` e o site se anuncia pelo endereço da Vercel. |
+
+---
+
+## 🌐 Domínio e Endereços Públicos
+
+| Endereço | Papel |
+| :--- | :--- |
+| `https://www.nota1000enem.digital` | **Domínio oficial.** Registrado na Hostinger, DNS apontando para a Vercel. É o endereço que vai em anúncio, bio e material de venda. |
+| `https://nota1000enem.digital` | Redireciona 308 para o `www`. |
+| `https://enem-nota-1000-six.vercel.app` | Endereço de deploy da Vercel. **Responde o mesmo conteúdo** — use só para depurar deploy, nunca para divulgar. |
+
+> [!warning] **Trocar de domínio não é só DNS**
+> Três lugares fora do repositório precisam conhecer o domínio, e o esquecimento de cada um falha em silêncio:
+> 1. **Supabase → Authentication → URL Configuration**: *Site URL* = `https://www.nota1000enem.digital` e *Redirect URLs* incluindo `https://www.nota1000enem.digital/**`. O login com Google manda o Supabase devolver o usuário para `window.location.origin + /auth/callback`, e endereço fora da allowlist é trocado pelo *Site URL* — a pessoa entra e reaparece deslogada no domínio que estava usando. Os e-mails de confirmação e de recuperação de senha também usam o *Site URL*.
+> 2. **Kiwify**: URL de retorno pós-compra apontando para `https://www.nota1000enem.digital/checkout/sucesso`. A liberação do acesso não depende disso (é o webhook que ativa), mas o comprador cai no endereço errado.
+> 3. **Vercel → Domains**: marcar o domínio próprio como principal e redirecionar o `*.vercel.app` para ele, para não haver dois sites idênticos indexados.
+
+> [!info] O Google Cloud **não** entra nessa lista: o *Authorized redirect URI* do OAuth aponta para `https://<ref>.supabase.co/auth/v1/callback`, que não muda com o domínio do site.
 
 ---
 

@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-17 (landing única + registro retroativo do tema dark V2)
+updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -161,6 +161,15 @@ updated: 2026-09-17 (landing única + registro retroativo do tema dark V2)
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 032: Endereço canônico em `NEXT_PUBLIC_SITE_URL` + card de compartilhamento gerado em build
+- **Status**: Aprovado e Implementado.
+- **Contexto**: o domínio `www.nota1000enem.digital` (Hostinger → Vercel) já servia o site, mas **não existia nenhuma referência a ele no repositório**. Consequências: (1) o `layout.tsx` não tinha `metadataBase`, então link colado em WhatsApp/Instagram saía sem card de preview — caro para um produto vendido por link; (2) o endereço `*.vercel.app` respondia o mesmo conteúdo com status 200, abrindo caminho para o buscador indexar os dois e dividir a relevância.
+- **Decisão**: `urlDoSite()` (`src/lib/site.ts`) resolve o endereço canônico em três degraus — `NEXT_PUBLIC_SITE_URL` → `VERCEL_PROJECT_PRODUCTION_URL` → `localhost` —, a mesma cadeia que o próprio Next usa como fallback de imagem social. URL de ambiente fica em `process.env`, como manda o padrão do projeto; o segundo degrau é rede de segurança para o caso de a variável faltar na Vercel.
+- **Metadata**: `metadataBase`, `alternates.canonical`, `openGraph` e `twitter` no `layout.tsx`. O canônico é o que resolve a duplicidade do lado do buscador; o redirect do `*.vercel.app` continua sendo configuração de painel da Vercel.
+- **Card gerado, não desenhado**: `src/app/opengraph-image.tsx` usa `ImageResponse` (`next/og`) e é prerenderizado em build, sem imagem versionada no repositório — muda junto com o texto de venda. **Ponto de atenção**: roda no Satori, que não lê o `globals.css`, então as cores da identidade estão repetidas em hexadecimal nesse arquivo; mudança de paleta exige tocar nele também.
+- **O que continua fora do código**: allowlist de redirect do Supabase, URL de retorno da Kiwify e o domínio principal na Vercel — documentados em [[05 - Banco de Dados & Integrações/Supabase, Storage & Env]].
+- **Testes**: 155 (sem variação — metadata e imagem não têm lógica testável no escopo atual).
+
 ### ADR 031: Identidade visual "V2 dark" para o projeto inteiro (registro retroativo)
 - **Status**: Aprovado e Implementado em 17/09 (commit `405043b`), **documentado só em 17/09 à noite** — a mudança de identidade foi para o código sem ADR nem entrada de changelog, e a nota [[04 - Arquitetura Técnica/Componentes & Design System]] ficou descrevendo o design anterior por meio dia. Este registro fecha a lacuna.
 - **Contexto**: o ADR 014 havia unificado tudo na identidade "caderno & caneta vermelha" (tema claro, papel `#F7F4ED`, vermelho de corretor como acento). O usuário produziu uma landing de referência (`nota-1000-ai-v2.html`) em tema escuro e decidiu levar essa direção para o produto inteiro.
@@ -258,6 +267,12 @@ updated: 2026-09-17 (landing única + registro retroativo do tema dark V2)
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.3.0] - 2026-09-17 (domínio próprio no código; preview de link)
+- **Adicionado**: `NEXT_PUBLIC_SITE_URL` e `urlDoSite()` (`src/lib/site.ts`); `metadataBase`, link canônico, Open Graph e Twitter Card no `layout.tsx`. Ver ADR 032.
+- **Adicionado**: `src/app/opengraph-image.tsx` — card 1200×630 gerado em build, para o link render preview em WhatsApp, Instagram e afins.
+- **Documentado**: o domínio `www.nota1000enem.digital` e os três ajustes de painel que ele exige (Supabase, Kiwify, Vercel).
+- **Testes**: 155 (sem variação).
 
 ### [v3.2.0] - 2026-09-17 (landing única: a página de vendas virou a home)
 - **Alterado**: `/` deixou de ser uma landing institucional própria e passou a ser a página de vendas — acabou a troca de identidade visual no meio do funil, que aparecia para todo usuário recém-cadastrado. Ver ADR 030.
