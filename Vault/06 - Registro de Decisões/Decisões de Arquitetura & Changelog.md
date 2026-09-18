@@ -16,7 +16,7 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 > [!warning] **Contagem de testes: confie em `npx vitest run`, não na aritmética do log**
 > Entradas antigas às vezes fazem "X → Y" assumindo que o Y da entrada anterior é o X correto desta — nem sempre é (ver achado documentado no ADR 029, P2 item 9 do relatório de 17/09). Para saber o número real de testes a qualquer momento, rode a suíte; não some deltas do changelog.
 
-> [!question]- **JEAN — conferir e apagar este bloco** (aberto em 18/09, no merge dos ADRs 040–043)
+> [!question] **JEAN — conferir e apagar este bloco** (aberto em 18/09, no merge dos ADRs 040–043)
 > Trabalhamos no mesmo dia e os dois lados mexeram neste arquivo. Duas coisas aconteceram, e a segunda é sobre um ADR seu.
 >
 > **1. O seu ADR 038 tinha sumido — foi restaurado.**
