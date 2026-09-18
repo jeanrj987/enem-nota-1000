@@ -53,3 +53,9 @@ next-env.d.ts
 # claude code: permissões e preferências locais de cada dev. As skills e o
 # AGENTS.md são compartilhados, este arquivo não.
 .claude/settings.local.json
+
+# relatórios gerados localmente, não devem ir para o repositório
+/Relatorios
+
+# cache local do Supabase CLI (gerado ao rodar `npx supabase`)
+/supabase/.temp

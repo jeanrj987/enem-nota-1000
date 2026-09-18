@@ -15,9 +15,9 @@ const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
  * mas NINGUÉM confirmou o formato exato contra um envio de teste real da
  * conta do usuário. Antes de confiar nisso em produção: disparar "Testar
  * Webhook" no painel da Kiwify (ou uma compra de teste) e conferir os logs
- * do Vercel para essa rota — `console.log('kiwify_webhook_payload_bruto', ...)`
- * abaixo grava o corpo inteiro de propósito, para isso ser possível sem
- * adivinhar.
+ * de erro desta rota (`kiwify_webhook_assinatura_invalida` e afins) — eles
+ * já trazem o payload bruto quando algo falha, sem precisar logar todo
+ * envio bem-sucedido.
  */
 
 function assinaturaValida(payloadBruto: string, assinaturaRecebida: string | null): boolean {
@@ -110,9 +110,6 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 });
   }
-
-  // Gravado de propósito, para confirmar o formato real no primeiro envio.
-  console.log('kiwify_webhook_payload_bruto', payloadBruto);
 
   const status = normalizarStatus(payload);
   const email = extrairEmail(payload);

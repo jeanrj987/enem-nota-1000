@@ -441,7 +441,12 @@ export default function PaginaInicial() {
       <footer className="border-t border-regua py-10">
         <div className="mx-auto flex max-w-6xl flex-col justify-between gap-3 px-6 text-[12px] text-tinta-fraca sm:flex-row">
           <span className="font-bold text-tinta-suave">Nota 1000 · Avaliador de redação do ENEM</span>
-          <span>suporte@avaliadornota1000.com</span>
+          <div className="flex items-center gap-4">
+            <span>suporte@avaliadornota1000.com</span>
+            <Link href="/privacidade" className="hover:text-tinta-suave transition-colors">
+              Política de Privacidade
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
