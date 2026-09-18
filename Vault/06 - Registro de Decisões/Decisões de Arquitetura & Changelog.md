@@ -163,10 +163,10 @@ updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 
 ### ADR 033: Cidade/Estado do cadastro viram seleção (IBGE), não texto livre
 - **Status**: Aprovado e Implementado.
-- **Contexto**: em `/completar-perfil`, o campo "Cidade e Estado" era um `<input type="text">` livre (placeholder "Ex: Fortaleza - CE"). Texto livre nesse campo gera dado sujo (abreviações, erros de digitação, formatos inconsistentes) sem nenhum ganho real — o valor não é usado para nada além de exibição/registro.
-- **Decisão**: virou dois `<select>` — Estado (lista fixa de 27 UFs, `src/lib/localidades.ts`) e Cidade (carregada sob demanda da API pública do IBGE, `buscarMunicipiosPorUf`, quando o estado é escolhido). Não há por que embutir as ~5570 cidades do Brasil no bundle — a busca é feita just-in-time, com timeout de 8s via `AbortController` e um botão de "tentar de novo" se a API do IBGE falhar (nunca falha silenciosamente). No submit, os dois valores são recompostos na mesma string `"Cidade - UF"` que já era salva em `perfis.cidade_estado` — sem migração de banco.
-- **Compatibilidade com cadastros antigos**: um `cidade_estado` salvo antes desta mudança só pré-popula os selects se bater exatamente no formato `"Cidade - UF"` com uma sigla de UF válida; caso contrário, a pessoa simplesmente escolhe de novo (campo já era obrigatório).
-- **Testes**: 155 (sem variação — é uma tela de formulário sem teste automatizado prévio, mesmo padrão de `RequerLogin`/`RequerAssinatura` antes do ADR 022; validado via `tsc --noEmit`, `eslint` e `npm run build`).
+- **Contexto**: tanto `/completar-perfil` quanto o formulário de "Criar Conta" em `/auth` tinham o campo "Cidade e Estado" como um `<input type="text">` livre (placeholder "Ex: Fortaleza - CE") — são dois pontos de entrada distintos para o mesmo dado (quem completa o cadastro depois do login social vs. quem já cadastra tudo no signup por e-mail). Texto livre nesse campo gera dado sujo (abreviações, erros de digitação, formatos inconsistentes) sem nenhum ganho real — o valor não é usado para nada além de exibição/registro.
+- **Decisão**: nas duas telas, virou dois `<select>` — Estado (lista fixa de 27 UFs, `src/lib/localidades.ts`) e Cidade (carregada sob demanda da API pública do IBGE, `buscarMunicipiosPorUf`, quando o estado é escolhido). Não há por que embutir as ~5570 cidades do Brasil no bundle — a busca é feita just-in-time, com timeout de 8s via `AbortController` e um botão de "tentar de novo" se a API do IBGE falhar (nunca falha silenciosamente). No submit, os dois valores são recompostos na mesma string `"Cidade - UF"` que já era salva em `perfis.cidade_estado` — sem migração de banco. A lógica de busca (estado, municípios, loading, erro, retry) é praticamente idêntica nas duas telas; não foi extraída para um componente/hook compartilhado porque são só 2 ocorrências (tolerável até a 3ª, ver AGENTS.md).
+- **Compatibilidade com cadastros antigos**: um `cidade_estado` salvo antes desta mudança só pré-popula os selects (em `/completar-perfil`) se bater exatamente no formato `"Cidade - UF"` com uma sigla de UF válida; caso contrário, a pessoa simplesmente escolhe de novo (campo já era obrigatório).
+- **Testes**: 155 (sem variação — são telas de formulário sem teste automatizado prévio, mesmo padrão de `RequerLogin`/`RequerAssinatura` antes do ADR 022; validado via `tsc --noEmit`, `eslint` e `npm run build`).
 
 ### ADR 032: Endereço canônico em `NEXT_PUBLIC_SITE_URL` + card de compartilhamento gerado em build
 - **Status**: Aprovado e Implementado.
@@ -276,7 +276,7 @@ updated: 2026-09-17 (domínio canônico e card de compartilhamento)
 ## 📋 Changelog do Projeto
 
 ### [v3.4.0] - 2026-09-18 (cidade/estado do cadastro viram seleção)
-- **Alterado**: `/completar-perfil` — o campo de texto livre "Cidade e Estado" virou dois selects: Estado (lista fixa) e Cidade (via API do IBGE, carregada ao escolher o estado). Ver ADR 033.
+- **Alterado**: `/completar-perfil` **e** o formulário de cadastro em `/auth` — o campo de texto livre "Cidade e Estado" virou dois selects em ambas as telas: Estado (lista fixa) e Cidade (via API do IBGE, carregada ao escolher o estado). Ver ADR 033.
 - **Testes**: 155 (sem variação).
 
 ### [v3.3.0] - 2026-09-17 (domínio próprio no código; preview de link)
