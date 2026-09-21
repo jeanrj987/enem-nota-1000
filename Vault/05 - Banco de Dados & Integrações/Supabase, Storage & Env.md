@@ -264,7 +264,7 @@ Chamadores (`Editor.tsx`, `dashboard/page.tsx`, `historico/page.tsx`, `correcao/
 | Rota | Limite | Janela | Teto de tamanho |
 | :--- | :--- | :--- | :--- |
 | `POST /api/corrigir` | 5 requisições/IP | 10 min | 8000 caracteres de texto |
-| `POST /api/upload` | 15 requisições/IP | 10 min | 10MB por arquivo |
+| `POST /api/upload` | 15 requisições/usuário | 10 min | 4MB por arquivo (`src/lib/limites-upload.ts`) |
 | `POST /api/vincular-compra` | 5 tentativas/usuário | 60 min | — |
 
 As duas primeiras retornam `429` com header `Retry-After` quando o limite é excedido; `/api/corrigir` retorna `413` para texto acima do teto, `/api/upload` retorna `413` para arquivo acima do teto.

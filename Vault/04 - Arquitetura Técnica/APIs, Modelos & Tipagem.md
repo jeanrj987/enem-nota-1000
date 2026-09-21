@@ -149,7 +149,9 @@ export interface Redacao {
 
 ### 2. `POST /api/upload`
 - **Função**: Processa uploads multipart/form-data: `.txt` (nativo), `.docx` (via `mammoth`), `.pdf` (via `pdf-parse`, só texto selecionável — sem OCR desde o ADR 025; PDF de foto/scan retorna 422 pedindo para colar o texto).
-- **Limites**: 15 requisições/IP a cada 10min (`429`), arquivo máx. 10MB (`413`).
+- **Limites**: 15 requisições/usuário a cada 10min (`429`), arquivo máx. **4MB** (`413`) e extensão em `.txt`/`.pdf`/`.docx` (`400`). Os dois últimos vêm de `src/lib/limites-upload.ts`, a mesma fonte que a tela aplica **antes** de enviar.
+- ⚠️ **O teto não é arbitrário**: funções serverless na Vercel recusam corpo acima de 4,5MB, e quem responde nesse caso é a plataforma, com HTML, antes de a rota rodar. O valor antigo (10MB) tornava a validação da rota inalcançável justamente na faixa em que mais importava — ver ADR 046.
+- **Do lado do cliente**, a resposta é lida com `lerRespostaJson()` (`src/lib/resposta-http.ts`), nunca com `res.json()` direto: quando o corpo não é JSON, o erro que sobe é uma frase deduzida do status, não a mensagem crua do motor JavaScript.
 - **Resposta**:
   ```json
   {

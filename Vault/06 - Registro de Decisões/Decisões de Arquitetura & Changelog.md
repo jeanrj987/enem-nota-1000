@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de funil/anúncio, prova de valor na landing e SEO)
+updated: 2026-09-21 (menu que não recusa em silêncio; importação de arquivo que explica a falha)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -182,6 +182,33 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 046: Resposta de rota nunca é parseada às cegas — o erro do motor JS parava de pé na tela do aluno
+
+- **Status**: Aprovado e Implementado.
+- **Contexto**: uma pessoa testando o produto em 21/09 tentou importar um arquivo e recebeu **"the string did not match the expected pattern"**. A frase não existe em lugar nenhum do código: é a mensagem que o **WebKit** (Safari, e qualquer navegador no iOS, que usa o mesmo motor por baixo) emite quando `JSON.parse` recebe algo que não é JSON. No V8 a mesma falha sairia como "Unexpected token '<'".
+- **Como ela chegava ao usuário**: `Editor.tsx` fazia `const data = await res.json()` e, no `catch`, `setUploadError(err.message)`. Quando o corpo não era JSON, a mensagem crua do motor ia direto para a tela — sem dizer o que houve nem o que fazer.
+- **A causa por baixo**: `await res.json()` só é seguro enquanto quem responde é a nossa rota, e nem sempre é. O teto de tamanho estava em **10MB** em `/api/upload`, escolhido sem relação com o ambiente de execução: funções serverless na Vercel **recusam corpo acima de 4,5MB**, e quem responde nesse caso é a plataforma, **antes de a rota rodar**, com HTML. O mesmo vale para timeout de gateway (504) e para deploy no ar no instante da requisição. A validação de tamanho da rota era inalcançável justamente na faixa em que mais importava.
+- **Decisão, em três partes**:
+  1. **`src/lib/resposta-http.ts`** — `lerRespostaJson()` lê o corpo como texto, tenta parsear e, quando falha, lança `Error` com uma frase deduzida do status (413, 429, 502, 503, 504…) em vez de deixar a do motor vazar. Registra o status e os primeiros 200 caracteres do corpo no console, para que um relato futuro seja diagnosticável. Substituiu os três `res.json()` desprotegidos do cliente (dois em `Editor.tsx`, um em `/correcao/[id]`).
+  2. **`src/lib/limites-upload.ts`** — extensões aceitas e teto de tamanho numa fonte só, sem dependência nenhuma, importável pela tela e pela rota. Teto baixado de 10MB para **4MB**, com folga sob o limite da hospedagem para o overhead do `multipart/form-data`. Uma redação de 30 linhas em PDF ou .docx raramente passa de algumas centenas de KB, então o teto novo não aperta o caso real.
+  3. **Validação antes do envio** — `Editor.tsx` aplica `validarArquivo()` no momento da escolha. O arquivo grande demais nem sai do aparelho, o que evita a viagem inteira e o erro na volta. A checagem da rota permanece, porque ela é chamável sem passar pela tela.
+- **Correção de UX no mesmo caminho**: o `<input type="file">` não tinha o valor limpo depois do envio. Escolher o **mesmo** arquivo de novo após um erro não disparava `onChange`, e a tela parecia travada. Agora o valor é zerado antes de qualquer saída do handler.
+- **Por que não só melhorar a mensagem**: trocar a frase resolveria a aparência e deixaria o arquivo de 6MB continuar falhando. O teto alinhado ao ambiente é o que faz o caso funcionar; a mensagem é a rede de segurança para todo o resto (timeout, gateway, deploy).
+- **Testes**: `tests/resposta-http.test.ts` (7) e `tests/limites-upload.test.ts` (9). Um deles trava `MAX_TAMANHO_ARQUIVO_BYTES < 4,5MB`: se alguém subir o teto sem conferir o ambiente, o bug volta por baixo e o teste avisa.
+
+### ADR 045: O menu deixa de oferecer o que o gate vai recusar — e a volta para a home deixa de ser muda
+
+- **Status**: Aprovado e Implementado.
+- **Contexto**: relatado em 21/09 como "o menu hambúrguer não direciona para as seções — clicar em qualquer opção leva para o topo do site". O menu não estava quebrado: estava sendo honesto sobre um comportamento que já era ruim.
+- **O que de fato acontecia**: `NAV_LINKS` lista Dashboard e Histórico para todo mundo, mas as duas rotas são protegidas por `RequerAssinatura`. Quem está logado sem plano clicava, a rota começava a carregar, aparecia um spinner e o gate fazia `router.replace('/')` — a home, que é a página de vendas. Somando o item "Início", que também aponta para `/`, **três das quatro opções** do menu terminavam no mesmo lugar, sem nenhuma explicação. Do lado de fora isso é indistinguível de um menu que não direciona para lugar nenhum.
+- **Decisão 1 — o menu não oferece o que vai ser recusado**: `NAV_LINKS` ganhou `exigePlano`. O `Navbar` consulta `temAcessoAtivo()` e, para quem está logado **e já sabemos** não ter plano, o item mostra cadeado (mais o selo "Plano" no drawer) e aponta direto para a oferta. O clique deixa de passar pela tela que vai expulsá-lo.
+- **Três estados, não dois**: a assinatura é guardada como `{ userId, ativa }`, não como um booleano. O `userId` junto impede que trocar de conta na mesma aba herde a resposta da sessão anterior, e o estado `null` ("ainda não sei") impede o cadeado de piscar em quem tem plano no intervalo entre a montagem e a resposta.
+- **Deslogado segue o caminho normal**, de propósito: ali o gate manda para o login **levando o destino junto** (`urlDeLogin`, ADR 026), que é um resultado compreensível — ao contrário de aterrissar na home sem explicação.
+- **Decisão 2 — a volta ganhou voz**: o destino por falta de assinatura passou de `/` para `/?bloqueio=assinatura` (`URL_SEM_ASSINATURA`, em `gates.ts`). **O destino não mudou**: continua sendo a home inteira, e não `#planos` — a decisão de funil registrada em `decidirGateAssinatura` segue valendo, porque quem é barrado ali nunca viu a oferta e despejá-lo em cima do preço converte pior. O carimbo só permite que a landing diga por que trouxe a pessoa de volta, num aviso com link para os planos. Há teste travando que ele aponta para a home e não para a âncora.
+- **Leitura do carimbo sem custo de arquitetura**: a landing usa `useSyncExternalStore` sobre `window.location`, não `useSearchParams` (que obrigaria a página inteira a viver dentro de um `<Suspense>`) nem `useEffect` + `setState` (barrado pela regra `react-hooks/set-state-in-effect` do projeto, e um render extra à toa). O terceiro argumento do hook — o snapshot do servidor — é o que evita descasamento de hidratação. A rota `/` continua estática no build.
+- **Polimento no mesmo caminho**: as seções com `id` da landing ganharam `scroll-mt-20`. O header é `sticky`, e sem margem de rolagem o alvo da âncora encostava atrás dele com o título encoberto.
+- **Testes**: 4 novos em `gates.test.ts` (o carimbo e `motivoDeBloqueio`, incluindo o caso de volta de anúncio, com `utm_source` e `fbclid` na mesma query); `gates-fluxo.test.tsx` atualizado para o destino novo.
 
 ### ADR 044: Correções gratuitas de 3 para 1, e o limite passa a ter uma fonte só
 - **Status**: Aprovado e Implementado.
@@ -398,6 +425,16 @@ updated: 2026-09-18 (P0/P2 do relatório de 17/09; compras órfãs, medição de
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.9.0] - 2026-09-21 (menu que não recusa em silêncio; importação de arquivo que explica a falha)
+- **Corrigido**: importar arquivo podia terminar com "the string did not match the expected pattern" na tela — mensagem crua do motor JavaScript no Safari/iOS quando `res.json()` recebia HTML em vez de JSON. Ver ADR 046. Novo `src/lib/resposta-http.ts`; os três `res.json()` desprotegidos do cliente foram substituídos.
+- **Alterado**: teto do arquivo de upload de 10MB para 4MB, agora numa fonte só (`src/lib/limites-upload.ts`) lida pela tela e pela rota. O valor antigo ficava acima do limite de corpo da hospedagem, então arquivos entre 4,5MB e 10MB nunca alcançavam a validação da rota — morriam no gateway, com resposta em HTML.
+- **Adicionado**: validação de extensão e tamanho no cliente, antes do envio; o `accept` do input passou a vir da mesma fonte.
+- **Corrigido**: escolher o mesmo arquivo de novo depois de um erro não disparava nada e a tela parecia travada — o valor do `<input type="file">` não era limpo.
+- **Corrigido**: no menu, Dashboard e Histórico eram oferecidos a quem não tem plano e o gate devolvia a pessoa à home sem explicação — na prática, três das quatro opções terminavam no topo do site. Ver ADR 045. Os itens agora mostram cadeado e levam direto à oferta.
+- **Adicionado**: aviso na landing explicando a volta (`/?bloqueio=assinatura`), com link para os planos. O destino do gate continua sendo a home inteira, não `#planos`.
+- **Adicionado**: `scroll-mt-20` nas seções com âncora da landing — o header `sticky` encobria o título da seção de destino.
+- **Testes**: 208 → 228.
 
 ### [v3.8.0] - 2026-09-18 (correção gratuita de 3 para 1; validação de data; travas no banco)
 - **Alterado**: `LIMITE_CORRECOES_GRATUITAS` de 3 para **1**. Cada correção gratuita é uma chamada paga de LLM, e com a confirmação de e-mail desligada nada impede criar contas em série para multiplicar a cota. Ver ADR 044.

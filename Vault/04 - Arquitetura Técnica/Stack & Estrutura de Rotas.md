@@ -96,6 +96,8 @@ src/app/
 - **Shell próprio**: não usa `Navbar`/`Footer` do app, porque o menu interno só leva a destinos que exigem assinatura. O header tem âncoras (`#exemplo`, `#como`, `#planos`, `#faq`) e um link que alterna entre "Entrar" e "Minha conta" conforme `useAuth`.
 - **Medição**: dispara `ViewContent` ao montar e `InitiateCheckout` no clique de assinar, e guarda a atribuição do anúncio (`_fbc`/`_fbp`) via `/api/atribuicao` antes de redirecionar para a Kiwify. Ver ADR 042.
 - Caminhos de entrada: acesso direto, o item "Início" do `Navbar` na área logada, os CTAs de paywall (`Footer.tsx` e `CorrecaoBloqueada.tsx`, que apontam para `/#planos`) e o redirecionamento automático de `RequerAssinatura` quando alguém sem assinatura ativa tenta abrir `/dashboard` ou `/historico`.
+- **Chegada por bloqueio de plano**: esse redirecionamento traz `?bloqueio=assinatura` (`URL_SEM_ASSINATURA`, em `gates.ts`) e a página mostra um aviso explicando a volta, com link para os planos. O destino continua sendo a home **inteira**, não `#planos` — quem é barrado ali nunca viu a oferta. A leitura é por `useSyncExternalStore` sobre `window.location`, escolha detalhada no ADR 045; a rota segue estática no build.
+- As seções com `id` (`#exemplo`, `#rigor`, `#como`, `#competencias`, `#planos`, `#faq`) têm `scroll-mt-20`, porque o header é `sticky` e encobriria o título da seção de destino.
 
 ### 2. Redirect de `/vendas`
 - A rota antiga sobrevive só como `permanentRedirect("/")` (308), para não quebrar link divulgado em anúncio, bio ou mensagem antiga. Não tem conteúdo próprio.
