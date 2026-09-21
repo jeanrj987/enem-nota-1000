@@ -1,63 +1,42 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Sparkles,
-  LayoutDashboard,
-  PenTool,
-  TrendingUp,
-  Menu,
-  X,
-  GraduationCap,
-  Lock,
-  LogOut,
-} from 'lucide-react';
+import { Sparkles, PenTool, Menu, X, GraduationCap, Lock, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
 import { URL_SEM_ASSINATURA } from '@/lib/gates';
-import { temAcessoAtivo } from '@/lib/assinatura';
+import { DESTINOS_DO_APP } from '@/lib/navegacao';
+import { useAssinaturaAtiva } from '@/lib/useAssinaturaAtiva';
 import { sair } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 /**
- * Itens fixos do menu. `exigePlano` existe porque o menu mentia: listava
- * Dashboard e Histórico para todo mundo, e quem não tinha plano clicava, via
- * um spinner e reaparecia no topo da home — `RequerAssinatura` expulsava a
- * pessoa depois de a rota já ter começado a carregar. De fora isso é
- * indistinguível de um menu que não direciona para lugar nenhum, que foi como
- * o problema chegou em 21/09. Com a marcação, o item mostra o cadeado e leva
- * direto para a oferta, sem passar pela tela que vai recusá-lo.
+ * "Início" é a página de vendas, e por isso só existe no menu de quem ainda
+ * não comprou. Para o cliente pagante ele era um desvio: levava da área
+ * logada para a landing, onde a única saída é o link "Minha conta" — uma
+ * volta inteira para chegar de novo onde já se estava (ADR 047).
  */
-const NAV_LINKS = [
-  { href: '/', label: 'Início', icon: Sparkles, exigePlano: false },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exigePlano: true },
-  { href: '/nova-redacao', label: 'Nova Redação', icon: PenTool, exigePlano: false },
-  { href: '/historico', label: 'Histórico & Evolução', icon: TrendingUp, exigePlano: true },
-] as const;
+const ITEM_INICIO = { href: '/', label: 'Início', icon: Sparkles, exigePlano: false } as const;
+
+/**
+ * `exigePlano` existe porque o menu mentia: listava Dashboard e Histórico
+ * para todo mundo, e quem não tinha plano clicava, via um spinner e
+ * reaparecia no topo da home — `RequerAssinatura` expulsava a pessoa depois
+ * de a rota já ter começado a carregar. De fora isso é indistinguível de um
+ * menu que não direciona para lugar nenhum, que foi como o problema chegou em
+ * 21/09. Com a marcação, o item mostra o cadeado e leva direto para a oferta,
+ * sem passar pela tela que vai recusá-lo.
+ */
+const NAV_LINKS = [ITEM_INICIO, ...DESTINOS_DO_APP] as const;
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { usuario } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Guarda de quem é a resposta, e não só o booleano: trocar de conta na
-  // mesma aba não pode herdar o resultado da sessão anterior. É também o que
-  // dá o terceiro estado ("ainda não sei"), sem o qual o cadeado pisca em
-  // quem tem plano no intervalo entre a montagem e a resposta.
-  const [assinatura, setAssinatura] = useState<{ userId: string; ativa: boolean } | null>(null);
-
-  useEffect(() => {
-    if (!usuario) return;
-    let ativo = true;
-    temAcessoAtivo().then((ativaAgora) => {
-      if (ativo) setAssinatura({ userId: usuario.id, ativa: ativaAgora });
-    });
-    return () => {
-      ativo = false;
-    };
-  }, [usuario]);
+  const assinaturaAtiva = useAssinaturaAtiva();
 
   /**
    * Um item só é bloqueado para quem está logado e já sabemos não ter plano.
@@ -65,14 +44,15 @@ export function Navbar() {
    * para o login levando o destino junto, que é o comportamento certo e
    * compreensível, ao contrário de aterrissar na home sem explicação.
    */
-  const semPlanoConfirmado =
-    !!usuario && assinatura?.userId === usuario.id && !assinatura.ativa;
-
-  const estaBloqueado = (exigePlano: boolean) => exigePlano && semPlanoConfirmado;
+  const estaBloqueado = (exigePlano: boolean) => exigePlano && assinaturaAtiva === false;
 
   /** Destino real do item, já considerando o bloqueio. */
   const destinoDoLink = (href: string, exigePlano: boolean) =>
     estaBloqueado(exigePlano) ? URL_SEM_ASSINATURA : href;
+
+  // Enquanto a assinatura não voltou (`null`), "Início" fica — tirá-lo e
+  // repô-lo faria o menu dançar na montagem de cada página.
+  const linksVisiveis = assinaturaAtiva === true ? DESTINOS_DO_APP : NAV_LINKS;
 
   const handleSair = async () => {
     await sair();
@@ -101,7 +81,7 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => {
+            {linksVisiveis.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
               const bloqueado = estaBloqueado(link.exigePlano);
@@ -175,7 +155,7 @@ export function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-regua bg-papel/95 backdrop-blur-xl px-4 pt-3 pb-5 space-y-2">
-          {NAV_LINKS.map((link) => {
+          {linksVisiveis.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
             const bloqueado = estaBloqueado(link.exigePlano);

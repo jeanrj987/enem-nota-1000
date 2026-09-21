@@ -72,7 +72,8 @@ Todas compartilham `border-bottom: 2px solid` + fundo translúcido na cor da cat
 ### Casca do app
 - **`Navbar.tsx`** — barra sticky responsiva (desktop + drawer mobile). Links em `NAV_LINKS`: Início (`/`), Dashboard, Nova Redação, Histórico; mais "Entrar"/"Sair" e o CTA "Escrever Redação". **Não tem item de planos/oferta** — removido a pedido do usuário.
   - Cada item carrega `exigePlano`. Para quem está logado **e já sabemos** não ter assinatura (`temAcessoAtivo()`, guardada como `{ userId, ativa }`), Dashboard e Histórico aparecem com cadeado — e com o selo "Plano" no drawer — e apontam para `URL_SEM_ASSINATURA` em vez da rota protegida. Sem isso o clique atravessava a rota, via um spinner e era devolvido à home pelo `RequerAssinatura`, o que parece um menu quebrado (ADR 045).
-  - Visitante **deslogado** segue pela rota normal de propósito: ali o gate manda para o login levando o destino junto, que é um resultado compreensível.
+  - Visitante **deslogado** segue pela rota normal de propósito: ali o gate manda para o login levando o destino junto, que é um resultado compreensível. A distinção depende de `useAssinaturaAtiva()` devolver `null` (e não `false`) para quem não tem sessão — ver ADR 047.
+  - Para o **cliente pagante**, "Início" some do menu: ele é a página de vendas, e levar quem já comprou para lá é um desvio do qual a única saída é o link "Minha conta". O logo segue apontando para `/`.
 - **`Footer.tsx`** — rodapé institucional; "Planos e preços" aponta para `/#planos`.
 - ⚠️ A landing `/` **não usa** `Navbar`/`Footer`: tem header e footer próprios (ADR 030).
 

@@ -39,8 +39,11 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronDown, Loader2, Lock, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, Loader2, Lock, LogOut, Menu, Sparkles, X } from 'lucide-react';
 import { motivoDeBloqueio } from '@/lib/gates';
+import { DESTINOS_DO_APP } from '@/lib/navegacao';
+import { useAssinaturaAtiva } from '@/lib/useAssinaturaAtiva';
+import { sair } from '@/lib/auth';
 import { PLANOS, PlanoId } from '@/lib/planos';
 import { useAuth } from '@/contexts/AuthContext';
 import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
@@ -112,6 +115,25 @@ export default function PaginaInicial() {
   const { usuario } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
+  const [menuClienteAberto, setMenuClienteAberto] = useState(false);
+
+  /**
+   * Cliente pagante que cai nesta página.
+   *
+   * Ele chega aqui digitando o endereço, por um link antigo ou pelo logo do
+   * app — e encontrava uma página inteira vendendo o que ele já comprou, com
+   * "Planos" e "Ver um exemplo" no topo e um botão escrito "Corrigir de
+   * graça", quando ele está pagando. A única saída era o link "Minha conta",
+   * no canto.
+   *
+   * Para ele, e só para ele, o header troca as âncoras de venda pelos
+   * destinos do app. Quem ainda não comprou continua vendo a página exatamente
+   * como antes: a navegação da landing é deliberadamente pobre, porque cada
+   * saída extra é uma chance a mais de abandonar o argumento no meio (ADR 043
+   * e ADR 047). Menu só para quem já converteu tem risco de conversão zero.
+   */
+  const assinaturaAtiva = useAssinaturaAtiva();
+  const clientePagante = assinaturaAtiva === true;
   /**
    * Quem clica em Dashboard ou Histórico sem plano é trazido para cá pelo
    * `RequerAssinatura`. Sem um aviso, essa volta é muda: a pessoa clica no
@@ -175,17 +197,31 @@ export default function PaginaInicial() {
             NOTA <span className="text-azul">1000</span>
           </span>
           <div className="hidden md:flex items-center gap-7 text-sm text-tinta-suave">
-            <a href="#exemplo" className="hover:text-tinta transition-colors">Ver um exemplo</a>
-            <a href="#rigor" className="hover:text-tinta transition-colors">Por que confiar</a>
-            <a href="#planos" className="hover:text-tinta transition-colors">Planos</a>
-            <a href="#faq" className="hover:text-tinta transition-colors">Dúvidas</a>
+            {clientePagante ? (
+              DESTINOS_DO_APP.map((destino) => (
+                <Link key={destino.href} href={destino.href} className="hover:text-tinta transition-colors">
+                  {destino.label}
+                </Link>
+              ))
+            ) : (
+              <>
+                <a href="#exemplo" className="hover:text-tinta transition-colors">Ver um exemplo</a>
+                <a href="#rigor" className="hover:text-tinta transition-colors">Por que confiar</a>
+                <a href="#planos" className="hover:text-tinta transition-colors">Planos</a>
+                <a href="#faq" className="hover:text-tinta transition-colors">Dúvidas</a>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-4">
             {/* Sem esse link, quem já tem conta cai na página de vendas pelo
-                menu "Início" do app e fica sem porta de volta. */}
+                menu do app e fica sem porta de volta. No celular ele sai do
+                header quando há menu de cliente, porque já está dentro dele —
+                três controles lado a lado não cabem em tela estreita. */}
             <Link
               href={usuario ? DESTINO_PADRAO : urlDeLogin('/')}
-              className="text-sm font-medium text-tinta-suave hover:text-tinta transition-colors"
+              className={`text-sm font-medium text-tinta-suave hover:text-tinta transition-colors ${
+                clientePagante ? 'hidden md:inline' : ''
+              }`}
             >
               {usuario ? 'Minha conta' : 'Entrar'}
             </Link>
@@ -193,10 +229,54 @@ export default function PaginaInicial() {
               href={destinoCorrecaoGratuita}
               className="cursor-pointer rounded-xl bg-tinta px-4 py-2.5 text-sm font-bold text-papel hover:brightness-110 transition"
             >
-              Corrigir de graça
+              {/* Dizer "de graça" a quem paga é a única frase do site que o
+                  cliente sabe ser falsa. */}
+              {clientePagante ? 'Escrever redação' : 'Corrigir de graça'}
             </Link>
+            {clientePagante && (
+              <button
+                type="button"
+                onClick={() => setMenuClienteAberto((aberto) => !aberto)}
+                className="md:hidden rounded-xl p-1 text-tinta-suave hover:text-tinta transition-colors"
+                aria-label={menuClienteAberto ? 'Fechar menu' : 'Abrir menu'}
+                aria-expanded={menuClienteAberto}
+              >
+                {menuClienteAberto ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            )}
           </div>
         </div>
+
+        {clientePagante && menuClienteAberto && (
+          <div className="md:hidden border-t border-regua bg-papel/95 px-6 pb-5 pt-3 space-y-1.5">
+            {DESTINOS_DO_APP.map((destino) => {
+              const Icone = destino.icon;
+              return (
+                <Link
+                  key={destino.href}
+                  href={destino.href}
+                  onClick={() => setMenuClienteAberto(false)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-tinta-suave hover:bg-folha-2/60 hover:text-tinta transition-colors"
+                >
+                  <Icone className="h-5 w-5 text-azul" />
+                  {destino.label}
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={async () => {
+                await sair();
+                setMenuClienteAberto(false);
+                router.refresh();
+              }}
+              className="flex w-full cursor-pointer items-center gap-3 rounded-xl border-t border-regua/60 px-3 pt-4 pb-2 text-sm font-medium text-tinta-suave hover:text-tinta transition-colors"
+            >
+              <LogOut className="h-5 w-5 text-tinta-fraca" />
+              Sair
+            </button>
+          </div>
+        )}
       </header>
 
       <main>

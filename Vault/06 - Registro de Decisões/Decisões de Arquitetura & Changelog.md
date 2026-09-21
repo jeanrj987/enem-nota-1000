@@ -5,7 +5,7 @@ tags:
   - adr
   - decisoes
   - historico
-updated: 2026-09-21 (menu que não recusa em silêncio; importação de arquivo que explica a falha)
+updated: 2026-09-21 (navegação na landing só para quem já comprou)
 ---
 
 # 🏛️ Decisões de Arquitetura (ADRs) & Changelog
@@ -182,6 +182,24 @@ updated: 2026-09-21 (menu que não recusa em silêncio; importação de arquivo 
 - **Terceira correção de arbitragem mantida completa**: quando a divergência aciona uma terceira correção, ela roda em modo completo, não leve — o par mais próximo entre as três pode excluir a primeira correção (a única com narrativa garantida até ali), e um caso raro não vale o risco de ficar sem fonte de texto pedagógico.
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
+
+### ADR 047: Navegação na landing é privilégio de quem já comprou
+
+- **Status**: Aprovado e Implementado.
+- **Contexto**: no mobile a landing não tem menu — as âncoras do header (`#exemplo`, `#rigor`, `#planos`, `#faq`) vivem em `hidden md:flex` e somem no celular. A pergunta natural, depois do ADR 045, foi adicionar um hambúrguer ali.
+- **A recomendação foi não adicionar, e ela foi aceita**: a página tem dez blocos e um fio condutor deliberado (ADR 043) — *nota sem diagnóstico não ensina → veja o diagnóstico → confira de graça → assine se valer*. Menu em landing de conversão dá **saídas**, não atalhos: cada uma é uma chance a mais de a pessoa pular etapa e abandonar o argumento no meio. O CTA principal já é `sticky` e nunca sai da tela, então o menu não resolveria alcance. E o único item com demanda real seria "Planos" — exatamente o atalho que o ADR 043 removeu por converter pior.
+- **A inversão que destravou a decisão**: nada disso vale para quem **já comprou**. O ADR 030 justificou não pôr o `Navbar` na landing dizendo que "visitante deslogado não tem o que fazer com um menu de Dashboard/Histórico". Para o cliente pagante o argumento se inverte inteiro: ele tem exatamente o que fazer com esse menu, e não há conversão a perder porque ele já converteu. Decisão de produto do usuário.
+- **O que o cliente pagante encontrava aqui até 21/09**: uma página inteira vendendo o que ele já comprou, com "Planos" e "Ver um exemplo" no topo, um botão escrito **"Corrigir de graça"** — a única frase do site que o cliente sabe ser falsa — e como única saída o link "Minha conta", no canto.
+- **Decisão**:
+  1. Com plano ativo, o header da landing troca as âncoras de venda pelos **destinos do app** (Dashboard, Nova Redação, Histórico), no desktop e num drawer no celular. Âncoras de venda não seriam úteis a quem já comprou; o objetivo é dar saída, não navegação de funil.
+  2. O CTA do header passa a dizer "Escrever redação" para quem paga.
+  3. **"Início" sai do menu do app para o cliente pagante.** Era a causa de ele cair aqui: levava da área logada para a página de vendas, onde a única porta de volta é "Minha conta" — uma volta inteira para chegar de novo onde já se estava. O logo continua levando a `/` para quem quiser rever a página.
+- **Sem conta ou sem plano, nada muda**: a landing continua com a navegação pobre de sempre. É o caso que os testes guardam, não o do cliente.
+- **Peças extraídas**: `src/lib/useAssinaturaAtiva.ts` (três consumidores — `Navbar`, landing e a decisão de bloqueio do ADR 045 —, que é o limite de duplicação que o projeto tolera) e `src/lib/navegacao.ts` com `DESTINOS_DO_APP`, para as duas listas não divergirem na primeira rota nova. O hook decide **o que oferecer**, nunca o que liberar: quem autoriza continua sendo a RLS e `RequerAssinatura`. Forjar `true` no navegador rende um menu bonito e nenhuma correção.
+- **Dois defeitos encontrados durante a implementação, ambos por teste**:
+  - **`false` e `null` não são a mesma ausência.** A primeira versão do hook devolvia `false` para quem está deslogado, e o `Navbar` passou a tratar visitante anônimo como assinante inadimplente, desviando-o para a oferta em vez de deixá-lo seguir para o login com o destino junto. Agora `false` significa **uma** coisa — logado e sabidamente sem plano — e todo o resto é `null`. Colapsar os dois casos obrigaria cada consumidor a lembrar de checar `usuario` por fora; separá-los faz ninguém precisar lembrar.
+  - **Os testes de componente não desmontavam nada.** O auto-cleanup do Testing Library depende de `globals: true`, que este projeto não usa, então cada `render()` ficava no `document.body` e as consultas de um teste enxergavam a árvore do anterior. Isso produz teste dependente de ordem, que mente nos dois sentidos: passa com código quebrado e falha com código correto. `tests/setup/jest-dom.ts` agora faz `cleanup()` no `afterEach`, o que vale para `gates-fluxo.test.tsx` também, onde o mesmo risco estava latente.
+- **Testes**: 228 → 243. `navbar-por-plano.test.tsx` (7) cobre os três estados do menu do app; `landing-menu-cliente.test.tsx` (8) cobre os da landing, com o peso nos casos **sem** plano, que são os que o funil não pode perder.
 
 ### ADR 046: Resposta de rota nunca é parseada às cegas — o erro do motor JS parava de pé na tela do aluno
 
@@ -425,6 +443,16 @@ updated: 2026-09-21 (menu que não recusa em silêncio; importação de arquivo 
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.10.0] - 2026-09-21 (navegação na landing só para quem já comprou)
+- **Adicionado**: com plano ativo, o header da landing troca as âncoras de venda pelos destinos do app (Dashboard, Nova Redação, Histórico), com drawer no celular. Ver ADR 047.
+- **Decidido**: **não** adicionar menu mobile na landing para o público geral — a página tem fio condutor deliberado e menu em landing de conversão dá saídas, não atalhos. O menu existe só para quem já converteu, onde não há conversão a perder.
+- **Alterado**: o CTA do header deixa de dizer "Corrigir de graça" a quem está pagando.
+- **Removido**: "Início" do menu do app para o cliente pagante — era o que o levava da área logada para a página de vendas, de onde a única saída era o link "Minha conta".
+- **Adicionado**: `src/lib/useAssinaturaAtiva.ts` (terceiro consumidor da consulta de assinatura) e `src/lib/navegacao.ts` com `DESTINOS_DO_APP`.
+- **Corrigido**: o hook devolvia `false` para quem está deslogado, e o menu tratava visitante anônimo como assinante inadimplente. `false` agora significa só "logado e sem plano".
+- **Corrigido**: testes de componente não desmontavam entre si — sem `globals: true`, o Testing Library não faz cleanup sozinho, e um teste enxergava a árvore do anterior. `tests/setup/jest-dom.ts` passou a chamar `cleanup()`.
+- **Testes**: 228 → 243.
 
 ### [v3.9.0] - 2026-09-21 (menu que não recusa em silêncio; importação de arquivo que explica a falha)
 - **Corrigido**: importar arquivo podia terminar com "the string did not match the expected pattern" na tela — mensagem crua do motor JavaScript no Safari/iOS quando `res.json()` recebia HTML em vez de JSON. Ver ADR 046. Novo `src/lib/resposta-http.ts`; os três `res.json()` desprotegidos do cliente foram substituídos.
