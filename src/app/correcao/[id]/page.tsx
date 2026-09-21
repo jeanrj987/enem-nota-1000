@@ -10,6 +10,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
+import { lerRespostaJson } from '@/lib/resposta-http';
 import { Footer } from '@/components/Footer';
 import { RequerLogin } from '@/components/RequerLogin';
 import { CorrecaoView } from '@/components/CorrecaoView';
@@ -17,6 +18,11 @@ import { CorrecaoBloqueada } from '@/components/CorrecaoBloqueada';
 import { buscarRedacaoPorId } from '@/lib/storage';
 import { supabase } from '@/lib/supabase';
 import { Redacao } from '@/types';
+
+interface RespostaCompletar {
+  completada?: boolean;
+  correcao?: Redacao['correcao'];
+}
 
 export default function PaginaResultadoCorrecao() {
   const params = useParams();
@@ -56,7 +62,7 @@ export default function PaginaResultadoCorrecao() {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ redacaoId: id }),
         });
-        const data = await res.json();
+        const data = await lerRespostaJson<RespostaCompletar>(res);
         if (ativo && res.ok && data.completada && data.correcao) {
           setRedacao((atual) => (atual ? { ...atual, correcao: data.correcao } : atual));
         }

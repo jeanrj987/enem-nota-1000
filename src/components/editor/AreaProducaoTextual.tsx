@@ -1,6 +1,7 @@
 'use client';
 
 import { RefObject } from 'react';
+import { ACCEPT_ARQUIVO, maxTamanhoEmMB } from '@/lib/limites-upload';
 import {
   Upload,
   FileText,
@@ -60,7 +61,7 @@ export function AreaProducaoTextual({
             type="file"
             ref={fileInputRef}
             onChange={onFileUpload}
-            accept=".txt,.pdf,.docx"
+            accept={ACCEPT_ARQUIVO}
             className="hidden"
           />
           <button
@@ -104,7 +105,7 @@ export function AreaProducaoTextual({
           <span>
             Envie um arquivo com <strong>texto real</strong> (não uma foto ou digitalização da folha
             escrita à mão). Letra legível e texto digitado garantem a melhor precisão da nota e a
-            análise mais completa possível.
+            análise mais completa possível. Limite de {maxTamanhoEmMB()}MB por arquivo.
           </span>
         </div>
       )}

@@ -9,6 +9,18 @@ import { SeletorTema } from './editor/SeletorTema';
 import { AreaProducaoTextual } from './editor/AreaProducaoTextual';
 import { ModalCarregamento } from './editor/ModalCarregamento';
 import { rastrearPrimeiraCorrecao } from '@/lib/analytics/eventos-cliente';
+import { validarArquivo } from '@/lib/limites-upload';
+import { lerRespostaJson } from '@/lib/resposta-http';
+
+interface RespostaUpload {
+  text?: string;
+  error?: string;
+}
+
+interface RespostaCorrecao {
+  redacaoId?: string;
+  error?: string;
+}
 
 interface EditorProps {
   initialText?: string;
@@ -80,6 +92,21 @@ export function Editor({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Limpa o valor do input antes de qualquer saída: sem isso, escolher o
+    // mesmo arquivo de novo depois de um erro não dispara `onChange` e a tela
+    // parece travada.
+    e.target.value = '';
+
+    // Barrar aqui é o que impede o arquivo grande de sair do aparelho e
+    // esbarrar no teto de corpo da hospedagem, que responde fora do nosso
+    // formato e quebrava o parse na volta (ver `lib/resposta-http.ts`).
+    const validacao = validarArquivo(file.name, file.size);
+    if (!validacao.ok) {
+      setUploadedFileName(null);
+      setUploadError(validacao.erro);
+      return;
+    }
+
     setIsUploading(true);
     setUploadError(null);
 
@@ -101,8 +128,8 @@ export function Editor({
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await lerRespostaJson<RespostaUpload>(res);
+      if (!res.ok || !data.text) {
         throw new Error(data.error || 'Falha ao processar arquivo.');
       }
 
@@ -152,7 +179,7 @@ export function Editor({
         }),
       });
 
-      const data = await res.json();
+      const data = await lerRespostaJson<RespostaCorrecao>(res);
 
       if (!res.ok || !data.redacaoId) {
         throw new Error(data.error || 'Erro na resposta do corretor.');

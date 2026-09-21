@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
+import { MAX_TAMANHO_ARQUIVO_BYTES } from '@/lib/limites-upload';
 
 vi.mock('@/lib/supabase-admin', () => ({
   supabaseAdmin: {
@@ -60,7 +61,7 @@ describe('POST /api/upload — autenticação', () => {
     // Arquivo acima do teto: se a resposta fosse 413, significaria que a rota
     // processou o corpo antes de checar quem é — justamente o gasto que a
     // autenticação deve evitar.
-    const grande = new Uint8Array(10 * 1024 * 1024 + 1);
+    const grande = new Uint8Array(MAX_TAMANHO_ARQUIVO_BYTES + 1);
     const req = requestComArquivo(new File([grande], 'redacao.txt', { type: 'text/plain' }), null);
     const res = await POST(req);
     expect(res.status).toBe(401);
@@ -79,8 +80,8 @@ describe('POST /api/upload — validação e limites (sem I/O externo)', () => {
     expect(res.status).toBe(400);
   });
 
-  it('retorna 413 para arquivo acima de 10MB', async () => {
-    const grande = new Uint8Array(10 * 1024 * 1024 + 1);
+  it('retorna 413 para arquivo acima do teto de tamanho', async () => {
+    const grande = new Uint8Array(MAX_TAMANHO_ARQUIVO_BYTES + 1);
     const file = new File([grande], 'redacao.txt', { type: 'text/plain' });
     const res = await POST(requestComArquivo(file, 'token-valido-c'));
     expect(res.status).toBe(413);

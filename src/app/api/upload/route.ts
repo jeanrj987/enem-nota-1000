@@ -3,11 +3,11 @@ import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import { checarRateLimit, obterIpCliente } from '@/lib/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { MAX_TAMANHO_ARQUIVO_BYTES, validarArquivo } from '@/lib/limites-upload';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_TAMANHO_ARQUIVO_BYTES = 10 * 1024 * 1024; // 10MB
 const LIMITE_UPLOADS = 15;
 const JANELA_UPLOADS_MS = 10 * 60 * 1000; // 10 minutos
 
@@ -60,11 +60,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    if (file.size > MAX_TAMANHO_ARQUIVO_BYTES) {
-      return NextResponse.json(
-        { error: `Arquivo excede o limite de ${MAX_TAMANHO_ARQUIVO_BYTES / (1024 * 1024)}MB.` },
-        { status: 413 }
-      );
+    // Mesma regra que a tela aplica antes de enviar (`@/lib/limites-upload`).
+    // A checagem do cliente poupa a viagem inteira; esta aqui é a que vale,
+    // porque a rota é chamável sem passar pela tela.
+    const validacao = validarArquivo(file.name, file.size);
+    if (!validacao.ok) {
+      const excedeuTamanho = file.size > MAX_TAMANHO_ARQUIVO_BYTES;
+      return NextResponse.json({ error: validacao.erro }, { status: excedeuTamanho ? 413 : 400 });
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -99,11 +101,6 @@ export async function POST(req: NextRequest) {
           { status: 422 }
         );
       }
-    } else {
-      return NextResponse.json(
-        { error: 'Formato não suportado. Envie arquivos .txt, .pdf ou .docx' },
-        { status: 400 }
-      );
     }
 
     // Limpeza de quebras de linha excessivas
