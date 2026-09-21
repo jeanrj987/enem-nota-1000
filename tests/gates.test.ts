@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decidirGateLogin, decidirGateAssinatura } from '@/lib/gates';
+import { decidirGateLogin, decidirGateAssinatura, URL_SEM_ASSINATURA, motivoDeBloqueio } from '@/lib/gates';
 import type { Perfil } from '@/lib/perfil';
 
 const perfilCompleto: Perfil = {
@@ -62,7 +62,18 @@ describe('decidirGateAssinatura (RequerAssinatura — exige login + cadastro + a
 
   it('perfil completo mas sem assinatura ativa, manda para a home de vendas', () => {
     const r = decidirGateAssinatura(true, perfilCompleto, false, '/dashboard');
-    expect(r).toEqual({ tipo: 'redirecionar', url: '/' });
+    // O destino continua sendo a home inteira, e não `#planos`. O `?bloqueio`
+    // não muda o funil: só deixa a landing explicar por que trouxe a pessoa
+    // de volta, em vez de o clique no menu parecer um botão quebrado.
+    expect(r).toEqual({ tipo: 'redirecionar', url: '/?bloqueio=assinatura' });
+  });
+
+  it('o carimbo de bloqueio aponta para a home, não para a âncora de planos', () => {
+    // Trava a decisão de funil registrada em decidirGateAssinatura: quem é
+    // barrado aqui nunca viu a oferta, então precisa cair no topo da página
+    // de vendas, não em cima do preço.
+    expect(URL_SEM_ASSINATURA.startsWith('/?')).toBe(true);
+    expect(URL_SEM_ASSINATURA).not.toContain('#');
   });
 
   it('perfil completo e assinatura ativa, libera', () => {
@@ -73,5 +84,21 @@ describe('decidirGateAssinatura (RequerAssinatura — exige login + cadastro + a
   it('rejeita tentativa de open redirect no pathname (não é caminho interno)', () => {
     const r = decidirGateAssinatura(false, null, false, 'https://site-falso.com');
     expect(r).toEqual({ tipo: 'redirecionar', url: '/auth' });
+  });
+});
+
+describe('motivoDeBloqueio', () => {
+  it('reconhece o carimbo deixado pelo gate de assinatura', () => {
+    expect(motivoDeBloqueio('?bloqueio=assinatura')).toBe('assinatura');
+  });
+
+  it('ignora query vazia, ausente ou com outro valor', () => {
+    expect(motivoDeBloqueio('')).toBeNull();
+    expect(motivoDeBloqueio('?utm_source=instagram')).toBeNull();
+    expect(motivoDeBloqueio('?bloqueio=qualquer-outra-coisa')).toBeNull();
+  });
+
+  it('acha o carimbo no meio de outros parâmetros, como volta de anúncio', () => {
+    expect(motivoDeBloqueio('?utm_source=meta&bloqueio=assinatura&fbclid=abc')).toBe('assinatura');
   });
 });

@@ -131,7 +131,7 @@ describe('RequerAssinatura — navegação real', () => {
       </RequerAssinatura>
     );
 
-    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(routerReplace).toHaveBeenCalledWith('/?bloqueio=assinatura'));
     expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
   });
 

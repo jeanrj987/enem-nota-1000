@@ -36,10 +36,11 @@
  * O CTA do topo e o do fim são a MESMA ação, de propósito.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, ChevronDown, Loader2, Lock, Sparkles } from 'lucide-react';
+import { motivoDeBloqueio } from '@/lib/gates';
 import { PLANOS, PlanoId } from '@/lib/planos';
 import { useAuth } from '@/contexts/AuthContext';
 import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
@@ -57,6 +58,10 @@ import {
   textoRedacoesGratuitas,
 } from '@/lib/limites';
 import { CONTROLADOR } from '@/lib/controlador';
+
+/** O carimbo de bloqueio é lido uma vez, na montagem, e não muda enquanto a
+ *  página vive — não há a que se inscrever. */
+const semInscricao = () => () => {};
 
 const COMPETENCIAS = [
   { sigla: 'C1', titulo: 'Domínio da escrita', texto: 'Identifique desvios de gramática, pontuação, concordância, regência e outros aspectos da escrita formal.' },
@@ -107,6 +112,26 @@ export default function PaginaInicial() {
   const { usuario } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [planoCarregando, setPlanoCarregando] = useState<PlanoId | null>(null);
+  /**
+   * Quem clica em Dashboard ou Histórico sem plano é trazido para cá pelo
+   * `RequerAssinatura`. Sem um aviso, essa volta é muda: a pessoa clica no
+   * menu e simplesmente reaparece no topo do site, o que parece defeito.
+   *
+   * Duas escolhas de implementação, ambas para evitar um preço alto demais
+   * por um parâmetro opcional:
+   *
+   * - `window.location` em vez de `useSearchParams`, que obrigaria esta
+   *   página inteira a viver dentro de um `<Suspense>`;
+   * - `useSyncExternalStore` em vez de `useEffect` + `setState`, porque o
+   *   valor não existe na renderização do servidor e o terceiro argumento
+   *   (o snapshot do servidor) resolve o descasamento de hidratação sem
+   *   custar um render extra.
+   */
+  const bloqueadoPorPlano = useSyncExternalStore(
+    semInscricao,
+    () => motivoDeBloqueio(window.location.search) !== null,
+    () => false
+  );
 
   // Marca a visita à página de vendas para o Meta e o GA4. É o denominador do
   // funil: sem ele não existe taxa de conversão, só contagem de vendas.
@@ -175,6 +200,24 @@ export default function PaginaInicial() {
       </header>
 
       <main>
+        {bloqueadoPorPlano && (
+          <div className="border-b border-ambar/30 bg-ambar-claro">
+            <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-3 text-sm text-tinta-suave sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                <strong className="text-tinta">Dashboard e Histórico fazem parte do plano.</strong>{' '}
+                Sua conta está ativa, mas ainda sem assinatura — por isso trouxemos você de volta
+                para cá.
+              </p>
+              <a
+                href="#planos"
+                className="shrink-0 font-semibold text-azul underline underline-offset-4 hover:brightness-110"
+              >
+                Ver os planos
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Hero — a promessa e a ação são a mesma coisa. */}
         <section className="relative overflow-hidden py-20 sm:py-28">
           <div className="pointer-events-none absolute -right-40 -top-32 h-[500px] w-[600px] rounded-full bg-azul/15 blur-[100px]" />
@@ -274,7 +317,7 @@ export default function PaginaInicial() {
         </section>
 
         {/* A PROVA. É a seção que a página não tinha. */}
-        <section id="exemplo" className="py-24">
+        <section id="exemplo" className="scroll-mt-20 py-24">
           <div className="mx-auto max-w-4xl px-6">
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">A prova</span>
@@ -309,7 +352,7 @@ export default function PaginaInicial() {
         <RigorDaCorrecao />
 
         {/* Como funciona */}
-        <section id="como" className="border-y border-regua bg-folha-2/60 py-24">
+        <section id="como" className="scroll-mt-20 border-y border-regua bg-folha-2/60 py-24">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-azul">Como funciona</span>
             <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
@@ -329,7 +372,7 @@ export default function PaginaInicial() {
         </section>
 
         {/* As competências */}
-        <section id="competencias" className="py-24">
+        <section id="competencias" className="scroll-mt-20 py-24">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <span className="text-[11px] font-black uppercase tracking-widest text-azul">As 5 competências</span>
             <h2 className="mx-auto mt-3 max-w-2xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
@@ -356,7 +399,7 @@ export default function PaginaInicial() {
         <FronteiraGratisPago destino={destinoCorrecaoGratuita} />
 
         {/* Planos */}
-        <section id="planos" className="border-y border-regua bg-folha-2/60 py-24">
+        <section id="planos" className="scroll-mt-20 border-y border-regua bg-folha-2/60 py-24">
           <div className="mx-auto max-w-5xl px-6">
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">Oferta</span>
@@ -431,7 +474,7 @@ export default function PaginaInicial() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="py-24">
+        <section id="faq" className="scroll-mt-20 py-24">
           <div className="mx-auto max-w-3xl px-6">
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">Dúvidas</span>

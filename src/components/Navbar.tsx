@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -11,31 +11,74 @@ import {
   Menu,
   X,
   GraduationCap,
+  Lock,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DESTINO_PADRAO, urlDeLogin } from '@/lib/redirecionamento';
+import { URL_SEM_ASSINATURA } from '@/lib/gates';
+import { temAcessoAtivo } from '@/lib/assinatura';
 import { sair } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+
+/**
+ * Itens fixos do menu. `exigePlano` existe porque o menu mentia: listava
+ * Dashboard e Histórico para todo mundo, e quem não tinha plano clicava, via
+ * um spinner e reaparecia no topo da home — `RequerAssinatura` expulsava a
+ * pessoa depois de a rota já ter começado a carregar. De fora isso é
+ * indistinguível de um menu que não direciona para lugar nenhum, que foi como
+ * o problema chegou em 21/09. Com a marcação, o item mostra o cadeado e leva
+ * direto para a oferta, sem passar pela tela que vai recusá-lo.
+ */
+const NAV_LINKS = [
+  { href: '/', label: 'Início', icon: Sparkles, exigePlano: false },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exigePlano: true },
+  { href: '/nova-redacao', label: 'Nova Redação', icon: PenTool, exigePlano: false },
+  { href: '/historico', label: 'Histórico & Evolução', icon: TrendingUp, exigePlano: true },
+] as const;
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { usuario } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Guarda de quem é a resposta, e não só o booleano: trocar de conta na
+  // mesma aba não pode herdar o resultado da sessão anterior. É também o que
+  // dá o terceiro estado ("ainda não sei"), sem o qual o cadeado pisca em
+  // quem tem plano no intervalo entre a montagem e a resposta.
+  const [assinatura, setAssinatura] = useState<{ userId: string; ativa: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!usuario) return;
+    let ativo = true;
+    temAcessoAtivo().then((ativaAgora) => {
+      if (ativo) setAssinatura({ userId: usuario.id, ativa: ativaAgora });
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [usuario]);
+
+  /**
+   * Um item só é bloqueado para quem está logado e já sabemos não ter plano.
+   * Visitante deslogado continua indo pela rota normal — lá o gate o manda
+   * para o login levando o destino junto, que é o comportamento certo e
+   * compreensível, ao contrário de aterrissar na home sem explicação.
+   */
+  const semPlanoConfirmado =
+    !!usuario && assinatura?.userId === usuario.id && !assinatura.ativa;
+
+  const estaBloqueado = (exigePlano: boolean) => exigePlano && semPlanoConfirmado;
+
+  /** Destino real do item, já considerando o bloqueio. */
+  const destinoDoLink = (href: string, exigePlano: boolean) =>
+    estaBloqueado(exigePlano) ? URL_SEM_ASSINATURA : href;
 
   const handleSair = async () => {
     await sair();
     setMobileMenuOpen(false);
     router.push('/');
   };
-
-  const navLinks = [
-    { href: '/', label: 'Início', icon: Sparkles },
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/nova-redacao', label: 'Nova Redação', icon: PenTool },
-    { href: '/historico', label: 'Histórico & Evolução', icon: TrendingUp },
-  ];
 
   return (
     <header className="sticky top-0 z-50 w-full glass-panel border-b border-regua/80 transition-all">
@@ -58,20 +101,26 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
+            {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
+              const bloqueado = estaBloqueado(link.exigePlano);
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={destinoDoLink(link.href, link.exigePlano)}
+                  title={bloqueado ? `${link.label} faz parte do plano — veja os planos` : undefined}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
                     isActive
                       ? 'bg-azul-claro text-azul border border-azul shadow-sm'
                       : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-azul' : 'text-tinta-fraca'}`} />
+                  {bloqueado ? (
+                    <Lock className="w-4 h-4 text-tinta-fraca" />
+                  ) : (
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-azul' : 'text-tinta-fraca'}`} />
+                  )}
                   {link.label}
                 </Link>
               );
@@ -126,13 +175,14 @@ export function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-regua bg-papel/95 backdrop-blur-xl px-4 pt-3 pb-5 space-y-2">
-          {navLinks.map((link) => {
+          {NAV_LINKS.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
+            const bloqueado = estaBloqueado(link.exigePlano);
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={destinoDoLink(link.href, link.exigePlano)}
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium ${
                   isActive
@@ -140,8 +190,17 @@ export function Navbar() {
                     : 'text-tinta-suave hover:text-tinta hover:bg-folha-2/60'
                 }`}
               >
-                <Icon className="w-5 h-5 text-azul" />
-                {link.label}
+                {bloqueado ? (
+                  <Lock className="w-5 h-5 text-tinta-fraca" />
+                ) : (
+                  <Icon className="w-5 h-5 text-azul" />
+                )}
+                <span className="flex-1">{link.label}</span>
+                {bloqueado && (
+                  <span className="rounded-md bg-folha-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-tinta-fraca">
+                    Plano
+                  </span>
+                )}
               </Link>
             );
           })}
