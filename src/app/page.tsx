@@ -484,36 +484,21 @@ export default function PaginaInicial() {
             <div className="text-center">
               <span className="text-[11px] font-black uppercase tracking-widest text-azul">Oferta</span>
               <h2 className="mx-auto mt-3 max-w-xl text-[2rem] font-black leading-tight tracking-tight sm:text-4xl">
-                Depois da gratuita, escolha como continuar.
+                Depois da gratuita, continue para sempre.
               </h2>
               <p className="mx-auto mt-3 max-w-md text-[15px] text-tinta-suave">
-                Correções ilimitadas em qualquer plano. Sem fidelidade e com garantia de sete dias.
+                Pague uma única vez, sem renovação, e use para sempre. Garantia de sete dias.
               </p>
             </div>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-2">
-              <CartaoDePlano
-                plano={PLANOS.mensal}
-                destaque
-                descricao="Para quem vai treinar redação toda semana até a prova."
-                beneficios={[
-                  'Dupla correção independente, como na prova real',
-                  'Correções ilimitadas',
-                  'Nota nas 5 competências',
-                  'Desvios marcados no seu texto',
-                  'Versão reescrita e plano de ação',
-                  'Renova sozinho, cancele quando quiser',
-                ]}
-                carregando={planoCarregando === 'mensal'}
-                bloqueado={planoCarregando !== null}
-                aoClicar={() => iniciarCheckout('mensal')}
-              />
+            <div className="mx-auto mt-12 max-w-md">
               <CartaoDePlano
                 plano={PLANOS.unico}
-                descricao="Para quem quer uma reta final concentrada, sem recorrência."
+                destaque
+                descricao="Um pagamento, sem mensalidade, para treinar até a prova e depois dela."
                 beneficios={[
                   'Dupla correção independente, como na prova real',
-                  'Correções ilimitadas por 30 dias',
+                  'Correções ilimitadas, para sempre',
                   'Nota nas 5 competências',
                   'Desvios marcados no seu texto',
                   'Versão reescrita e plano de ação',
@@ -717,6 +702,11 @@ function FronteiraGratisPago({ destino }: { destino: string }) {
   );
 }
 
+/** 56.9 → "56,90" (o preço é número no código, mas a landing mostra centavos). */
+function formatarPreco(valor: number): string {
+  return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function CartaoDePlano({
   plano,
   descricao,
@@ -754,9 +744,9 @@ function CartaoDePlano({
 
         <div className="mt-5 flex items-baseline gap-1.5">
           <span className="text-[15px] font-bold text-tinta-fraca">R$</span>
-          <span className="text-5xl font-black tabular-nums tracking-tight">{plano.precoReais}</span>
+          <span className="text-5xl font-black tabular-nums tracking-tight">{formatarPreco(plano.precoReais)}</span>
           <span className="text-[13px] text-tinta-fraca">
-            {plano.recorrente ? '/mês' : `· ${plano.diasDeAcesso} dias`}
+            {plano.recorrente ? '/mês' : plano.diasDeAcesso === null ? '· vitalício' : `· ${plano.diasDeAcesso} dias`}
           </span>
         </div>
 
@@ -782,7 +772,7 @@ function CartaoDePlano({
         {carregando ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <span>Assinar {plano.nome}</span>
+          <span>Comprar {plano.nome.toLowerCase()}</span>
         )}
       </button>
     </div>

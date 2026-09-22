@@ -66,7 +66,7 @@ const EMAIL_COMPRA = 'pai.da.maria@exemplo.com';
 
 beforeEach(() => {
   estado.linhas = [
-    { id: PEDIDO, email: EMAIL_COMPRA, plano_id: 'mensal', status: 'pendente' },
+    { id: PEDIDO, email: EMAIL_COMPRA, plano_id: 'unico', status: 'pendente' },
   ];
   estado.ativou = null;
   estado.falharAtivacao = false;
@@ -120,11 +120,11 @@ describe('vincularCompraOrfa — resgate legítimo', () => {
       userId: 'user-maria',
     });
 
-    expect(resultado).toEqual({ tipo: 'vinculada', planoId: 'mensal' });
+    expect(resultado).toEqual({ tipo: 'vinculada', planoId: 'unico' });
     expect(estado.ativou).toEqual({
       sessionId: PEDIDO,
       userId: 'user-maria',
-      planoId: 'mensal',
+      planoId: 'unico',
     });
     expect(estado.updates[0].campos.status).toBe('vinculada');
     expect(estado.updates[0].campos.user_id).toBe('user-maria');

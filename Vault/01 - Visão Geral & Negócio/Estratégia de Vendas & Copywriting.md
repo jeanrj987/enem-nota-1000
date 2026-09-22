@@ -119,12 +119,11 @@ Fecha com um parágrafo que **limita a própria promessa**: nada disso torna a c
 Cada uma vale até 200 pontos. O enquadramento é de estudo, não de recurso: *"saber qual delas está te segurando é o que decide onde vale a pena gastar seu tempo"*.
 
 ### 7. Oferta / Preço (`#planos`)
-> **"Depois da gratuita, escolha como continuar."**
+> **"Depois da gratuita, continue para sempre."**
 
 | Plano | Preço | Acesso | Observação |
 | :--- | :--- | :--- | :--- |
-| **Plano Mensal** (mais escolhido) | R$ 97/mês | 30 dias, renova | Assinatura recorrente na Kiwify |
-| **Acesso 30 dias** | R$ 147 | 30 dias, não renova | Pagamento único |
+| **Acesso vitalício** | R$ 56,90 | Vitalício, não renova | Pagamento único na Kiwify (ADR 048) |
 
 Preços vêm de `PLANOS.precoReais` (`src/lib/planos.ts`) — fonte única, lida também pelo webhook e pelo valor mandado ao Meta. **Precisa bater com o painel da Kiwify**; divergência não dá erro em lugar nenhum, só quebra a identificação de plano e o ROAS, em silêncio.
 

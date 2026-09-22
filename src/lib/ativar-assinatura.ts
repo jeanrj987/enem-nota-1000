@@ -2,6 +2,14 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { PLANOS, PlanoId } from '@/lib/planos';
 
 /**
+ * Acesso vitalício não tem data de fim, mas as consultas de acesso e a policy
+ * de RLS (`expira_em > now()`) tratam `null` como "sem acesso". Por isso o
+ * plano vitalício grava uma data-sentinela bem distante em vez de `null`.
+ */
+const EXPIRACAO_VITALICIA = '2099-12-31T23:59:59.000Z';
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+/**
  * Ativa uma assinatura no Supabase a partir de um pagamento já confirmado
  * como pago pelo gateway (hoje: webhook da Kiwify, evento "compra
  * aprovada"). `sessionId` é qualquer identificador único da transação (o
@@ -22,7 +30,10 @@ export async function ativarAssinatura(params: {
   }
 
   const diasDeAcesso = PLANOS[params.planoId].diasDeAcesso;
-  const expiraEm = new Date(Date.now() + diasDeAcesso * 24 * 60 * 60 * 1000).toISOString();
+  const expiraEm =
+    diasDeAcesso === null
+      ? EXPIRACAO_VITALICIA
+      : new Date(Date.now() + diasDeAcesso * MS_POR_DIA).toISOString();
 
   const { error } = await supabaseAdmin.from('assinaturas').upsert({
     id: params.sessionId,

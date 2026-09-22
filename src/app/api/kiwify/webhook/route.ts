@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { PLANOS, PlanoId } from '@/lib/planos';
+import { PlanoId } from '@/lib/planos';
 import { ativarAssinatura, revogarAssinatura } from '@/lib/ativar-assinatura';
 import { buscarUserIdPorEmail } from '@/lib/perfil';
 import { registrarCompraOrfa } from '@/lib/compras-orfas';
 import { registrarCompraNoMeta } from '@/lib/analytics/compra';
 
 const webhookToken = process.env.KIWIFY_WEBHOOK_TOKEN;
-
-/** Margem ao casar o valor cobrado com o preço do plano — cobre centavos de
- *  diferença por arredondamento ou desconto pequeno, sem confundir R$97 com
- *  R$147. */
-const TOLERANCIA_VALOR_REAIS = 1;
 
 /**
  * Formato do payload confirmado contra a Kiwify real em 17/09 (ADR 028): o
@@ -71,45 +66,13 @@ function extrairEmail(payload: PayloadWebhookKiwify): string | null {
 }
 
 /**
- * Tenta identificar qual dos nossos 2 planos corresponde ao produto
- * comprado, cruzando nome do produto e valor cobrado — heurística porque
- * não sabemos ainda o formato exato do identificador de produto que a
- * Kiwify manda no payload.
+ * Só existe um produto (pagamento único de R$ 56,90, acesso vitalício), então
+ * toda compra aprovada vinda deste webhook ativa o plano único. Não
+ * identificamos o plano pelo nome ou valor: cupons, renomeação do produto no
+ * painel ou renovações de assinaturas antigas fariam a compra cair na fila de
+ * órfãs mesmo com o pagamento confirmado.
  */
-function identificarPlano(payload: PayloadWebhookKiwify): PlanoId | null {
-  const nomeProduto: string = (
-    payload?.Product?.product_name ||
-    payload?.product?.product_name ||
-    payload?.Product?.name ||
-    payload?.product_name ||
-    ''
-  ).toLowerCase();
-
-  if (nomeProduto.includes('mensal')) return 'mensal';
-  if (nomeProduto.includes('30 dias') || nomeProduto.includes('único') || nomeProduto.includes('unico')) {
-    return 'unico';
-  }
-
-  const valorCentavos: number | undefined =
-    payload?.Commissions?.charge_amount ??
-    payload?.charge_amount ??
-    payload?.amount ??
-    payload?.price;
-
-  if (typeof valorCentavos === 'number') {
-    // Aceita tanto reais quanto centavos, dependendo de como a Kiwify manda.
-    const valorReais = valorCentavos > 1000 ? valorCentavos / 100 : valorCentavos;
-    // Os preços vêm de `PLANOS`, não cravados aqui: eram dois números soltos
-    // que precisavam ser lembrados junto com o painel da Kiwify e com o
-    // valor mandado ao Meta.
-    const porValor = Object.values(PLANOS).find(
-      (plano) => Math.abs(valorReais - plano.precoReais) < TOLERANCIA_VALOR_REAIS
-    );
-    if (porValor) return porValor.id;
-  }
-
-  return null;
-}
+const PLANO_VENDIDO: PlanoId = 'unico';
 
 function normalizarStatus(payload: PayloadWebhookKiwify): string {
   return String(
@@ -239,10 +202,10 @@ async function aprovar(ctx: {
   email: string;
   userId: string | null;
 }): Promise<NextResponse> {
-  const planoId = identificarPlano(ctx.payload);
+  const planoId = PLANO_VENDIDO;
   const orderId = idDoPedido(ctx.payload, ctx.payloadBruto);
 
-  if (ctx.userId && planoId) {
+  if (ctx.userId) {
     const resultado = await ativarAssinatura({ sessionId: orderId, userId: ctx.userId, planoId });
     if (!resultado.sucesso) {
       // 500 de propósito: a Kiwify reentrega em erro, e a reentrega é
@@ -266,8 +229,7 @@ async function aprovar(ctx: {
     return NextResponse.json({ received: true });
   }
 
-  // Sem conta (e-mail do checkout ≠ e-mail do cadastro) ou sem plano
-  // identificável: vai para a fila, com o payload cru, para a pessoa poder
+  // Sem conta (e-mail do checkout ≠ e-mail do cadastro): vai para a fila, com o payload cru, para a pessoa poder
   // resgatar sozinha em /vincular-compra.
   await registrarCompraOrfa({
     orderId,

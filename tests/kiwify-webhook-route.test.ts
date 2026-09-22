@@ -87,35 +87,21 @@ describe('POST /api/kiwify/webhook — verificação de assinatura', () => {
 });
 
 describe('POST /api/kiwify/webhook — compra aprovada', () => {
-  it('ativa a assinatura do plano mensal quando o produto é identificado pelo nome', async () => {
-    estado.userIdPorEmail = 'user-1';
-    const res = await POST(
-      requisicao({
-        order_id: 'kiwify_pedido_1',
-        order_status: 'paid',
-        Customer: { email: 'aluno@exemplo.com' },
-        Product: { product_name: 'Nota 1000 — Plano Mensal' },
-      })
-    );
-    expect(res.status).toBe(200);
-    expect(estado.ativou).toEqual({ sessionId: 'kiwify_pedido_1', userId: 'user-1', planoId: 'mensal' });
-  });
-
-  it('ativa o plano único quando o produto é identificado pelo nome "30 dias"', async () => {
+  it('ativa o plano único quando o produto é identificado pelo nome "vitalício"', async () => {
     estado.userIdPorEmail = 'user-2';
     const res = await POST(
       requisicao({
         order_id: 'kiwify_pedido_2',
         order_status: 'paid',
         Customer: { email: 'aluno2@exemplo.com' },
-        Product: { product_name: 'Nota 1000 AI — Acesso 30 dias' },
+        Product: { product_name: 'Nota 1000 AI — Acesso vitalício' },
       })
     );
     expect(res.status).toBe(200);
     expect(estado.ativou).toEqual({ sessionId: 'kiwify_pedido_2', userId: 'user-2', planoId: 'unico' });
   });
 
-  it('identifica o plano pelo valor cobrado quando o nome do produto não é reconhecido', async () => {
+  it('ativa o plano único para qualquer compra aprovada, independente do nome ou valor do produto', async () => {
     estado.userIdPorEmail = 'user-3';
     await POST(
       requisicao({
@@ -123,10 +109,10 @@ describe('POST /api/kiwify/webhook — compra aprovada', () => {
         order_status: 'paid',
         Customer: { email: 'aluno3@exemplo.com' },
         Product: { product_name: 'Produto sem nome reconhecível' },
-        charge_amount: 97,
+        charge_amount: 56.9,
       })
     );
-    expect(estado.ativou?.planoId).toBe('mensal');
+    expect(estado.ativou?.planoId).toBe('unico');
   });
 
   it('registra compra órfã quando não existe conta com o e-mail do comprador', async () => {
@@ -136,7 +122,7 @@ describe('POST /api/kiwify/webhook — compra aprovada', () => {
         order_id: 'kiwify_pedido_4',
         order_status: 'paid',
         Customer: { email: 'nao-cadastrado@exemplo.com' },
-        Product: { product_name: 'Nota 1000 — Plano Mensal' },
+        Product: { product_name: 'Nota 1000 AI — Acesso vitalício' },
       })
     );
     expect(res.status).toBe(200);
@@ -146,25 +132,7 @@ describe('POST /api/kiwify/webhook — compra aprovada', () => {
     expect(estado.orfaRegistrada).toMatchObject({
       orderId: 'kiwify_pedido_4',
       email: 'nao-cadastrado@exemplo.com',
-      planoId: 'mensal',
-    });
-  });
-
-  it('registra compra órfã quando a conta existe mas o plano não foi identificado', async () => {
-    estado.userIdPorEmail = 'user-6';
-    const res = await POST(
-      requisicao({
-        order_id: 'kiwify_pedido_6',
-        order_status: 'paid',
-        Customer: { email: 'aluno6@exemplo.com' },
-        Product: { product_name: 'Produto desconhecido' },
-      })
-    );
-    expect(res.status).toBe(200);
-    expect(estado.ativou).toBeNull();
-    expect(estado.orfaRegistrada).toMatchObject({
-      orderId: 'kiwify_pedido_6',
-      planoId: null,
+      planoId: 'unico',
     });
   });
 
@@ -173,7 +141,7 @@ describe('POST /api/kiwify/webhook — compra aprovada', () => {
     const corpo = {
       order_status: 'paid',
       Customer: { email: 'sem-pedido@exemplo.com' },
-      Product: { product_name: 'Nota 1000 — Plano Mensal' },
+      Product: { product_name: 'Nota 1000 AI — Acesso vitalício' },
     };
     await POST(requisicao(corpo));
     await POST(requisicao(corpo));

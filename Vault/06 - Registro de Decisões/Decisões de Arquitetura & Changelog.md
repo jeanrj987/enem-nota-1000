@@ -183,6 +183,14 @@ updated: 2026-09-21 (navegação na landing só para quem já comprou)
 - **Aplicado também em `completarParaDuplaCorrecao`**: aqui a segunda e a eventual terceira passagem são sempre leves, porque a correção gratuita já existente (gerada por `corrigirRedacaoSimples`, sempre completa) é a âncora garantida de narrativa — não há cenário em que ela esteja ausente.
 - **Testes**: 129 → 137 (6 novos em `correcao-schema.test.ts` e `reconciliacao.test.ts`, cobrindo o modo leve na validação e o empréstimo de narrativa nos dois pontos de reconciliação, incluindo o cálculo de médias por competência).
 
+### ADR 048: Produto único — pagamento único de R$ 56,90, acesso vitalício
+- **Status**: Aprovado e Implementado
+- **Contexto**: o modelo vigente tinha 2 planos (Mensal R$ 97 recorrente e Acesso 30 dias R$ 147 pagamento único, ADR 026). Por decisão de produto, passa a existir uma única forma de cobrança: **R$ 56,90, pagamento único, sem recorrência, acesso vitalício**. O valor cobrado é definido no painel da Kiwify (o produto mensal antigo foi removido de lá); o código só exibe o preço e o manda ao Meta.
+- **Decisão**: `PlanoId` virou só `'unico'` (mantido o id para não invalidar `plano_id` já gravado) e `PLANOS` perdeu o `mensal`. `precoReais` passou a `56.9`, `diasDeAcesso` a `null` (vitalício). A landing mostra um único cartão, com o preço formatado em pt-BR (`56,90`). Checkout continua em `https://pay.kiwify.com.br/BE4tQoq`.
+- **Webhook**: `identificarPlano` (nome do produto + valor) foi removida. Toda compra aprovada ativa o plano único; cupom, renomeação do produto ou renovação de assinatura antiga não fazem mais a compra cair na fila de órfãs. A fila de órfãs continua para o caso de e-mail sem conta.
+- **Acesso vitalício**: `ativarAssinatura` grava `expira_em = 2099-12-31` como data-sentinela, não `null`: `assinatura.ts`, `assinatura-servidor.ts` e a policy de RLS filtram por `expira_em > now()`, e `null` seria lido como "sem acesso". Sem migração de schema.
+- **Consequências**: (1) compras órfãs antigas com `plano_id = 'mensal'` deixam de ser vinculáveis sozinhas e vão para resgate manual (`compras-orfas.ts` já trata plano desconhecido assim); (2) assinantes mensais antigos que renovarem na Kiwify ganham acesso vitalício — desativar o produto mensal lá; (3) sem receita recorrente, o custo de IA por usuário vitalício não tem teto no tempo — monitorar.
+
 ### ADR 047: Navegação na landing é privilégio de quem já comprou
 
 - **Status**: Aprovado e Implementado.
@@ -443,6 +451,11 @@ updated: 2026-09-21 (navegação na landing só para quem já comprou)
 ---
 
 ## 📋 Changelog do Projeto
+
+### [v3.11.0] - 2026-09-21 (produto único a R$ 56,90, vitalício)
+- **Alterado**: a landing passou de 2 planos (R$ 97 mensal e R$ 147/30 dias) para um único cartão de **R$ 56,90, pagamento único, acesso vitalício**. `src/lib/planos.ts` só tem o plano `unico`; o webhook da Kiwify ativa esse plano em qualquer compra aprovada. Ver ADR 048.
+- **Removido**: plano `mensal` e a identificação do plano por nome/valor no webhook.
+- **Testes**: 242 (`npx vitest run`) — removidos os testes do plano mensal e do "plano não identificado", adicionado `tests/ativar-assinatura.test.ts` (data-sentinela do vitalício).
 
 ### [v3.10.0] - 2026-09-21 (navegação na landing só para quem já comprou)
 - **Adicionado**: com plano ativo, o header da landing troca as âncoras de venda pelos destinos do app (Dashboard, Nova Redação, Histórico), com drawer no celular. Ver ADR 047.

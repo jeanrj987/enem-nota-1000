@@ -35,7 +35,7 @@ updated: 2026-09-18 (páginas de erro 404/runtime, vincular-compra, robots/sitem
 | **Banco de Dados** | Supabase (`@supabase/supabase-js`) | Persistência de redações, assinaturas, perfis e compras órfãs; Auth real (e-mail/senha + Google) desde o ADR 011 |
 | **Validação** | `zod` | Validação estrita de payload nas rotas de `src/app/api/*` |
 | **Medição** | Meta Pixel + Conversions API, GA4 | Funil e atribuição de anúncio; a **compra sai pelo servidor**, porque o checkout roda no domínio da Kiwify (ADR 042) |
-| **Cobrança** | Kiwify (link de checkout fixo + webhook) | 2 planos de acesso; a dependência `stripe` foi removida no ADR 028 |
+| **Cobrança** | Kiwify (link de checkout fixo + webhook) | 1 plano de acesso (R$ 56,90, vitalício); a dependência `stripe` foi removida no ADR 028 |
 
 ---
 
